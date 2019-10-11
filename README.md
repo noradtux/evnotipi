@@ -1,4 +1,4 @@
-# EVNotiPi
+# EVNotiPi Nerd Edition
 Python Version of EVNotify
 ## Needed Hardware
 - Raspberry Pi Zero W with GPIO Header https://buyzero.de/collections/boards-kits/products/raspberry-pi-zero-w-easy-mit-bestucktem-header
