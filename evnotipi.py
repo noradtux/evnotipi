@@ -64,6 +64,12 @@ Threads.append(gps)
 EVNotify = evnotify.EVNotify(config['evnotify'], car, gps)
 Threads.append(EVNotify)
 
+# Init ABRP
+if 'abrp' in config and config['abrp']['enable'] == True:
+    import abrp
+    ABRP = abrp.ABRP(config['abrp'], car, gps, EVNotify)
+    Threads.append(ABRP)
+
 # Init WiFi control
 if 'wifi' in config and config['wifi']['enable'] == True:
     from wifi_ctrl import WiFiCtrl
