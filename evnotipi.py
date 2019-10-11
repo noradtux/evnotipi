@@ -70,6 +70,12 @@ if 'abrp' in config and config['abrp']['enable'] == True:
     ABRP = abrp.ABRP(config['abrp'], car, gps, EVNotify)
     Threads.append(ABRP)
 
+# Init influx interface
+if 'influxdb' in config and config['influxdb']['enable'] == True:
+    import influx_telemetry
+    Influx = influx_telemetry.InfluxTelemetry(config['influxdb'], car, gps, EVNotify)
+    Threads.append(Influx)
+
 # Init WiFi control
 if 'wifi' in config and config['wifi']['enable'] == True:
     from wifi_ctrl import WiFiCtrl
