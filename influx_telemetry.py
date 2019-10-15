@@ -93,7 +93,7 @@ class InfluxTelemetry:
                     fields.update({
                         'speed':     float(fix.speed),
                         })
-                if fix.mode > 2:
+                if fix.mode > 2 and not isnan(fix.altitude):
                     fields.update({
                         'altitude':  float(fix.altitude),
                         })
