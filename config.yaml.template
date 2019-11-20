@@ -26,6 +26,11 @@ watchdog:
 	i2c_bus: 1
 
 dongle:
+	debug:
+		enable:	1
+		url: 	https://whatever
+		#user:
+		#pass:
 	# Use SpcketCAN:
         #type:  SocketCAN
         #port:  can0
