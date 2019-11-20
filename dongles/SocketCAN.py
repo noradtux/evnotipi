@@ -38,7 +38,9 @@ class SocketCAN:
 
             msg_data = bytearray([cmd_len]) + cmd + b"\00" * (7 - cmd_len) # Pad cmd to 8 bytes
 
-            self.cmd_msg = can.Message(extended_id = False, arbitration_id = self.can_id, data = msg_data)
+            is_extended = True if self.can_id > 0xfff else False
+
+            self.cmd_msg = can.Message(extended_id = is_Extended, arbitration_id = self.can_id, data = msg_data)
 
             #print(hexlify(cmd),msg_data)
             self.log.debug("{} Sent messsage".format(self.cmd_msg))
@@ -164,7 +166,7 @@ class SocketCAN:
         self.bus.set_filters([{
             'can_id': self.can_filter,
             'can_mask': self.can_mask,
-            'extended': False
+            'extended': True if self.can_filter > 0xfff else False
             }])
 
     def setCANRxMask(self, mask):
@@ -176,7 +178,7 @@ class SocketCAN:
         self.bus.set_filters([{
             'can_id': self.can_filter,
             'can_mask': self.can_mask,
-            'extended': False
+            'extended': True if self.can_filter > 0xfff else False
             }])
 
     def setCANRxFilter(self, addr):
@@ -188,7 +190,7 @@ class SocketCAN:
         self.bus.set_filters([{
             'can_id': self.can_filter,
             'can_mask': self.can_mask,
-            'extended': False
+            'extended': True if self.can_filter > 0xfff else False
             }])
 
     def setFiltersEx(self, filters):
@@ -197,7 +199,7 @@ class SocketCAN:
             flt.append({
                 'can_id': f['id'],
                 'can_mask': f['mask'],
-                'extended': False
+                'extended': True if f['id'] > 0xfff else False
                 })
 
         self.bus.set_filters(flt)
