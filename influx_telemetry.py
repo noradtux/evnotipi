@@ -5,7 +5,7 @@ import influxdb
 import pyrfc3339
 from datetime import datetime, timezone
 from time import time, sleep
-from threading import Thread, Lock
+from threading import Thread, Condition, Lock
 import logging
 from math import isnan
 
@@ -38,13 +38,13 @@ class InfluxTelemetry:
 
         self.influx = Influx
         self.submit_queue = []
-        self.data_q_lock = Lock()
+        self.data_q_lock = Condition(Lock())
         self.data_queue = []
 
     def start(self):
         if self.influx:
             self.running = True
-            self.thread = Thread(self.submitData)
+            self.thread = Thread(target = self.submitData)
             self.thread.start()
             self.car.registerData(self.dataCallback)
 
@@ -55,16 +55,20 @@ class InfluxTelemetry:
         self.thread.join()
 
     def dataCallback(self, data):
+        self.log.debug("Enqeue...")
         with self.data_q_lock:
             self.data_queue.append(data)
             self.data_q_lock.notify()
 
     def submitData(self):
         while self.running:
+            data = None
             with self.data_q_lock:
                 if len(self.data_queue) == 0:
+                    self.log.debug("Waiting...")
                     self.data_q_lock.wait()
                 else:
+                    self.log.debug("Got Data...")
                     data = self.data_queue.pop(0)
                     now = time()
                     self.watchdog = now
@@ -115,6 +119,7 @@ class InfluxTelemetry:
                                     'gps_device': fix.device
                                     })
 
+            if data:
                 self.submit(measurement="telemetry", time=data['timestamp'],
                         fields=fields, tags=tags)
 
