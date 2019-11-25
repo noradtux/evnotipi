@@ -12,6 +12,8 @@ import evnotify
 
 Systemd = sdnotify.SystemdNotifier()
 
+class WatchdogFailed(Exception): pass
+
 # load config
 if os.path.exists('config.json'):
     import json
@@ -106,6 +108,7 @@ try:
             if t.checkWatchdog() == False:
                 log.error("Watchdog Failed " + str(t))
                 watchdogs_ok = False
+                raise WatchdogFailed
 
         if watchdogs_ok:
             Systemd.notify("WATCHDOG=1")
