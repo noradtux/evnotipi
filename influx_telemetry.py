@@ -51,10 +51,8 @@ class InfluxTelemetry:
     def stop(self):
         self.car.unregisterData(self.dataCallback)
         self.running = False
-        try:
+        with self.data_q_lock:
             self.data_q_lock.notify()
-        except RuntimeError:
-            pass
         self.thread.join()
 
     def dataCallback(self, data):
