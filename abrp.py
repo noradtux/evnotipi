@@ -4,7 +4,7 @@ import requests
 from time import time, sleep
 import json
 import logging
-from threading import Thread, Lock
+from threading import Thread, Condition, Lock
 
 PidMap = {
         "dcBatteryCurrent": "current",
@@ -42,22 +42,38 @@ class ABRP:
         self.thread = None
         self.watchdog = time()
         self.watchdog_timeout = self.poll_interval * 10
+        self.data = None
+        self.data_lock = Condition(Lock())
 
     def start(self):
         self.running = True
         self.thread = Thread(target = self.submitData)
         self.thread.start()
+        self.car.registerData(self.dataCallback)
 
     def stop(self):
+        self.car.unregisterData(self.dataCallback)
         self.running = False
+        with self.data_lock:
+            self.data_lock.notify()
         self.thread.join()
+
+    def dataCallback(self, data):
+        self.log.debug("Enqeue...")
+        with self.data_lock:
+            self.data = data
+            self.data_lock.notify()
 
     def submitData(self):
         while self.running:
+            with self.data_lock:
+                self.data_lock.wait()
+                data = self.data
+                self.data = None
+
             now = time()
             self.watchdog = now
 
-            data = self.car.getData()
             if data:
                 fix = self.gps.fix()
                 if fix and fix.mode > 1:
