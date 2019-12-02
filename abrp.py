@@ -104,13 +104,16 @@ class ABRP:
 
         for k,v in PidMap.items():
             if k in data:
-                payload[v] = data[k]
+                payload[v] = round(data[k], 3)
             elif 'EXTENDED' in data and k in data['EXTENDED']:
-                payload[v] = data['EXTENDED'][k]
+                payload[v] = round(data['EXTENDED'][k], 3)
             elif 'ADDITIONAL' in data and k in data['ADDITIONAL']:
-                payload[v] = data['ADDITIONAL'][k]
+                payload[v] = round(data['ADDITIONAL'][k], 3)
             elif location and k in location:
-                payload[v] = location[k] * (3.6 if k == 'speed' else 1)
+                if k == 'speed':
+                    payload[v] = round(location[k] * 3.6, 1)
+                else:
+                    payload[v] = location[k]
 
         payload_str = json.dumps(payload)
         self.log.debug(ApiUrl + "/send", {'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
