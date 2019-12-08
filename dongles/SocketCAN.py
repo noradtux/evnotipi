@@ -125,7 +125,6 @@ class SocketCAN:
                 'can_mask': 0x1fffff if is_extended else 0x7ff
                 }])
 
-            #print(hexlify(cmd),msg_data)
             self.log.debug("{} Sent messsage".format(self.cmd_msg))
             self.bus.send(self.cmd_msg)
 
@@ -133,7 +132,7 @@ class SocketCAN:
             data_len = 0
 
             while True:
-                msg = self.bus.recv(1)
+                msg = self.bus.recv(0.2)
                 self.log.debug(msg)
 
                 if msg == None:
@@ -157,7 +156,7 @@ class SocketCAN:
                     self.log.debug("{} consecutive frame".format(msg))
                     idx = msg.data[0] & 0x0f
                     frame_len = min(7, data_len - len(data))
-                    data += bytes(msg.data[1:frame_len])
+                    data += bytes(msg.data[1:frame_len+1])
 
                     if data_len == len(data):
                         break
@@ -171,7 +170,7 @@ class SocketCAN:
             raise CanError("Failed Command {}: {}".format(hexlify(cmd), e))
 
         if data_len != len(data):
-            raise CanError("Failed Command {}: {}".format(hexlify(cmd), hexlify(data)))
+            raise CanError("Data length mismatch {}: {} vs {} {}".format(hexlify(cmd), data_len, len(data), hexlify(data)))
         if data_len == 0:
             raise NoData('NO DATA')
 
@@ -223,19 +222,6 @@ class SocketCAN:
             raise ValueError
 
         self.can_id = can_id
-
-    def setIDFilter(self, id_filter):
-        # XXX ????????
-        if not isinstance(id_filter, int):
-            raise ValueError
-
-        self.can_filter = id_filter
-
-        self.bus.set_filters([{
-            'can_id': self.can_filter,
-            'can_mask': self.can_mask,
-            'extended': True if self.can_filter > 0xfff else False
-            }])
 
     def setCANRxMask(self, mask):
         if not isinstance(mask, int):

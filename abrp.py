@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import requests
-from time import time
+from time import time, sleep
 import json
 import logging
-from threading import Timer, Lock
+from threading import Thread, Condition, Lock
 
 PidMap = {
         "dcBatteryCurrent": "current",
@@ -39,64 +39,77 @@ class ABRP:
         self.token = config['token']
         self.poll_interval = config['interval']
         self.running = False
-        self.timer = None
+        self.thread = None
         self.watchdog = time()
         self.watchdog_timeout = self.poll_interval * 10
+        self.data = None
+        self.data_lock = Condition(Lock())
 
     def start(self):
         self.running = True
-        self.timer = Timer(0, self.submitData)
-        self.timer.start()
+        self.thread = Thread(target = self.submitData)
+        self.thread.start()
+        self.car.registerData(self.dataCallback)
 
     def stop(self):
-        if self.running:
-            self.timer.cancel()
+        self.car.unregisterData(self.dataCallback)
         self.running = False
+        with self.data_lock:
+            self.data_lock.notify()
+        self.thread.join()
+
+    def dataCallback(self, data):
+        self.log.debug("Enqeue...")
+        with self.data_lock:
+            self.data = data
+            self.data_lock.notify()
 
     def submitData(self):
-        if not self.running: return
+        while self.running:
+            with self.data_lock:
+                self.data_lock.wait()
+                data = self.data
+                self.data = None
 
-        now = time()
-        self.watchdog = now
+            now = time()
+            self.watchdog = now
 
-        data = self.car.getData()
-        if data:
-            fix = self.gps.fix()
-            if fix and fix.mode > 1:
-                location = {
-                        'latitude':  fix.latitude,
-                        'longitude': fix.longitude,
-                        }
-                if fix.mode > 2:
-                    location.update({
-                        'altitude':fix.altitude,
-                        'speed': fix.speed,
-                        })
-            else:
-                location = None
+            if data:
+                fix = self.gps.fix()
+                if fix and fix.mode > 1:
+                    location = {
+                            'latitude':  fix.latitude,
+                            'longitude': fix.longitude,
+                            }
+                    if fix.mode > 2:
+                        location.update({
+                            'altitude':fix.altitude,
+                            'speed': fix.speed,
+                            })
+                else:
+                    location = None
 
-            try:
-                self.submit(data, location)
+                try:
+                    self.submit(data, location)
 
-                # XXX Need to reimplement, not working well
-                #abrpSocThreshold = ABRP.getNextCharge()
+                    # XXX Need to reimplement, not working well
+                    #abrpSocThreshold = ABRP.getNextCharge()
 
-                #if is_charging and \
-                #        last_charging_soc < abrpSocThreshold and \
-                #        currentSOC >= abrpSocThreshold:
-                #    EVNotify.sendNotification()
+                    #if is_charging and \
+                    #        last_charging_soc < abrpSocThreshold and \
+                    #        currentSOC >= abrpSocThreshold:
+                    #    EVNotify.sendNotification()
 
-            #except EVNotify.CommunicationError as e:
-            #    self.log.error(e)
-            except SubmitError as e:
-                self.log.error(e)
+                #except EVNotify.CommunicationError as e:
+                #    self.log.error(e)
+                except SubmitError as e:
+                    self.log.error(e)
 
-        # Prime next loop iteration
-        if self.running:
-            runtime = time() - now
-            interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
-            self.timer = Timer(interval, self.submitData)
-            self.timer.start()
+            # Prime next loop iteration
+            if self.running:
+                runtime = time() - now
+                interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
+                sleep(interval)
 
 
     def submit(self, data, location):
@@ -107,13 +120,16 @@ class ABRP:
 
         for k,v in PidMap.items():
             if k in data:
-                payload[v] = data[k]
+                payload[v] = round(data[k], 3)
             elif 'EXTENDED' in data and k in data['EXTENDED']:
-                payload[v] = data['EXTENDED'][k]
+                payload[v] = round(data['EXTENDED'][k], 3)
             elif 'ADDITIONAL' in data and k in data['ADDITIONAL']:
-                payload[v] = data['ADDITIONAL'][k]
+                payload[v] = round(data['ADDITIONAL'][k], 3)
             elif location and k in location:
-                payload[v] = location[k] * (3.6 if k == 'speed' else 1)
+                if k == 'speed':
+                    payload[v] = round(location[k] * 3.6, 1)
+                else:
+                    payload[v] = location[k]
 
         payload_str = json.dumps(payload)
         self.log.debug(ApiUrl + "/send", {'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})

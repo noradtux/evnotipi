@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from gevent.monkey import patch_all; patch_all()
 from gpspoller import GpsPoller
 from subprocess import check_call, check_output
 from time import sleep,time
@@ -11,6 +12,8 @@ import logging
 import evnotify
 
 Systemd = sdnotify.SystemdNotifier()
+
+class WatchdogFailed(Exception): pass
 
 # load config
 if os.path.exists('config.json'):
@@ -106,6 +109,7 @@ try:
             if t.checkWatchdog() == False:
                 log.error("Watchdog Failed " + str(t))
                 watchdogs_ok = False
+                raise WatchdogFailed
 
         if watchdogs_ok:
             Systemd.notify("WATCHDOG=1")
