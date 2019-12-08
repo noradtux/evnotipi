@@ -4,7 +4,7 @@ import requests
 from time import time, sleep
 import json
 import logging
-from threading import Thread, Condition, Lock
+from threading import Thread, Condition
 
 PidMap = {
         "dcBatteryCurrent": "current",
@@ -43,7 +43,7 @@ class ABRP:
         self.watchdog = time()
         self.watchdog_timeout = self.poll_interval * 10
         self.data = None
-        self.data_lock = Condition(Lock())
+        self.data_lock = Condition()
 
     def start(self):
         self.running = True

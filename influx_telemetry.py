@@ -5,7 +5,7 @@ import influxdb
 import pyrfc3339
 from datetime import datetime, timezone
 from time import time, sleep
-from threading import Thread, Condition, Lock
+from threading import Thread, Condition
 import logging
 from math import isnan
 
@@ -38,7 +38,7 @@ class InfluxTelemetry:
 
         self.influx = Influx
         self.submit_queue = []
-        self.data_q_lock = Condition(Lock())
+        self.data_q_lock = Condition()
         self.data_queue = []
 
     def start(self):
