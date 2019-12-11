@@ -21,7 +21,6 @@ Python Version of EVNotify
 ### Variant 3 (Diamex OBD-Hat, the old default; does not support Renault Zoe):
 - Diamex OBD-Hat: https://www.diamex.de/dxshop/PI-OBD-HAT-OBD2-Modul-fuer-Raspberry-PI with flat connector
 ## Wiring
-=======
 ### OBD2 connection
 The case has a slot for a DB9 plug (the side with the pins). Connect the DB9 plug to CAN_H and CAN_L of the CAN-hat; connect GND and 12V to the watchdog. Pinout is as follows:
 ```
