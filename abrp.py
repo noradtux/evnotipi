@@ -151,7 +151,7 @@ class ABRP:
             raise SubmitError(str(ret),ret.text)
 
     def checkWatchdog(self):
-        return (time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive() # (time() - self.watchdog) <= self.watchdog_timeout
 
 
 if __name__ == '__main__':
