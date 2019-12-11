@@ -149,6 +149,5 @@ class InfluxTelemetry:
         except Exception as e:
             self.log.error("InfluxTelemetry len({}): {}".format(len(self.submit_queue), str(e)))
 
-
     def checkWatchdog(self):
-        return (time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive() # (time() - self.watchdog) <= self.watchdog_timeout
