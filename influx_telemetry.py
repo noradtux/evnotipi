@@ -44,7 +44,7 @@ class InfluxTelemetry:
     def start(self):
         if self.influx:
             self.running = True
-            self.thread = Thread(target = self.submitData)
+            self.thread = Thread(target = self.submitData, name = "EVNotiPi/InfluxDB")
             self.thread.start()
             self.car.registerData(self.dataCallback)
 
