@@ -47,7 +47,7 @@ class ABRP:
 
     def start(self):
         self.running = True
-        self.thread = Thread(target = self.submitData)
+        self.thread = Thread(target = self.submitData, name = "EVNotiPi/ABRP")
         self.thread.start()
         self.car.registerData(self.dataCallback)
 
