@@ -36,9 +36,11 @@ class PiOBD2Hat:
                     self.log.warning("Stray data in buffer: " + \
                             str(self.serial.read(self.serial.in_waiting)))
                     sleep(0.2)
+                self.log.debug("Send AT command: {}".format(cmd))
                 self.exp.send(cmd + b'\r\n')
                 self.exp.expect('>')
                 ret = self.exp.before.strip(b'\r\n')
+                self.log.debug("Received: {}".format(ret))
                 if expect not in ret:
                     raise Exception('Expected %s, got %s' % (expect,ret))
 
@@ -58,9 +60,11 @@ class PiOBD2Hat:
                     self.log.warning("Stray data in buffer: " + \
                             str(self.serial.read(self.serial.in_waiting)))
                     sleep(0.2)
+                self.log.debug("Send command: {}".format(cmd))
                 self.exp.send(cmd + '\r\n')
                 self.exp.expect('>')
                 ret = self.exp.before.strip(b'\r\n')
+                self.log.debug("Received: {}".format(ret))
         except pexpect.exceptions.TIMEOUT:
             ret = b'TIMEOUT'
 
