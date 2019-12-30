@@ -45,7 +45,7 @@ if __name__ == "__main__":
                 })
             try:
                 Influx.write_points(data_queue)
-                data_queue = []
+                data_queue.clear()
             except Exception as e:
                 print("Exception", e)
 

@@ -141,11 +141,11 @@ class InfluxTelemetry:
 
         try:
             self.influx.write_points(self.submit_queue)
-            self.submit_queue = []
+            self.submit_queue.clear()
         except influxdb.exceptions.InfluxDBClientError as e:
             self.log.error("InfluxDBClientError qlen({}): code({}) content({}) last_data({})".format(len(self.submit_queue), str(e.code), str(e.content), self.submit_queue[-1]))
             if e.code == 400:
-                self.submit_queue = []
+                self.submit_queue.clear()
         except Exception as e:
             self.log.error("InfluxTelemetry len({}): {}".format(len(self.submit_queue), str(e)))
 
