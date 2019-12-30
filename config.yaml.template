@@ -29,6 +29,11 @@ watchdog:
    i2c_bus: 1
 
 dongle:
+   debug:
+      enable:	1
+      url: 	https://whatever
+      #user:
+      #pass:
    # Use SpcketCAN:
    #type:  SocketCAN
    #port:  can0
@@ -47,3 +52,4 @@ dongle:
    # Configure the input pin for the PnP watchdog
    shutdown_pin: 24
    pup_down: 21    # 21: Pull-Down 22: Pull-Up
+
