@@ -8,7 +8,6 @@ pexpect>=4.6.0
 pyrfc3339>=1.1
 pyroute2>=0.5.2
 pyserial>=3.4
-python-can>=3.0
 requests>=2.21.0
 sdnotify>=0.3.1
 smbus>=1.1
