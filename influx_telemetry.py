@@ -58,96 +58,88 @@ class InfluxTelemetry:
     def dataCallback(self, data):
         self.log.debug("Enqeue...")
         with self.data_q_lock:
-            self.data_queue.append(data)
-            self.data_q_lock.notify()
+            if data and 'timestamp' in data:
+                fix = self.gps.fix()
+                tags = {
+                        "cartype": self.cartype,
+                        "akey": self.evn_akey,
+                        }
+
+                fields = {}
+                if 'SOC_DISPLAY' in data:
+                    fields.update({
+                        'SOC_DISPLAY': data['SOC_DISPLAY'],
+                        })
+                if 'SOC_BMS' in data:
+                    fields.update({
+                        'SOC_BMS': data['SOC_BMS'],
+                        })
+
+                if 'EXTENDED' in data:
+                    fields.update(data['EXTENDED'])
+                if 'ADDITIONAL' in data:
+                    fields.update(data['ADDITIONAL'])
+
+                if fix and fix.mode > 1:
+                    fields.update({
+                            'latitude':  float(fix.latitude),
+                            'longitude': float(fix.longitude),
+                            'gdop':      float(fix.gdop),
+                            'pdop':      float(fix.pdop),
+                            'hdop':      float(fix.hdop),
+                            'vdop':      float(fix.vdop),
+                            'distance':  float(fix.distance),
+                            })
+                    if not isnan(fix.speed):
+                        fields.update({
+                            'speed':     float(fix.speed),
+                            })
+                    if fix.mode > 2 and not isnan(fix.altitude):
+                        fields.update({
+                            'altitude':  float(fix.altitude),
+                            })
+                    if fix.device:
+                        tags.update({
+                            'gps_device': fix.device
+                            })
+
+                self.data_queue.append({
+                    "measurement": "telemetry",
+                    "time": pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc)),
+                    "tags": tags,
+                    "fields": {**fields, 'submit_queue_len': len(self.data_queue)}
+                    })
+
+                self.data_q_lock.notify()
 
     def submitData(self):
         while self.running:
-            data = None
+            now = time()
+            did_transfer = False
             with self.data_q_lock:
                 if len(self.data_queue) == 0:
                     self.log.debug("Waiting...")
                     self.data_q_lock.wait()
                 else:
                     self.log.debug("Got Data...")
-                    data = self.data_queue.pop(0)
-                    now = time()
-                    self.watchdog = now
 
-                    #data = self.car.getData()
-                    if data and 'timestamp' in data:
-                        tags = {
-                                "cartype": self.cartype,
-                                "akey": self.evn_akey,
-                                }
-
-                        fields = {}
-                        if 'SOC_DISPLAY' in data:
-                            fields.update({
-                                'SOC_DISPLAY': data['SOC_DISPLAY'],
-                                })
-                        if 'SOC_BMS' in data:
-                            fields.update({
-                                'SOC_BMS': data['SOC_BMS'],
-                                })
-
-                        if 'EXTENDED' in data:
-                            fields.update(data['EXTENDED'])
-                        if 'ADDITIONAL' in data:
-                            fields.update(data['ADDITIONAL'])
-
-                        fix = self.gps.fix()
-                        if fix and fix.mode > 1:
-                            fields.update({
-                                    'latitude':  float(fix.latitude),
-                                    'longitude': float(fix.longitude),
-                                    'gdop':      float(fix.gdop),
-                                    'pdop':      float(fix.pdop),
-                                    'hdop':      float(fix.hdop),
-                                    'vdop':      float(fix.vdop),
-                                    'distance':  float(fix.distance),
-                                    })
-                            if not isnan(fix.speed):
-                                fields.update({
-                                    'speed':     float(fix.speed),
-                                    })
-                            if fix.mode > 2 and not isnan(fix.altitude):
-                                fields.update({
-                                    'altitude':  float(fix.altitude),
-                                    })
-                            if fix.device:
-                                tags.update({
-                                    'gps_device': fix.device
-                                    })
-
-            if data:
-                self.submit(measurement="telemetry", time=data['timestamp'],
-                        fields=fields, tags=tags)
+                    try:
+                        self.influx.write_points(self.submit_queue)
+                        self.submit_queue.clear()
+                        did_transfer = True         # sleep outside of the lock
+                    except influxdb.exceptions.InfluxDBClientError as e:
+                        self.log.error("InfluxDBClientError qlen({}): code({}) content({}) last_data({})".format(len(self.submit_queue), str(e.code), str(e.content), self.submit_queue[-1]))
+                        if e.code == 400:
+                            self.submit_queue.clear()
+                    except Exception as e:
+                        self.log.error("InfluxTelemetry len({}): {}".format(len(self.submit_queue), str(e)))
 
             # Prime next loop iteration
-            #if self.running:
-            #    runtime = time() - now
-            #    interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
-            #    sleep(interval)
+            if self.running and did_transfer:
+                runtime = time() - now
+                interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
+                sleep(interval)
 
-
-    def submit(self, measurement, time, tags, fields):
-        self.submit_queue.append({
-            "measurement": measurement,
-            "time": pyrfc3339.generate(datetime.fromtimestamp(time, timezone.utc)),
-            "tags": tags,
-            "fields": {**fields, 'submit_queue_len': len(self.submit_queue)}
-            })
-
-        try:
-            self.influx.write_points(self.submit_queue)
-            self.submit_queue.clear()
-        except influxdb.exceptions.InfluxDBClientError as e:
-            self.log.error("InfluxDBClientError qlen({}): code({}) content({}) last_data({})".format(len(self.submit_queue), str(e.code), str(e.content), self.submit_queue[-1]))
-            if e.code == 400:
-                self.submit_queue.clear()
-        except Exception as e:
-            self.log.error("InfluxTelemetry len({}): {}".format(len(self.submit_queue), str(e)))
 
     def checkWatchdog(self):
         return self.thread.is_alive() # (time() - self.watchdog) <= self.watchdog_timeout
