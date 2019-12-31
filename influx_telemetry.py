@@ -37,7 +37,6 @@ class InfluxTelemetry:
             Influx = None
 
         self.influx = Influx
-        self.submit_queue = []
         self.data_q_lock = Condition()
         self.data_queue = []
 
@@ -124,15 +123,15 @@ class InfluxTelemetry:
                     self.log.debug("Got Data...")
 
                     try:
-                        self.influx.write_points(self.submit_queue)
-                        self.submit_queue.clear()
+                        self.influx.write_points(self.data_queue)
+                        self.data_queue.clear()
                         did_transfer = True         # sleep outside of the lock
                     except influxdb.exceptions.InfluxDBClientError as e:
-                        self.log.error("InfluxDBClientError qlen({}): code({}) content({}) last_data({})".format(len(self.submit_queue), str(e.code), str(e.content), self.submit_queue[-1]))
+                        self.log.error("InfluxDBClientError qlen({}): code({}) content({}) last_data({})".format(len(self.data_queue), str(e.code), str(e.content), self.data_queue[-1]))
                         if e.code == 400:
-                            self.submit_queue.clear()
+                            self.data_queue.clear()
                     except Exception as e:
-                        self.log.error("InfluxTelemetry len({}): {}".format(len(self.submit_queue), str(e)))
+                        self.log.error("InfluxTelemetry len({}): {}".format(len(self.data_queue), str(e)))
 
             # Prime next loop iteration
             if self.running and did_transfer:
