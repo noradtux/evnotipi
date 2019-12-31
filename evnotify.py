@@ -1,6 +1,6 @@
 import evnotifyapi
 from time import time, sleep
-from threading import Thread, Lock
+from threading import Thread, Condition
 import logging
 
 EVN_SETTINGS_INTERVAL = 300
@@ -29,6 +29,10 @@ class EVNotify:
         self.watchdog_timeout = self.poll_interval * 10
         self.evnotify = evnotifyapi.EVNotify(config['akey'], config['token'])
 
+        self.data = []
+        self.gps_data = []
+        self.data_lock = Condition()
+
         self.settings = None
         self.socThreshold = 100
 
@@ -42,25 +46,66 @@ class EVNotify:
 
     def start(self):
         self.running = True
-        self.thread = Thread(target = self.submitData)
+        self.thread = Thread(target = self.submitData, name = "EVNotiPi/EVNotify")
         self.thread.start()
+        self.car.registerData(self.dataCallback)
 
     def stop(self):
+        self.car.unregisterData(self.dataCallback)
         self.running = False
+        with self.data_lock:
+            self.data_lock.notify()
         self.thread.join()
+
+    def dataCallback(self, data):
+        self.log.debug("Enqeue...")
+        with self.data_lock:
+            self.data.append(data)
+            self.gps_data.append(self.gps.fix())
+            self.data_lock.notify()
 
     def submitData(self):
         while self.running:
+            with self.data_lock:
+                self.data_lock.wait()
+                data = self.data[-1:]
+                if 'EXTENDED' in data:
+                    for d in self.data[:-1]:
+                        if 'dcBatteryCurrent' in data['EXTENDED']:
+                            data['EXTENDED']['dcBatteryCurrent'] += d['EXTENDED']['dcBatteryCurrent']
+                        if 'dcBatteryPower' in data['EXTENDED']:
+                            data['EXTENDED']['dcBatteryPower']   += d['EXTENDED']['dcBatteryPower']
+                        if 'dcBatteryVoltage' in data['EXTENDED']:
+                            data['EXTENDED']['dcBatteryVoltage'] += d['EXTENDED']['dcBatteryVoltage']
+
+                    if 'dcBatteryCurrent' in data['EXTENDED']:
+                        data['EXTENDED']['dcBatteryCurrent'] /= len(self.data)
+                    if 'dcBatteryPower' in data['EXTENDED']:
+                        data['EXTENDED']['dcBatteryPower']   /= len(self.data)
+                    if 'dcBatteryVoltage' in data['EXTENDED']:
+                        data['EXTENDED']['dcBatteryVoltage'] /= len(self.data)
+
+                fix = self.gps_data[-1:]
+                #for f in self.gps_data[:-1]:
+                #    fix.latitude += f.latitude
+                #    fix.longitude += f.longitude
+                #    fix.speed += f.speed
+
+                #fix.speed /= len(self.gps_data)
+                #fix.latitude /= len(self.gps_data)
+                #fix.longitude /= len(self.gps_data)
+
+                self.data.clear()
+                self.gps_data.clear()
+
             now = time()
             self.watchdog = now
 
             try:
-                data = self.car.getData()
                 if data == None or not 'SOC_DISPLAY' in data:
                     raise NoData()
 
                 self.log.debug(data)
-                fix = self.gps.fix()
                 self.last_data = now
 
                 self.evnotify.setSOC(data['SOC_DISPLAY'], data['SOC_BMS'] if 'SOC_BMS' in data else None)
@@ -104,7 +149,7 @@ class EVNotify:
                                 self.log.info("New notification threshold: {}".format(self.socThreshold))
 
                         except envotifyapi.CommunicationError as e:
-                            self.log.error("Commuinication error occured",e)
+                            self.log.error("Communication error occured",e)
 
                     # track charging started
                     if is_charging and self.chargingStartSOC == 0:
@@ -147,8 +192,9 @@ class EVNotify:
             if self.running:
                 runtime = time() - now
                 interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
-                sleep(interval)
+                if interval > 0:
+                    sleep(interval)
 
 
     def checkWatchdog(self):
-        return (time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive() # (time() - self.watchdog) <= self.watchdog_timeout

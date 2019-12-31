@@ -1,19 +1,16 @@
 import sys
-sys.path.append('/usr/local/lib/python3.7/site-packages')
 import gps
-import threading
-from readerwriterlock import rwlock
+from threading import Thread
 from time import time,sleep
 from math import isnan
 
-class GpsPoller(threading.Thread):
+class GpsPoller:
     def __init__(self):
-        threading.Thread.__init__(self)
+        self.thread = None
         self.gps = gps
         self.gpsd = None
         self.last_fix = None
         self.distance = 0
-        self.lock = rwlock.RWLockWrite()
         self.watchdog = time()
         self.watchdog_timeout = 60
 
@@ -42,8 +39,7 @@ class GpsPoller(threading.Thread):
                             last_loop = now
 
                         fix.distance = self.distance
-                        with self.lock.gen_wlock():
-                            self.last_fix = fix
+                        self.last_fix = fix
                 else:
                     self.gpsd = self.gps.gps(mode=self.gps.WATCH_ENABLE)
             except (StopIteration, ConnectionResetError, OSError):
@@ -52,13 +48,16 @@ class GpsPoller(threading.Thread):
                 sleep(1)
 
     def fix(self):
-        with self.lock.gen_rlock():
-            return self.last_fix
+        return self.last_fix
+
+    def start(self):
+        self.running = True
+        self.thread = Thread(target = self.run, name = "EVNotiPi/GPS")
+        self.thread.start()
 
     def stop(self):
         self.running = False
-        self.join()
-
+        self.thread.join()
 
     def checkWatchdog(self):
-        return (time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive() #(time() - self.watchdog) <= self.watchdog_timeout

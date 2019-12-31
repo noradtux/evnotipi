@@ -21,27 +21,33 @@ Python Version of EVNotify
 ### Variant 3 (Diamex OBD-Hat, the old default; does not support Renault Zoe):
 - Diamex OBD-Hat: https://www.diamex.de/dxshop/PI-OBD-HAT-OBD2-Modul-fuer-Raspberry-PI with flat connector
 ## Wiring
-### OBD2 to DB9 connector
-    OBD2       DB9
-    4,5  GND   1,2
-    6    CAN_H 3
-    14   CAN_L 5
-    16   VCC   9
+### OBD2 connection
+The case has a slot for a DB9 plug (the side with the pins). Connect the DB9 plug to CAN_H and CAN_L of the CAN-hat; connect GND and 12V to the watchdog. Pinout is as follows:
+```
+OBD2        DB9
+4,5  GND    1,2
+  6  CAN_H  3
+ 14  CAN_L  5
+ 16  12V    9
+```
+This pinout should be compatible to most DB9 to OBD2 cables. One can always build one's own cable, though.
 ## Installation
 ### Raspberry Pi
 - sudo apt update
 - sudo apt upgrade
-- sudo apt install python3-{pip,rpi.gpio,pexpect,serial,requests,sdnotify,can,pyroute2,smbus}
-- sudo systemctl stop --now serial-getty@ttyAMA0.service
-#### If using the Diamex PI-OBD-HAT
-- echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt
+- sudo apt install python3-{pip,rpi.gpio,serial,requests,sdnotify,pyroute2,smbus,yaml} gpsd watchdog rsyslog-
+- sudo systemctl disable --now serial-getty@ttyAMA0.service
+- sudo sed -i -re "\\$agpu_mem=16\nmax_usb_current=1\nenable_uart=1\ndtoverlay=disable-bt\ndtoverlay=gpio-poweroff:active_low" -e "/^dtparam=audio=/ s/^/#/" /boot/config.txt
+- sudo sed -i -re '/console=/ s/$/ panic=1/' /boot/cmdline.txt
+- sudo sed -i -re '/max-load/ s/^#//' /etc/watchdog.conf
+- sudo sed -i -re "\\$adtparam=watchdog=on" /boot/config.txt
 #### If using MCP2515 based adapter:
-- echo "dtparam=spi=on" | sudo tee -a /boot/config.txt
-- echo "dtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25" | sudo tee -a /boot/config.txt
-- echo "dtoverlay=spi-bcm2835-overlay" | sudo tee -a /boot/config.txt
-#### If using the i2c watchdog:
-- echo "dtparam=i2c_arm=on" | sudo tee -a /boot/config.txt
-- echo "i2c-dev" | sudo tee -a /etc/modules
+- sudo sed -i -re "\\$adtparam=spi=on\ndtoverlay=mcp2515-can0,oscillator=16000000,interrupt=25\ndtoverlay=spi-bcm2835-overlay" /boot/config.txt
+- echo -e "[Match]\nDriver=mcp251x\n\n[CAN]\nBitRate=500000\nRestartSec=100ms" | tee /etc/systemd/network/can.network
+- sudo systemctl enable --now systemd-networkd
+#### If using the i2c watchdog (the one with the Trinket M0):
+- sudo sed -i -re "\\$adtparam=i2c_arm=on,i2c_arm_baudrate=50000" /boot/config.txt
+- sudo sed -i -re "\\$ai2c-dev" /etc/modules
 ### EVNotiPi
 - sudo git clone --recurse-submodules https://github.com/EVNotify/EVNotiPi /opt/evnotipi
 - cd /opt/evnotipi

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from gevent.monkey import patch_all; patch_all()
 from gpspoller import GpsPoller
 from subprocess import check_call, check_output
 from time import sleep,time
@@ -107,13 +108,13 @@ try:
         for t in Threads:
             if t.checkWatchdog() == False:
                 log.error("Watchdog Failed " + str(t))
-                raise WatchdogFailure
                 watchdogs_ok = False
+                raise WatchdogFailure
 
         if watchdogs_ok:
             Systemd.notify("WATCHDOG=1")
 
-        if config['system']['shutdown_delay'] != None:
+        if 'system' in config and 'shutdown_delay' in config['system']:
             if now - car.last_data > config['system']['shutdown_delay'] and dongle.isCarAvailable() == False:
                 usercnt = int(check_output(['who','-q']).split(b'\n')[1].split(b'=')[1])
                 if usercnt == 0:

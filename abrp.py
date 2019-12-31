@@ -4,7 +4,7 @@ import requests
 from time import time, sleep
 import json
 import logging
-from threading import Thread, Lock
+from threading import Thread, Condition
 
 PidMap = {
         "dcBatteryCurrent": "current",
@@ -42,22 +42,38 @@ class ABRP:
         self.thread = None
         self.watchdog = time()
         self.watchdog_timeout = self.poll_interval * 10
+        self.data = None
+        self.data_lock = Condition()
 
     def start(self):
         self.running = True
-        self.thread = Thread(target = self.submitData)
+        self.thread = Thread(target = self.submitData, name = "EVNotiPi/ABRP")
         self.thread.start()
+        self.car.registerData(self.dataCallback)
 
     def stop(self):
+        self.car.unregisterData(self.dataCallback)
         self.running = False
+        with self.data_lock:
+            self.data_lock.notify()
         self.thread.join()
+
+    def dataCallback(self, data):
+        self.log.debug("Enqeue...")
+        with self.data_lock:
+            self.data = data
+            self.data_lock.notify()
 
     def submitData(self):
         while self.running:
+            with self.data_lock:
+                self.data_lock.wait()
+                data = self.data
+                self.data = None
+
             now = time()
             self.watchdog = now
 
-            data = self.car.getData()
             if data:
                 fix = self.gps.fix()
                 if fix and fix.mode > 1:
@@ -93,7 +109,8 @@ class ABRP:
             if self.running:
                 runtime = time() - now
                 interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
-                sleep(interval)
+                if interval > 0:
+                    sleep(interval)
 
 
     def submit(self, data, location):
@@ -104,13 +121,16 @@ class ABRP:
 
         for k,v in PidMap.items():
             if k in data:
-                payload[v] = data[k]
+                payload[v] = round(data[k], 3)
             elif 'EXTENDED' in data and k in data['EXTENDED']:
-                payload[v] = data['EXTENDED'][k]
+                payload[v] = round(data['EXTENDED'][k], 3)
             elif 'ADDITIONAL' in data and k in data['ADDITIONAL']:
-                payload[v] = data['ADDITIONAL'][k]
+                payload[v] = round(data['ADDITIONAL'][k], 3)
             elif location and k in location:
-                payload[v] = location[k] * (3.6 if k == 'speed' else 1)
+                if k == 'speed':
+                    payload[v] = round(location[k] * 3.6, 1)
+                else:
+                    payload[v] = location[k]
 
         payload_str = json.dumps(payload)
         self.log.debug(ApiUrl + "/send", {'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
@@ -132,7 +152,7 @@ class ABRP:
             raise SubmitError(str(ret),ret.text)
 
     def checkWatchdog(self):
-        return (time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive() # (time() - self.watchdog) <= self.watchdog_timeout
 
 
 if __name__ == '__main__':
