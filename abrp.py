@@ -77,6 +77,8 @@ class ABRP:
             with self.data_lock:
                 self.log.debug('Waiting...')
                 self.data_lock.wait()
+                if len(self.data) == 0:
+                    continue
             
                 for d in self.data:
                     for k,v in avgs.items():
