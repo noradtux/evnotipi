@@ -11,8 +11,6 @@ class GpsPoller:
         self.gpsd = None
         self.last_fix = None
         self.distance = 0
-        self.watchdog = time()
-        self.watchdog_timeout = 60
 
     def run(self):
         self.running = True
@@ -21,7 +19,6 @@ class GpsPoller:
             try:
                 if self.gpsd:
                     now = time()
-                    self.watchdog = now
                     if self.gpsd.waiting(timeout=1):
                         self.gpsd.next()
 
@@ -60,4 +57,4 @@ class GpsPoller:
         self.thread.join()
 
     def checkWatchdog(self):
-        return self.thread.is_alive() #(time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive()
