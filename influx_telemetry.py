@@ -58,55 +58,19 @@ class InfluxTelemetry:
         self.log.debug("Enqeue...")
         with self.data_q_lock:
             if data and 'timestamp' in data:
-                fix = self.gps.fix()
                 tags = {
                         "cartype": self.cartype,
                         "akey": self.evn_akey,
                         }
 
-                fields = {}
-                if 'SOC_DISPLAY' in data:
-                    fields.update({
-                        'SOC_DISPLAY': data['SOC_DISPLAY'],
-                        })
-                if 'SOC_BMS' in data:
-                    fields.update({
-                        'SOC_BMS': data['SOC_BMS'],
-                        })
-
-                if 'EXTENDED' in data:
-                    fields.update(data['EXTENDED'])
-                if 'ADDITIONAL' in data:
-                    fields.update(data['ADDITIONAL'])
-
-                if fix and fix.mode > 1:
-                    fields.update({
-                            'latitude':  float(fix.latitude),
-                            'longitude': float(fix.longitude),
-                            'gdop':      float(fix.gdop),
-                            'pdop':      float(fix.pdop),
-                            'hdop':      float(fix.hdop),
-                            'vdop':      float(fix.vdop),
-                            'distance':  float(fix.distance),
-                            })
-                    if not isnan(fix.speed):
-                        fields.update({
-                            'speed':     float(fix.speed),
-                            })
-                    if fix.mode > 2 and not isnan(fix.altitude):
-                        fields.update({
-                            'altitude':  float(fix.altitude),
-                            })
-                    if fix.device:
-                        tags.update({
-                            'gps_device': fix.device
-                            })
+                if data['gps_device']:
+                    tags['gps_device'] = data['gps_device']
 
                 self.data_queue.append({
                     "measurement": "telemetry",
                     "time": pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc)),
                     "tags": tags,
-                    "fields": {**fields, 'submit_queue_len': len(self.data_queue)}
+                    "fields": {**data, 'submit_queue_len': len(self.data_queue)}
                     })
 
                 self.data_q_lock.notify()

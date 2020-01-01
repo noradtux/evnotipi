@@ -23,8 +23,6 @@ PidMap = {
 
 ApiUrl = "https://api.iternio.com/1/tlm"
 
-class SubmitError(Exception): pass
-
 class ABRP:
     def __init__(self, config, car, gps, evnotify):
         self.log = logging.getLogger("EVNotiPi/ABRP")
@@ -42,7 +40,7 @@ class ABRP:
         self.thread = None
         self.watchdog = time()
         self.watchdog_timeout = self.poll_interval * 10
-        self.data = None
+        self.data = []
         self.data_lock = Condition()
 
     def start(self):
@@ -61,49 +59,64 @@ class ABRP:
     def dataCallback(self, data):
         self.log.debug("Enqeue...")
         with self.data_lock:
-            self.data = data
+            self.data.append(data)
             self.data_lock.notify()
 
     def submitData(self):
         while self.running:
             with self.data_lock:
                 self.data_lock.wait()
-                data = self.data
-                self.data = None
+                data = self.data[-1:]
+                pwr_cnt = 0
+                gps_cnt = 0
+                for d in self.data[:-1]:
+                    if d['dcBatteryCurrent'] and d['dcBatteryPower'] and d['dcBatteryVoltage']:
+                        data['dcBatteryCurrent'] += d['dcBatteryCurrent']
+                        data['dcBatteryPower']   += d['dcBatteryPower']
+                        data['dcBatteryVoltage'] += d['dcBatteryVoltage']
+                        pwr_cnt += 1
+                    if d['speed'] and d['latitude'] and d['longitude']:
+                        data['speed']       += d['speed']
+                        data['latitude']    += d['latitude']
+                        data['longitude']   += d['longitude']
+                        gps_cnt += 1
+
+                data['dcBatteryCurrent'] /= pwr_cnt
+                data['dcBatteryPower']   /= pwr_cnt
+                data['dcBatteryVoltage'] /= pwr_cnt
+
+                data['speed']       /= gps_cnt
+                data['speed']       *= 3.6      # convert from m/s to km/h
+                data['latitude']    /= gps_cnt
+                data['longitude']   /= gps_cnt
+
+                self.data.clear()
 
             now = time()
             self.watchdog = now
 
-            if data:
-                fix = self.gps.fix()
-                if fix and fix.mode > 1:
-                    location = {
-                            'latitude':  fix.latitude,
-                            'longitude': fix.longitude,
-                            }
-                    if fix.mode > 2:
-                        location.update({
-                            'altitude':fix.altitude,
-                            'speed': fix.speed,
-                            })
+            try:
+                payload = {
+                        'utc':       data['timestamp'],
+                        'car_model': self.car_model,
+                        }
+
+                payload.update({v:data[k] for k,v in PidMap.items() if data[k] != None})
+
+                payload_str = json.dumps(payload)
+                self.log.debug(ApiUrl + "/send", {'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
+
+                ret = self.session.post(ApiUrl + "/send", data={'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
+                if ret.status_code == requests.codes.ok and ret.json()['status'] == "ok":
+                    return ret
                 else:
-                    location = None
+                    self.log.error("Submit error: %s %s %s",payload_str,str(ret),ret.text)
 
-                try:
-                    self.submit(data, location)
+                # XXX Need to reimplement, not working well
+                #abrpSocThreshold = ABRP.getNextCharge()
 
-                    # XXX Need to reimplement, not working well
-                    #abrpSocThreshold = ABRP.getNextCharge()
-
-                    #if is_charging and \
-                    #        last_charging_soc < abrpSocThreshold and \
-                    #        currentSOC >= abrpSocThreshold:
-                    #    EVNotify.sendNotification()
-
-                #except EVNotify.CommunicationError as e:
-                #    self.log.error(e)
-                except SubmitError as e:
-                    self.log.error(e)
+            except requests.exceptions.ConnectionError:
+                self.log.error(e)
 
             # Prime next loop iteration
             if self.running:
@@ -111,37 +124,6 @@ class ABRP:
                 interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
                 if interval > 0:
                     sleep(interval)
-
-
-    def submit(self, data, location):
-        payload = {
-                'utc':       data['timestamp'],
-                'car_model': self.car_model,
-                }
-
-        for k,v in PidMap.items():
-            if k in data:
-                payload[v] = round(data[k], 3)
-            elif 'EXTENDED' in data and k in data['EXTENDED']:
-                payload[v] = round(data['EXTENDED'][k], 3)
-            elif 'ADDITIONAL' in data and k in data['ADDITIONAL']:
-                payload[v] = round(data['ADDITIONAL'][k], 3)
-            elif location and k in location:
-                if k == 'speed':
-                    payload[v] = round(location[k] * 3.6, 1)
-                else:
-                    payload[v] = location[k]
-
-        payload_str = json.dumps(payload)
-        self.log.debug(ApiUrl + "/send", {'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
-        try:
-            ret = self.session.post(ApiUrl + "/send", data={'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
-            if ret.status_code == requests.codes.ok and ret.json()['status'] == "ok":
-                return ret
-            else:
-                raise SubmitError("Submit error:",payload_str,str(ret),ret.text)
-        except requests.exceptions.ConnectionError:
-            raise SubmitError()
 
 
     def getNextCharge(self):
