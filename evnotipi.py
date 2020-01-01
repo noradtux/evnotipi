@@ -55,13 +55,16 @@ if 'watchdog' in config and config['watchdog']['enable'] == True:
 else:
     Watchdog = None
 
+# Init dongle
 dongle = DONGLE(config['dongle'], watchdog = Watchdog)
-car = CAR(config['car'], dongle, gps)
-Threads.append(car)
 
 # Init GPS interface
 gps = GpsPoller()
 Threads.append(gps)
+
+# Init car
+car = CAR(config['car'], dongle, gps)
+Threads.append(car)
 
 # Init EVNotify
 EVNotify = evnotify.EVNotify(config['evnotify'], car)
@@ -106,10 +109,11 @@ try:
         now = time()
         watchdogs_ok = True
         for t in Threads:
-            if t.checkWatchdog() == False:
+            status = t.checkWatchdog()
+            if status == False:
                 log.error("Watchdog Failed " + str(t))
                 watchdogs_ok = False
-                raise WatchdogFailure
+                raise WatchdogFailure(str(t))
 
         if watchdogs_ok:
             Systemd.notify("WATCHDOG=1")
