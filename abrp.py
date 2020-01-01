@@ -39,8 +39,6 @@ class ABRP:
         self.poll_interval = config['interval']
         self.running = False
         self.thread = None
-        self.watchdog = time()
-        self.watchdog_timeout = self.poll_interval * 10
         self.data = []
         self.data_lock = Condition()
 
@@ -90,7 +88,6 @@ class ABRP:
                 self.data.clear()
                 
             now = time()
-            self.watchdog = now
 
             data.update({k:round(sum(v)/len(v)) for k,v in avgs.items() if len(v) > 0})
             if data['speed'] != None and data['longitude'] != None and data['latitude'] != None:
@@ -141,7 +138,7 @@ class ABRP:
             raise SubmitError(str(ret),ret.text)
 
     def checkWatchdog(self):
-        return self.thread.is_alive() # (time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive()
 
 
 if __name__ == '__main__':

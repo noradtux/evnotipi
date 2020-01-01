@@ -23,8 +23,6 @@ class InfluxTelemetry:
         self.poll_interval = config['interval']
         self.running = False
         self.thread = None
-        self.watchdog = time()
-        self.watchdog_timeout = self.poll_interval * 10
 
         try:
             Influx = influxdb.InfluxDBClient(config['host'], config['port'],
@@ -109,4 +107,4 @@ class InfluxTelemetry:
 
 
     def checkWatchdog(self):
-        return self.thread.is_alive() # (time() - self.watchdog) <= self.watchdog_timeout
+        return self.thread.is_alive()
