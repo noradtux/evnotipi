@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from time import time, sleep
 from threading import Thread, Condition
 import logging
-from math import isnan
 
 class InfluxTelemetry:
     def __init__(self, config, car, gps, evnotify):
@@ -63,7 +62,7 @@ class InfluxTelemetry:
                         "akey": self.evn_akey,
                         }
 
-                if data['gps_device']:
+                if 'gps_device' in data:
                     tags['gps_device'] = data['gps_device']
 
                 self.data_queue.append({
@@ -84,7 +83,7 @@ class InfluxTelemetry:
                     self.log.debug("Waiting...")
                     self.data_q_lock.wait()
                 else:
-                    self.log.debug("Got Data...")
+                    self.log.debug("Transmit...")
 
                     try:
                         self.influx.write_points(self.data_queue)

@@ -23,14 +23,15 @@ PidMap = {
 
 ApiUrl = "https://api.iternio.com/1/tlm"
 
+class SubmitError(Exception): pass
+
 class ABRP:
-    def __init__(self, config, car, gps, evnotify):
+    def __init__(self, config, car, evnotify):
         self.log = logging.getLogger("EVNotiPi/ABRP")
         self.log.info("Initializing ABRP")
 
         self.car = car
         self.car_model = car.getABRPModel()
-        self.gps = gps
         self.config = config
         self.session = requests.Session()
         self.api_key = config['api_key']
@@ -64,36 +65,40 @@ class ABRP:
 
     def submitData(self):
         while self.running:
+            avgs = {
+                    'dcBatteryCurrent': [],
+                    'dcBatteryPower': [],
+                    'dcBatteryVoltage': [],
+                    'speed': [],
+                    'latitude': [],
+                    'longitude': [],
+                    'altitude': [],
+                    }
             with self.data_lock:
+                self.log.debug('Waiting...')
                 self.data_lock.wait()
-                data = self.data[-1:]
-                pwr_cnt = 0
-                gps_cnt = 0
-                for d in self.data[:-1]:
-                    if d['dcBatteryCurrent'] and d['dcBatteryPower'] and d['dcBatteryVoltage']:
-                        data['dcBatteryCurrent'] += d['dcBatteryCurrent']
-                        data['dcBatteryPower']   += d['dcBatteryPower']
-                        data['dcBatteryVoltage'] += d['dcBatteryVoltage']
-                        pwr_cnt += 1
-                    if d['speed'] and d['latitude'] and d['longitude']:
-                        data['speed']       += d['speed']
-                        data['latitude']    += d['latitude']
-                        data['longitude']   += d['longitude']
-                        gps_cnt += 1
+            
+                for d in self.data:
+                    for k,v in avgs.items():
+                        if k in d and d[k] != None:
+                            v.append(d[k])
 
-                data['dcBatteryCurrent'] /= pwr_cnt
-                data['dcBatteryPower']   /= pwr_cnt
-                data['dcBatteryVoltage'] /= pwr_cnt
-
-                data['speed']       /= gps_cnt
-                data['speed']       *= 3.6      # convert from m/s to km/h
-                data['latitude']    /= gps_cnt
-                data['longitude']   /= gps_cnt
-
+                data = self.data[-1]
+                
                 self.data.clear()
-
+                
             now = time()
             self.watchdog = now
+
+            data.update({k:round(sum(v)/len(v)) for k,v in avgs.items() if len(v) > 0})
+            if data['speed'] != None and data['longitude'] != None and data['latitude'] != None:
+                data['speed'] *= 3.6      # convert from m/s to km/h
+            else:
+                # Skip interation, ABRP does not accept data without location fields
+                self.log.debug("location missing, skip... %s",data)
+                continue
+
+            self.log.debug("Transmit...")
 
             try:
                 payload = {
@@ -101,21 +106,21 @@ class ABRP:
                         'car_model': self.car_model,
                         }
 
-                payload.update({v:data[k] for k,v in PidMap.items() if data[k] != None})
+                payload.update({v:data[k] for k,v in PidMap.items() if k in data and data[k] != None})
 
                 payload_str = json.dumps(payload)
-                self.log.debug(ApiUrl + "/send", {'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
-
                 ret = self.session.post(ApiUrl + "/send", data={'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
-                if ret.status_code == requests.codes.ok and ret.json()['status'] == "ok":
-                    return ret
-                else:
+                self.log.debug("Post result: %i %s", ret.status_code, ret.json())
+
+                if ret.status_code != requests.codes.ok or ret.json()['status'] != "ok":
                     self.log.error("Submit error: %s %s %s",payload_str,str(ret),ret.text)
 
                 # XXX Need to reimplement, not working well
                 #abrpSocThreshold = ABRP.getNextCharge()
 
-            except requests.exceptions.ConnectionError:
+            except requests.exceptions.ConnectionError as e:
+                self.log.error(e)
+            except SubmitError as e:
                 self.log.error(e)
 
             # Prime next loop iteration
