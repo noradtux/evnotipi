@@ -8,6 +8,9 @@ from time import time, sleep
 from threading import Thread, Condition
 import logging
 
+IntFieldList = ('gps_device','charging','fanFeedback','fanStatus','fix_mode',
+        'normalChargePort','rapidChargePort','submit_queue_len','timestamp')
+
 class InfluxTelemetry:
     def __init__(self, config, car, gps, evnotify):
         self.log = logging.getLogger("EVNotiPi/InfluxDB")
@@ -56,28 +59,24 @@ class InfluxTelemetry:
     def dataCallback(self, data):
         self.log.debug("Enqeue...")
         with self.data_q_lock:
-            if data and 'timestamp' in data:
-                tags = {
-                        "cartype": self.cartype,
-                        "akey": self.evn_akey,
-                        }
-                fields = {k:float(v) if isinstance(data[k], float) else v for k,v in data.items() if v != None}
-                fields['submit_queue_len'] = len(self.data_queue)
+            tags = {
+                    "cartype": self.cartype,
+                    "akey": self.evn_akey,
+                    }
+            fields = {k:v if k in IntFieldList else float(v) for k,v in data.items() if v != None}
+            fields['submit_queue_len'] = len(self.data_queue)
 
-                if isinstance(fields['altitude'], int):
-                    print(fields)
+            if 'gps_device' in data:
+                tags['gps_device'] = data['gps_device']
 
-                if 'gps_device' in data:
-                    tags['gps_device'] = data['gps_device']
+            self.data_queue.append({
+                "measurement": "telemetry",
+                "time": pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc)),
+                "tags": tags,
+                "fields": fields
+                })
 
-                self.data_queue.append({
-                    "measurement": "telemetry",
-                    "time": pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc)),
-                    "tags": tags,
-                    "fields": fields
-                    })
-
-                self.data_q_lock.notify()
+            self.data_q_lock.notify()
 
     def submitData(self):
         while self.running:
@@ -95,7 +94,7 @@ class InfluxTelemetry:
                         self.data_queue.clear()
                         did_transfer = True         # sleep outside of the lock
                     except influxdb.exceptions.InfluxDBClientError as e:
-                        self.log.error("InfluxDBClientError qlen(%i): code(%i) content(%s) last_data(%s)", len(self.data_queue), e.code, e.content, self.data_queue[-1])
+                        self.log.error("InfluxDBClientError qlen(%i): code(%i) content(%s)", len(self.data_queue), e.code, e.content)
                         if e.code == 400:
                             self.data_queue.clear()
                     except Exception as e:
