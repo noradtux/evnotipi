@@ -61,6 +61,11 @@ class InfluxTelemetry:
                         "cartype": self.cartype,
                         "akey": self.evn_akey,
                         }
+                fields = {k:float(v) if isinstance(data[k], float) else v for k,v in data.items() if v != None}
+                fields['submit_queue_len'] = len(self.data_queue)
+
+                if isinstance(fields['altitude'], int):
+                    print(fields)
 
                 if 'gps_device' in data:
                     tags['gps_device'] = data['gps_device']
@@ -69,7 +74,7 @@ class InfluxTelemetry:
                     "measurement": "telemetry",
                     "time": pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc)),
                     "tags": tags,
-                    "fields": {**data, 'submit_queue_len': len(self.data_queue)}
+                    "fields": fields
                     })
 
                 self.data_q_lock.notify()
@@ -90,11 +95,11 @@ class InfluxTelemetry:
                         self.data_queue.clear()
                         did_transfer = True         # sleep outside of the lock
                     except influxdb.exceptions.InfluxDBClientError as e:
-                        self.log.error("InfluxDBClientError qlen({}): code({}) content({}) last_data({})".format(len(self.data_queue), str(e.code), str(e.content), self.data_queue[-1]))
+                        self.log.error("InfluxDBClientError qlen(%i): code(%i) content(%s) last_data(%s)", len(self.data_queue), e.code, e.content, self.data_queue[-1])
                         if e.code == 400:
                             self.data_queue.clear()
                     except Exception as e:
-                        self.log.error("InfluxTelemetry len({}): {}".format(len(self.data_queue), str(e)))
+                        self.log.error("InfluxTelemetry len(%i): %s", len(self.data_queue), e)
 
             # Prime next loop iteration
             if self.running and did_transfer:
