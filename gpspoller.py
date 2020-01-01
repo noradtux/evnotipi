@@ -18,7 +18,6 @@ class GpsPoller:
         while self.running:
             try:
                 if self.gpsd:
-                    now = time()
                     if self.gpsd.waiting(timeout=1):
                         self.gpsd.next()
 
@@ -58,3 +57,4 @@ class GpsPoller:
 
     def checkWatchdog(self):
         return self.thread.is_alive()
+
