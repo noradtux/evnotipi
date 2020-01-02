@@ -58,8 +58,9 @@ class ABRP:
     def dataCallback(self, data):
         self.log.debug("Enqeue...")
         with self.data_lock:
-            self.data.append(data)
-            self.data_lock.notify()
+            if data['SOC_DISPLAY'] != None:
+                self.data.append(data)
+                self.data_lock.notify()
 
     def submitData(self):
         while self.running:
@@ -77,16 +78,16 @@ class ABRP:
                 self.data_lock.wait()
                 if len(self.data) == 0:
                     continue
-            
+
                 for d in self.data:
                     for k,v in avgs.items():
                         if k in d and d[k] != None:
                             v.append(d[k])
 
                 data = self.data[-1]
-                
+
                 self.data.clear()
-                
+
             now = time()
 
             data.update({k:round(sum(v)/len(v)) for k,v in avgs.items() if len(v) > 0})
