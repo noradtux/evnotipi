@@ -1,7 +1,7 @@
 import sys
 import socket
 from threading import Thread
-from time import time,sleep
+from time import time,sleep,strptime,mktime
 from math import isnan
 import json
 import logging
@@ -27,6 +27,7 @@ class GpsPoller:
                 'hdop': None,
                 'gdop': None,
                 'pdop': None,
+                'time': None,
                 }
         self.distance = 0
 
@@ -47,9 +48,12 @@ class GpsPoller:
                                     continue
 
                                 if fix['class'] == 'TPV':
-                                    if (self.last_fix['latitude'] and abs(self.last_fix['latitude']-fix.get('lat',0)) > 0.15) or \
-                                            (self.last_fix['longitude'] and abs(self.last_fix['longitude']-fix.get('lon',0)) > 0.15):
+                                    fix_time = mktime(strptime(fix['time'][:23], "%Y-%m-%dT%H:%M:%S.%f"))
+                                    if (abs((self.last_fix['latitude'] or 0)-fix.get('lat',0)) > 0.15 or abs((self.last_fix['longitude'] or 0)-fix.get('lon',0)) > 0.15) and \
+                                            fix_time - (self.last_fix['time'] or 0) < 5:
+                                        # skip if more than 0.15° GPS jump within up to 5 seconds
                                         raise GpsDropImplausible
+
 
                                     self.last_fix.update({
                                         'device':    fix['device'],
@@ -58,6 +62,7 @@ class GpsPoller:
                                         'longitude': fix.get('lon'),
                                         'speed':     fix.get('speed'),
                                         'altitude':  fix.get('alt'),
+                                        'time':      fix_time,
                                         })
                                 elif fix['class'] == 'SKY':
                                     self.last_fix.update({
