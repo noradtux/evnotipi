@@ -6,6 +6,8 @@ from math import isnan
 import json
 import logging
 
+class GpsDropImplausible(Exception): pass
+
 class GpsPoller:
     def __init__(self):
         self.log = logging.getLogger("EVNotiPi/GPSPoller")
@@ -45,6 +47,10 @@ class GpsPoller:
                                     continue
 
                                 if fix['class'] == 'TPV':
+                                    if (self.last_fix['latitude'] and abs(self.last_fix['latitude']-fix.get('lat',0)) > 0.15) or \
+                                            (self.last_fix['longitude'] and abs(self.last_fix['longitude']-fix.get('lon',0)) > 0.15):
+                                        raise GpsDropImplausible
+
                                     self.last_fix.update({
                                         'device':    fix['device'],
                                         'mode':      fix['mode'],
@@ -63,6 +69,8 @@ class GpsPoller:
                                         'gdop': fix['gdop'], 
                                         'pdop': fix['pdop'], 
                                         })
+                            except GpsDropImplausible:
+                                self.log.warning("Dropped implausible GPS frame")
                             except json.decoder.JSONDecodeError:
                                 self.log.error("JSONDecodeError %s", line)
                     except socket.timeout:
