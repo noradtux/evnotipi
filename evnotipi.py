@@ -105,6 +105,7 @@ signal.signal(signal.SIGTERM, exit_gracefully)
 for t in Threads:
     t.start()
 
+state = 0
 Systemd.notify("READY=1")
 log.info("Starting main loop")
 try:
@@ -126,10 +127,15 @@ try:
                 usercnt = int(check_output(['who','-q']).split(b'\n')[1].split(b'=')[1])
                 if usercnt == 0:
                     log.info("Not charging and car off => Shutdown")
+                    state = 2
                     check_call(['/bin/systemctl','poweroff'])
                     sleep(5)
                 else:
-                    log.info("Not charging and car off; Not shutting down, users connected")
+                    if state != 3:
+                        log.info("Not charging and car off; Not shutting down, users connected")
+                        state = 3
+            else:
+                state = 1
 
         if wifi and config['wifi']['shutdown_delay'] != None:
             if now - car.last_data > config['wifi']['shutdown_delay'] and dongle.isCarAvailable() == False:
