@@ -1,7 +1,6 @@
 -i https://pypi.org/simple
 PyYAML>=5.0
 RPi.GPIO>=0.7.0
-gps>=3.19
 influxdb>=5.2.0
 iso8601>=0.1.11
 pyrfc3339>=1.1
