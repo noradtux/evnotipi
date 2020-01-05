@@ -17,7 +17,9 @@ if os.path.exists('config.json'):
 elif os.path.exists('config.yaml'):
     import yaml
     with open('config.yaml', encoding='utf-8') as config_file:
-        C = yaml.load(config_file, Loader=yaml.SafeLoader)
+        C = None
+        for c in yaml.load_all(config_file, Loader=yaml.SafeLoader):
+            C = c
 else:
     raise Exception('No config found')
 
