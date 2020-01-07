@@ -64,6 +64,8 @@ class ABRP:
 
     def submitData(self):
         while self.running:
+            now = time()
+
             avgs = {
                     'dcBatteryCurrent': [],
                     'dcBatteryPower': [],
@@ -85,29 +87,27 @@ class ABRP:
                             v.append(d[k])
 
                 data = self.data[-1]
-
                 self.data.clear()
 
-            now = time()
+            payload = {
+                    'car_model': self.car_model,
+                    'utc':       data['timestamp'],
+                    }
+            payload.update({v:data[k] for k,v in PidMap.items() if k in data and data[k] != None})
 
-            data.update({k:round(sum(v)/len(v)) for k,v in avgs.items() if len(v) > 0})
-            if data['speed'] != None and data['longitude'] != None and data['latitude'] != None:
-                data['speed'] *= 3.6      # convert from m/s to km/h
+            # Apply averages
+            payload.update({PidMap[k]:round(sum(v)/len(v)) for k,v in avgs.items() if len(v) > 0})
+
+            if 'speed' in payload and 'lon' in payload and 'lat' in payload:
+                payload['speed'] *= 3.6      # convert from m/s to km/h
             else:
-                # Skip interation, ABRP does not accept data without location fields
-                self.log.debug("location missing, skip... %s",data)
+                # Skip interation, ABRP does not accept payload without location fields
+                self.log.debug("location missing, skip... %s",payload)
                 continue
 
             self.log.debug("Transmit...")
 
             try:
-                payload = {
-                        'utc':       data['timestamp'],
-                        'car_model': self.car_model,
-                        }
-
-                payload.update({v:data[k] for k,v in PidMap.items() if k in data and data[k] != None})
-
                 payload_str = json.dumps(payload)
                 ret = self.session.post(ApiUrl + "/send", data={'api_key': self.api_key, 'token': self.token, 'tlm': payload_str})
                 self.log.debug("Post result: %i %s", ret.status_code, ret.json())
