@@ -96,7 +96,7 @@ class ABRP:
             payload.update({v:data[k] for k,v in PidMap.items() if k in data and data[k] != None})
 
             # Apply averages
-            payload.update({PidMap[k]:round(sum(v)/len(v)) for k,v in avgs.items() if len(v) > 0})
+            payload.update({PidMap[k]:sum(v)/len(v) for k,v in avgs.items() if len(v) > 0})
 
             if 'speed' in payload and 'lon' in payload and 'lat' in payload:
                 payload['speed'] *= 3.6      # convert from m/s to km/h
