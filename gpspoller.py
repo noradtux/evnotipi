@@ -60,12 +60,12 @@ class GpsPoller:
                                 elif fix['class'] == 'SKY':
                                     self.last_fix.update({
                                         'xdop': fix['xdop'],
-                                        'ydop': fix['ydop'], 
-                                        'vdop': fix['vdop'], 
-                                        'tdop': fix['tdop'], 
-                                        'hdop': fix['hdop'], 
-                                        'gdop': fix['gdop'], 
-                                        'pdop': fix['pdop'], 
+                                        'ydop': fix['ydop'],
+                                        'vdop': fix['vdop'],
+                                        'tdop': fix['tdop'],
+                                        'hdop': fix['hdop'],
+                                        'gdop': fix['gdop'],
+                                        'pdop': fix['pdop'],
                                         })
 
                             except json.decoder.JSONDecodeError:
@@ -83,6 +83,8 @@ class GpsPoller:
                         s.close()
                         s = None
             except (StopIteration, ConnectionResetError, OSError):
+                s.close()
+                s = None
                 self.last_fix = None
                 sleep(1)
 
