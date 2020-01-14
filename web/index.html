@@ -18,28 +18,86 @@ body {
    border-radius: 0.5em;
    border: 2px solid white;
    font-size: 200%;
-   padding: 0.5em;
+   padding: 0 0.5em 0.5em 0.5em;
    flex-grow: 1;
    text-align: center;
 }
+.widget .description {
+   font-size: 50%;
+   color: lightgray;
+}
+.widget .value {
+   display: inline-block;
+}
+.widget .unit {
+   font-size: 100%;
+   display: inline-block;
+   padding-left: 0.3em;
+}
       </style>
       <script type="text/javascript">
+var WidgetList = [
+   'SOC_DISPLAY',
+   'auxBatteryVoltage',
+   'batteryMinTemperature',
+   'batteryMaxTemperature',
+   'externalTemperature',
+   'dcBatteryCurrent',
+   'dcBatteryPower',
+   'dcBatteryVoltage',
+   ];
+
+var AvailableFields = {
+   'SOC_DISPLAY':          {precision: 1, unit: '%',  descr: 'SoC'},
+   'auxBatteryVoltage':    {precision: 1, unit: 'V',  descr: 'AuxVolt'},
+   'batteryMinTemperature':{precision: 0, unit: '°C', descr: 'BattMin'},
+   'batteryMaxTemperature':{precision: 0, unit: '°C', descr: 'BattMax'},
+   'externalTemperature':  {precision: 0, unit: '°C', descr: 'Outside'},
+   'dcBatteryCurrent':     {precision: 0, unit: 'A',  descr: 'Current'},
+   'dcBatteryPower':       {precision: 1, unit: 'kW', descr: 'Power'},
+   'dcBatteryVoltage':     {precision: 0, unit: 'V',  descr: 'Voltage'},
+};
+
 function startWebsocket() {
    var ws = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/live/websocket");
    ws.onmessage = function (rec) {
       var json = JSON.parse(rec.data);
-      console.log(json);
-      for (var key in json) {
-         var val = json[key];
+      // console.log(json);
+      var widgetcontainer = document.getElementById("widget-container");
+      var val = 0;
+      for (var idx in WidgetList) {
+         var key = WidgetList[idx];
+         if (json[key] !== undefined) {
+            val = json[key].toFixed(AvailableFields[key].precision);
+         }
+         else {
+            val = '--';
+         }
+
          var widget = document.getElementById(key);
          if (widget == null) {
-            var widgetcontainer = document.getElementById("widget-container");
-            widget = document.createElement("div");
+            widget = document.createElement('div');
             widget.id = key;
-            widget.classList.add("widget");
+            widget.classList.add('widget');
+
+            wdescr = document.createElement('div');
+            wdescr.classList.add('description');
+            wdescr.innerHTML = AvailableFields[key].descr;
+
+            wval = document.createElement('div');
+            wval.classList.add('value');
+
+            wunit = document.createElement('div');
+            wunit.classList.add('unit');
+            wunit.innerHTML = AvailableFields[key].unit;
+
+            widget.appendChild(wdescr);
+            widget.appendChild(wval);
+            widget.appendChild(wunit);
+
             widgetcontainer.appendChild(widget);
          }
-         widget.innerHTML = val;
+         widget.getElementsByClassName('value')[0].innerHTML = val;
       }
    };
    ws.onopen = function() {
