@@ -10,7 +10,6 @@ import signal
 import sdnotify
 import logging
 import evnotify
-import webservice
 
 Systemd = sdnotify.SystemdNotifier()
 
@@ -95,6 +94,7 @@ else:
 
 # Init web service
 if 'webservice' in config and config['webservice'].get('enable') == True:
+    import webservice
     WebService = webservice.WebService(config['webservice'], car)
     Threads.append(WebService)
 
