@@ -102,8 +102,7 @@ class InfluxTelemetry:
             if self.running and did_transfer:
                 runtime = time() - now
                 interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
-                if interval > 0:
-                    sleep(interval)
+                sleep(min(0, interval))
 
 
     def checkWatchdog(self):
