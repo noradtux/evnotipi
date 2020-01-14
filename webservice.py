@@ -66,6 +66,10 @@ class WebService(Bottle):
             self.data = data
             self.data_lock.notify_all()
 
+    def checkWatchdog(self):
+        return self.thread.is_alive()
+
+
 if __name__ == '__main__':
     class TestCar:
         def registerData(self, callback):
