@@ -67,7 +67,7 @@ function startWebsocket() {
       var val = 0;
       for (var idx in WidgetList) {
          var key = WidgetList[idx];
-         if (json[key] !== undefined) {
+         if (key in json) {
             val = json[key].toFixed(AvailableFields[key].precision);
          }
          else {
