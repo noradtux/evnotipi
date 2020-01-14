@@ -18,6 +18,7 @@ class GpsPoller:
                 'longitude': None,
                 'speed': None,
                 'altitude': None,
+                'time': None,
                 'xdop': None,
                 'ydop': None,
                 'vdop': None,
@@ -25,7 +26,6 @@ class GpsPoller:
                 'hdop': None,
                 'gdop': None,
                 'pdop': None,
-                'time': None,
                 }
         self.distance = 0
 
