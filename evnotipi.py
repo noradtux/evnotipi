@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#from gevent.monkey import patch_all; patch_all()
+from gevent.monkey import patch_all; patch_all()
 from gpspoller import GpsPoller
 from subprocess import check_call, check_output
 from time import sleep,time
@@ -10,6 +10,7 @@ import signal
 import sdnotify
 import logging
 import evnotify
+import webservice
 
 Systemd = sdnotify.SystemdNotifier()
 
@@ -52,7 +53,7 @@ sys.path.remove('cars')
 
 Threads = []
 
-if 'watchdog' in config and config['watchdog']['enable'] == True:
+if 'watchdog' in config and config['watchdog'].get('enable') == True:
     import watchdog
     Watchdog = watchdog.Watchdog(config['watchdog'])
 else:
@@ -74,23 +75,28 @@ EVNotify = evnotify.EVNotify(config['evnotify'], car)
 Threads.append(EVNotify)
 
 # Init ABRP
-if 'abrp' in config and config['abrp']['enable'] == True:
+if 'abrp' in config and config['abrp'].get('enable') == True:
     import abrp
     ABRP = abrp.ABRP(config['abrp'], car, EVNotify)
     Threads.append(ABRP)
 
 # Init influx interface
-if 'influxdb' in config and config['influxdb']['enable'] == True:
+if 'influxdb' in config and config['influxdb'].get('enable') == True:
     import influx_telemetry
     Influx = influx_telemetry.InfluxTelemetry(config['influxdb'], car, gps, EVNotify)
     Threads.append(Influx)
 
 # Init WiFi control
-if 'wifi' in config and config['wifi']['enable'] == True:
+if 'wifi' in config and config['wifi'].get('enable') == True:
     from wifi_ctrl import WiFiCtrl
     wifi = WiFiCtrl()
 else:
     wifi = None
+
+# Init web service
+if 'webservice' in config and config['webservice'].get('enable') == True:
+    WebService = webservice.WebService(config['webservice'], car)
+    Threads.append(WebService)
 
 # Init some variables
 main_running = True

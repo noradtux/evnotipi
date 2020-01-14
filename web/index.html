@@ -1,0 +1,62 @@
+<html>
+   <head>
+      <title>Realtime Car Stats</title>
+      <style type="text/css">
+body {
+   background-color: #303030;
+   color: white;
+}
+#widget-container {
+   display: flex;
+   flex-direction: row;
+   flex-wrap: wrap;
+   justify-content: center;
+   align-items: center;
+}
+.widget {
+   display: inline-block;
+   border-radius: 0.5em;
+   border: 2px solid white;
+   font-size: 200%;
+   padding: 0.5em;
+   flex-grow: 1;
+   text-align: center;
+}
+      </style>
+      <script type="text/javascript">
+function startWebsocket() {
+   var ws = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/live/websocket");
+   ws.onmessage = function (rec) {
+      var json = JSON.parse(rec.data);
+      console.log(json);
+      for (var key in json) {
+         var val = json[key];
+         var widget = document.getElementById(key);
+         if (widget == null) {
+            var widgetcontainer = document.getElementById("widget-container");
+            widget = document.createElement("div");
+            widget.id = key;
+            widget.classList.add("widget");
+            widgetcontainer.appendChild(widget);
+         }
+         widget.innerHTML = val;
+      }
+   };
+   ws.onopen = function() {
+      console.log('WebSocket connected');
+   };
+   ws.onclose = function() {
+      // connection closed, disacrd old websocket and create new one after 1s
+      ws = null;
+      console.log('WebSocket closed, scheduling reconnect');
+      setTimeout(startWebsocket, 1000);
+   };
+};
+startWebsocket();
+      </script>
+   </head>
+   <body id="widget-container">
+   </body>
+</html>
+<!-- vim: sw=3 sts=3 expandtab
+-->
