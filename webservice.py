@@ -24,6 +24,7 @@ class WebService(Bottle):
         self.route('/live/websocket', callback = self.handle_websocket)
         self.route('/', callback = self.handle_index)
         self.route('/static/<filename>', callback = self.handle_static)
+        self.route('/data', callback = self.handle_data)
 
     def handle_websocket(self):
         wsock = request.environ.get('wsgi.websocket')
@@ -35,9 +36,9 @@ class WebService(Bottle):
                 #measurement = json.dumps(queue.get())
                 with self.data_lock:
                     self.data_lock.wait()
-                    data = json.dumps(self.data)
-                    #print('WebSocket '+ data)
-                    wsock.send(data)
+                    data = self.data
+                data = json.dumps(data)
+                wsock.send(data)
             except WebSocketError:
                 break
 
@@ -46,6 +47,9 @@ class WebService(Bottle):
 
     def handle_static(self, filename):
         return static_file(filename, root="./web")
+
+    def handle_data(self):
+        return json.dumps(self.data)
 
     def start(self):
         self.running = True
