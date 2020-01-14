@@ -59,7 +59,7 @@ var AvailableFields = {
 };
 
 function startWebsocket() {
-   var ws = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/live/websocket");
+   var ws = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/data/live/ws");
    ws.onmessage = function (rec) {
       var json = JSON.parse(rec.data);
       // console.log(json);

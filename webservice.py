@@ -21,10 +21,10 @@ class WebService(Bottle):
         self.server = None
         self.thread = None
 
-        self.route('/live/websocket', callback = self.handle_websocket)
+        self.route('/data/live/ws', callback = self.handle_websocket)
+        self.route('/data', callback = self.handle_data)
         self.route('/', callback = self.handle_index)
         self.route('/static/<filename>', callback = self.handle_static)
-        self.route('/data', callback = self.handle_data)
 
     def handle_websocket(self):
         wsock = request.environ.get('wsgi.websocket')
