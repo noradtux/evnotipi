@@ -56,17 +56,17 @@ body {
 }
       </style>
       <script type="text/javascript">
-var WidgetList = [
-   'SOC_DISPLAY',
-   'auxBatteryVoltage',
-   'batteryMinTemperature',
-   'batteryMaxTemperature',
-   'externalTemperature',
-   'dcBatteryCurrent',
-   'dcBatteryPower',
-   'dcBatteryVoltage',
-   'speed',
-   ];
+var WidgetList = {
+   'SOC_DISPLAY': {},
+   'auxBatteryVoltage': {},
+   'batteryMinTemperature': {},
+   'batteryMaxTemperature': {},
+   'externalTemperature': {},
+   'dcBatteryCurrent': {},
+   'dcBatteryPower': {},
+   'dcBatteryVoltage': {},
+   'speed': {},
+};
 
 var AvailableFields = {
    'SOC_DISPLAY':          {precision: 1, unit: '%',  descr: 'SoC'},
@@ -83,9 +83,7 @@ var AvailableFields = {
 function createWidgets() {
    var widgetcontainer = document.getElementById("widget-container");
 
-   for (var idx in WidgetList) {
-      var key = WidgetList[idx];
-
+   for (var key in WidgetList) {
       var widget = document.getElementById(key);
       if (widget == null) {
          widget = document.createElement('div');
@@ -109,6 +107,9 @@ function createWidgets() {
          widget.appendChild(wunit);
 
          widgetcontainer.appendChild(widget);
+
+         WidgetList[key].widget = widget;
+         WidgetList[key].value = wval;
       }
    }
 };
@@ -121,11 +122,9 @@ function startWebsocket() {
 
       var json = JSON.parse(rec.data);
       // console.log(json);
-      var val = 0;
-      for (var idx in WidgetList) {
-         var key = WidgetList[idx];
+      for (var key in WidgetList) {
          if (key in json) {
-            val = json[key];
+            var val = json[key];
             if ('multiplier' in AvailableFields[key]) {
                val *= AvailableFields[key].multiplier;
             }
@@ -135,8 +134,7 @@ function startWebsocket() {
             val = '--';
          }
 
-         var widget = document.getElementById(key);
-         widget.getElementsByClassName('value')[0].innerHTML = val;
+         WidgetList[key].value.innerHTML = val;
       }
    };
    ws.onopen = function() {
