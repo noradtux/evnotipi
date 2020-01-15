@@ -70,12 +70,44 @@ var AvailableFields = {
    'speed':                {precision: 0, unit: 'km/h',  descr: 'Speed', multiplier: 3.6},
 };
 
+function createWidgets() {
+   var widgetcontainer = document.getElementById("widget-container");
+
+   for (var idx in WidgetList) {
+      var key = WidgetList[idx];
+
+      var widget = document.getElementById(key);
+      if (widget == null) {
+         widget = document.createElement('div');
+         widget.id = key;
+         widget.classList.add('widget');
+
+         wdescr = document.createElement('div');
+         wdescr.classList.add('description');
+         wdescr.innerHTML = AvailableFields[key].descr;
+
+         wval = document.createElement('div');
+         wval.classList.add('value');
+         wval.innerHTML = '--';
+
+         wunit = document.createElement('div');
+         wunit.classList.add('unit');
+         wunit.innerHTML = AvailableFields[key].unit;
+
+         widget.appendChild(wdescr);
+         widget.appendChild(wval);
+         widget.appendChild(wunit);
+
+         widgetcontainer.appendChild(widget);
+      }
+   }
+};
+
 function startWebsocket() {
    var ws = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/data/live/ws");
    ws.onmessage = function (rec) {
       var json = JSON.parse(rec.data);
       // console.log(json);
-      var widgetcontainer = document.getElementById("widget-container");
       var val = 0;
       for (var idx in WidgetList) {
          var key = WidgetList[idx];
@@ -90,28 +122,6 @@ function startWebsocket() {
          }
 
          var widget = document.getElementById(key);
-         if (widget == null) {
-            widget = document.createElement('div');
-            widget.id = key;
-            widget.classList.add('widget');
-
-            wdescr = document.createElement('div');
-            wdescr.classList.add('description');
-            wdescr.innerHTML = AvailableFields[key].descr;
-
-            wval = document.createElement('div');
-            wval.classList.add('value');
-
-            wunit = document.createElement('div');
-            wunit.classList.add('unit');
-            wunit.innerHTML = AvailableFields[key].unit;
-
-            widget.appendChild(wdescr);
-            widget.appendChild(wval);
-            widget.appendChild(wunit);
-
-            widgetcontainer.appendChild(widget);
-         }
          widget.getElementsByClassName('value')[0].innerHTML = val;
       }
    };
@@ -128,7 +138,7 @@ function startWebsocket() {
 startWebsocket();
       </script>
    </head>
-   <body id="widget-container">
+   <body id="widget-container" onload="createWidgets()">
    </body>
 </html>
 <!-- vim: sw=3 sts=3 expandtab
