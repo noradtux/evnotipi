@@ -40,7 +40,8 @@ body {
    display: inline-block;
 }
 .widget .unit {
-   font-size: 100%;
+   font-size: 75%;
+   color: lightgray;
    display: inline-block;
    padding-left: 0.3em;
 }
@@ -66,6 +67,7 @@ var AvailableFields = {
    'dcBatteryCurrent':     {precision: 0, unit: 'A',  descr: 'Current'},
    'dcBatteryPower':       {precision: 1, unit: 'kW', descr: 'Power'},
    'dcBatteryVoltage':     {precision: 0, unit: 'V',  descr: 'Voltage'},
+   'speed':                {precision: 0, unit: 'km/h',  descr: 'Speed', multiplier: 3.6},
 };
 
 function startWebsocket() {
@@ -79,6 +81,9 @@ function startWebsocket() {
          var key = WidgetList[idx];
          if (key in json) {
             val = json[key].toFixed(AvailableFields[key].precision);
+            if ('multiplier' in AvailableFields[key]) {
+               val *= AvailableFields[key].multiplier;
+            }
          }
          else {
             val = '--';
