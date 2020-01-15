@@ -6,6 +6,16 @@ body {
    background-color: #303030;
    color: white;
 }
+@media only screen and (orientation: portrait) and (max-width: 1024px) {
+   body {
+      font-size: 300%;
+   }
+}
+@media only screen and (orientation: landscape) and (max-width: 1024px) {
+   body {
+      font-size: 200%;
+   }
+}
 #widget-container {
    display: flex;
    flex-direction: row;
