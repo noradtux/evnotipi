@@ -113,10 +113,11 @@ function startWebsocket() {
       for (var idx in WidgetList) {
          var key = WidgetList[idx];
          if (key in json) {
-            val = json[key].toFixed(AvailableFields[key].precision);
+            val = json[key];
             if ('multiplier' in AvailableFields[key]) {
                val *= AvailableFields[key].multiplier;
             }
+            val = val.toFixed(AvailableFields[key].precision);
          }
          else {
             val = '--';
