@@ -16,6 +16,15 @@ body {
       font-size: 200%;
    }
 }
+#heartbeat-indicator {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 1em;
+   height: 1em;
+   border-radius: 0.5em;
+   background-color: #00ff00;
+}
 #widget-container {
    display: flex;
    flex-direction: row;
@@ -107,6 +116,9 @@ function createWidgets() {
 function startWebsocket() {
    var ws = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/data/live/ws");
    ws.onmessage = function (rec) {
+      var indicator = document.getElementById('heartbeat-indicator');
+      indicator.hidden = ! indicator.hidden;
+
       var json = JSON.parse(rec.data);
       // console.log(json);
       var val = 0;
@@ -141,6 +153,7 @@ startWebsocket();
       </script>
    </head>
    <body id="widget-container" onload="createWidgets()">
+      <div id="heartbeat-indicator"></div>
    </body>
 </html>
 <!-- vim: sw=3 sts=3 expandtab
