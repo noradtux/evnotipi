@@ -13,7 +13,7 @@ body {
 }
 @media only screen and (orientation: landscape) and (max-width: 1024px) {
    body {
-      font-size: 200%;
+      font-size: 180%;
    }
 }
 #heartbeat-indicator {
@@ -29,17 +29,18 @@ body {
    display: flex;
    flex-direction: row;
    flex-wrap: wrap;
-   justify-content: center;
-   align-items: center;
+   /*justify-content: center;
+   align-items: center;*/
 }
 .widget {
    display: inline-block;
    border-radius: 0.5em;
    border: 2px solid white;
    font-size: 200%;
-   padding: 0 0.5em 0.5em 0.5em;
-   flex-grow: 1;
+   padding: 0 0 0.2em 0;
+   flex-grow: 0;
    text-align: center;
+   width: 3.2em;
 }
 .widget .description {
    font-size: 50%;
@@ -49,7 +50,7 @@ body {
    display: inline-block;
 }
 .widget .unit {
-   font-size: 75%;
+   font-size: 50%;
    color: lightgray;
    display: inline-block;
    padding-left: 0.3em;
