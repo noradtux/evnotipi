@@ -93,15 +93,15 @@ function createWidgets() {
          widget.id = key;
          widget.classList.add('widget');
 
-         wdescr = document.createElement('div');
+         var wdescr = document.createElement('div');
          wdescr.classList.add('description');
          wdescr.innerHTML = AvailableFields[key].descr;
 
-         wval = document.createElement('div');
+         var wval = document.createElement('div');
          wval.classList.add('value');
          wval.innerHTML = '--';
 
-         wunit = document.createElement('div');
+         var wunit = document.createElement('div');
          wunit.classList.add('unit');
          wunit.innerHTML = AvailableFields[key].unit;
 
