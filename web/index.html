@@ -127,11 +127,19 @@ function startWebsocket() {
       // console.log(json);
       for (var key in WidgetList) {
          if (key in json) {
+            var field = AvailableFields[key];
             var val = json[key];
-            if ('multiplier' in AvailableFields[key]) {
-               val *= AvailableFields[key].multiplier;
+            if (val !== null) {
+               if ('multiplier' in field) {
+                  val *= field.multiplier;
+               }
+               if ('precision' in field) {
+                  val = val.toFixed(field.precision);
+               }
             }
-            val = val.toFixed(AvailableFields[key].precision);
+            else {
+               val = '--';
+            }
          }
          else {
             val = '--';
