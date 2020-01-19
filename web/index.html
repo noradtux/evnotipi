@@ -20,7 +20,8 @@ body {
    position: absolute;
    border-radius: 0.5em;
    border: 2px solid white;
-   background-color: darkgrey;
+   background-color: lightgrey;
+   color: black;
    list-style-type: none;
    margin: 0;
    padding: 0;
@@ -31,7 +32,7 @@ body {
 }
 .menu li {
    border-top: 2px solid white;
-   padding: 0.2em;
+   padding: 0.5em;
    white-space: nowrap;
 }
 #heartbeat-indicator {
@@ -116,7 +117,7 @@ var AvailableFields = {
    'fanFeedback':       {precision: 0, unit: 'RPM', descr: 'Fan'},
    'availableChargePower':    {precision: 0, unit: 'kW', descr: 'Chg Pwr'},
    'availableDischargePower': {precision: 0, unit: 'kW', descr: 'Dischg Pwr'},
-   'obdVoltage':  {precision: 1, unit: 'V', descr: 'OBD'},
+   'obdVoltage':  {precision: 1, unit: 'V', descr: 'OBD volt'},
    'gdop':        {precision: 2, unit: '', descr: 'GDOP'},
    'pdop':        {precision: 2, unit: '', descr: 'PDOP'},
    'hdop':        {precision: 2, unit: '', descr: 'HDOP'},
