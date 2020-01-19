@@ -16,8 +16,26 @@ body {
       font-size: 180%;
    }
 }
-#heartbeat-indicator {
+.menu {
    position: absolute;
+   border-radius: 0.5em;
+   border: 2px solid white;
+   background-color: darkgrey;
+   list-style-type: none;
+   margin: 0;
+   padding: 0;
+   overflow: auto;
+}
+.menu li:first-child {
+   border: none;
+}
+.menu li {
+   border-top: 2px solid white;
+   padding: 0.2em;
+   white-space: nowrap;
+}
+#heartbeat-indicator {
+   position: fixed;
    top: 0;
    left: 0;
    width: 1em;
@@ -26,13 +44,15 @@ body {
    background-color: #00ff00;
 }
 #widget-container {
+   user-select: none;
    display: flex;
    flex-direction: row;
    flex-wrap: wrap;
-   /*justify-content: center;
+   /*justify-content: space-between;
    align-items: center;*/
 }
-.widget {
+div.widget {
+   cursor: default;
    display: inline-block;
    border-radius: 0.5em;
    border: 2px solid white;
@@ -42,14 +62,31 @@ body {
    text-align: center;
    width: 3.2em;
 }
-.widget .description {
+#newwidget {
+   cursor: default;
+   background-color: grey;
+   display: inline-block;
+   border-radius: 0.5em;
+   border: none;
+   font-size: 200%;
+   padding: 0 0 0.2em 0;
+   flex-grow: 0;
+   text-align: center;
+   align-content: center;
+   width: 3.2em;
+}
+div.widget .description {
    font-size: 50%;
    color: lightgray;
 }
-.widget .value {
+div.widget .value {
    display: inline-block;
 }
-.widget .unit {
+div.widget .outdated .value {
+   display: inline-block;
+   color: grey;
+}
+div.widget .unit {
    font-size: 50%;
    color: lightgray;
    display: inline-block;
@@ -76,46 +113,118 @@ var AvailableFields = {
    'auxBatteryVoltage':    {precision: 1, unit: 'V',  descr: 'AuxVolt'},
    'batteryMinTemperature':{precision: 0, unit: '°C', descr: 'BattMin'},
    'batteryMaxTemperature':{precision: 0, unit: '°C', descr: 'BattMax'},
+   'batteryAvgTemperature':{precision: 1, unit: '°C', descr: 'BattAvg'},
    'externalTemperature':  {precision: 0, unit: '°C', descr: 'Outside'},
    'dcBatteryCurrent':     {precision: 0, unit: 'A',  descr: 'Current'},
    'dcBatteryPower':       {precision: 1, unit: 'kW', descr: 'Power'},
    'dcBatteryVoltage':     {precision: 0, unit: 'V',  descr: 'Voltage'},
-   'speed':                {precision: 0, unit: 'km/h',  descr: 'Speed', multiplier: 3.6},
+   'cumulativeEnergyCharged': {precision: 0, unit: 'kWh',  descr: 'CEC'},
+   'cumulativeEnergyDischarg':{precision: 0, unit: 'kWh',  descr: 'CED'},
+   'odo':                     {precision: 0, unit: 'km',   descr: 'ODO'},
+   'cumulativeChargeCurrent': {precision: 0, unit: 'Ah',   descr: 'CCC'},
+   'cumulativeDischargeCurrent': {precision: 0, unit: 'Ah', descr: 'CDC'},
+   'driveMotorSpeed':   {precision: 0, unit: 'RPM', descr: 'Motor'},
+   'fanStatus':         {precision: 0, unit: '', descr: 'Fan Status'},
+   'fanFeedback':       {precision: 0, unit: 'RPM', descr: 'Fan'},
+   'availableChargePower':    {precision: 0, unit: 'kW', descr: 'Chg Pwr'},
+   'availableDischargePower': {precision: 0, unit: 'kW', descr: 'Dischg Pwr'},
+   'obdVoltage':  {precision: 1, unit: 'V', descr: 'OBD'},
+   'gdop':        {precision: 2, unit: '', descr: 'GDOP'},
+   'pdop':        {precision: 2, unit: '', descr: 'PDOP'},
+   'hdop':        {precision: 2, unit: '', descr: 'HDOP'},
+   'vdop':        {precision: 2, unit: '', descr: 'VDOP'},
+   'tdop':        {precision: 2, unit: '', descr: 'TDOP'},
+   'speed':       {precision: 0, unit: 'km/h',  descr: 'Speed', multiplier: 3.6},
+   'latitude':    {unit: '°',  descr: 'Latitude'},
+   'longitude':   {unit: '°',  descr: 'Longitude'},
+   'altitude':    {precision: 0, unit: 'm', descr: 'Altitude'},
+   'fix_mode':    {precision: 0, unit: '', descr: 'GPS Fix'},
 };
+
+var nextIdx = 0;
 
 function createWidgets() {
-   var widgetcontainer = document.getElementById("widget-container");
+   var widgetcontainer = document.getElementById('widget-container');
 
    for (var key in WidgetList) {
-      var widget = document.getElementById(key);
-      if (widget == null) {
-         widget = document.createElement('div');
-         widget.id = key;
-         widget.classList.add('widget');
+      createWidget(key);
+   }
+   var widget = document.getElementById('newwidget');
+   if (widget == null) {
+      widget = document.createElement('div');
+      widget.id = 'newwidget';
+      widget.style.order = 10000;
+      widget.innerText = '+';
+      widget.onclick = showAddMenu;
+      widgetcontainer.appendChild(widget);
+   }
+}
 
-         var wdescr = document.createElement('div');
-         wdescr.classList.add('description');
-         wdescr.innerHTML = AvailableFields[key].descr;
+function createWidget(key) {
+   var widgetcontainer = document.getElementById('widget-container');
 
-         var wval = document.createElement('div');
-         wval.classList.add('value');
-         wval.innerHTML = '--';
+   if (document.getElementById[key] == null) {
+      var widget = document.createElement('div');
+      widget.id = key;
+      widget.classList.add('widget');
+      widget.style.order = nextIdx++;
 
-         var wunit = document.createElement('div');
-         wunit.classList.add('unit');
-         wunit.innerHTML = AvailableFields[key].unit;
+      var wdescr = document.createElement('div');
+      wdescr.classList.add('description');
+      wdescr.innerText = AvailableFields[key].descr;
 
-         widget.appendChild(wdescr);
-         widget.appendChild(wval);
-         widget.appendChild(wunit);
+      var wval = document.createElement('div');
+      wval.classList.add('value');
+      wval.innerText = '--';
 
-         widgetcontainer.appendChild(widget);
+      var wunit = document.createElement('div');
+      wunit.classList.add('unit');
+      wunit.innerText = AvailableFields[key].unit;
 
-         WidgetList[key].widget = widget;
-         WidgetList[key].value = wval;
+      widget.appendChild(wdescr);
+      widget.appendChild(wval);
+      widget.appendChild(wunit);
+      widget.onclick = showWidgetMenu;
+
+      widgetcontainer.appendChild(widget);
+
+
+      WidgetList[key] = {widget: widget, value: wval};
+   }
+}
+
+function replaceWidget(widget, key) {
+   delete WidgetList[widget.id];
+   widget.id = key;
+   var vwal = widget.getElementsByClassName('value')[0];
+   vwal.innerText = '--';
+   widget.getElementsByClassName('description')[0].innerText = AvailableFields[key].descr;
+   widget.getElementsByClassName('unit')[0].innerText = AvailableFields[key].unit;
+   WidgetList[key] = {widget: widget, value: vwal};
+}
+
+function orderWidget(target, after) {
+   var new_position = after.style.order + 1;
+   var widgets = document.getElementsByClassName('widget');
+   var list = [];
+   for (var idx = 0; idx < widgets.length; idx++) {
+      var widget = widgets[idx];
+      if (widget != target)
+         list[widget.style.order] = widget;
+   } // Sort widgets by order
+   for (var idx = 0; idx < list.length; idx++) {
+      var widget = list[idx];
+      if (widget) {
+         if (idx == new_position) {
+            target.style.order = idx;
+            widget.style.order = idx + 1;
+         }
+         if (idx > after.style.order) {
+            widget.style.order = idx + 1;
+         }
       }
    }
-};
+}
 
 function startWebsocket() {
    var ws = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/data/live/ws");
@@ -126,6 +235,7 @@ function startWebsocket() {
       var json = JSON.parse(rec.data);
       // console.log(json);
       for (var key in WidgetList) {
+         var widget = WidgetList[key];
          if (key in json) {
             var field = AvailableFields[key];
             var val = json[key];
@@ -136,16 +246,17 @@ function startWebsocket() {
                if ('precision' in field) {
                   val = val.toFixed(field.precision);
                }
+               widget.value.innerText = val;
+               widget.widget.classList.remove('outdated');//val = '--';
             }
             else {
-               val = '--';
+               widget.widget.classList.add('outdated');//val = '--';
             }
          }
          else {
-            val = '--';
+            widget.widget.classList.add('outdated');//val = '--';
          }
 
-         WidgetList[key].value.innerHTML = val;
       }
    };
    ws.onopen = function() {
@@ -157,11 +268,130 @@ function startWebsocket() {
       console.log('WebSocket closed, scheduling reconnect');
       setTimeout(startWebsocket, 1000);
    };
-};
-startWebsocket();
+}
+
+function closeAllMenus() {
+   var menus = document.getElementsByClassName('menu');
+   for (var idx = 0; idx < menus.length; idx++) {
+      menus[idx].remove();
+   }
+   event.stopImmediatePropagation();
+}
+
+function displayMenu(entries) {
+   closeAllMenus();
+
+   if (entries.length == 0) {
+      return;
+   }
+
+   var body = document.body;
+   var menu = document.createElement('ul');
+   menu.id = 'menu';
+   menu.classList.add('menu');
+   menu.style.left = event.clientX;
+   menu.style.top = event.clientY;
+
+   for(var idx in entries) {
+      var entry = entries[idx];
+      var li = document.createElement('li');
+      li.innerText = entry.title;
+      li.onclick = entry.func;
+      li.params = entry.params;
+      menu.appendChild(li);
+   }
+
+   body.appendChild(menu);
+
+   var geo = menu.getBoundingClientRect();
+   if (geo.right > document.body.clientWidth) {
+      var newleft = document.body.clientWidth - geo.width;
+      if (newleft < 0) {
+         newleft = 0;
+         menu.style.width = document.body.clientWidth;
+      }
+      menu.style.left = newleft;
+   }
+   if (geo.bottom > document.body.clientHeight) {
+      var newtop = document.body.clientHeight - geo.height - 50;
+      if (newtop < 0) {
+         newtop = 0;
+         menu.style.height = document.body.clientHeight;
+      }
+      menu.style.top = newtop;
+   }
+   event.stopImmediatePropagation();
+}
+
+function showWidgetMenu(e) {
+   var target = e.target;
+   while (target && ! target.classList.contains('widget')) {
+      if ('parentElement' in target) {
+         target = target.parentElement;
+      }
+      else {
+         target = null;
+      }
+   }
+   if (target) {
+      var entries = [
+         {title: 'change', func: showReplaceMenu, params: {widget: target}},
+         {title: 'move after', func: showMoveMenu, params: {widget: target}},
+         {title: 'remove', func: removeWidget, params: {widget: target}}
+      ];
+      displayMenu(entries);
+   }
+}
+
+function showAddMenu(e) {
+   var entries = [];
+   for (var idx in AvailableFields) {
+      if (! (idx in WidgetList)) {
+         var field = AvailableFields[idx];
+         entries.push({title: field.descr, func: function(e) {createWidget(e.target.params.name);}, params: {name: idx}});
+      }
+   }
+   displayMenu(entries);
+}
+
+function showReplaceMenu(e) {
+   var widget = e.target.params.widget;
+   var entries = [];
+   for (var idx in AvailableFields) {
+      if (! (idx in WidgetList)) {
+         var field = AvailableFields[idx];
+         entries.push({title: field.descr, func: function(e) {replaceWidget(e.target.params.widget, e.target.params.name);}, params: {widget: widget, name: idx}});
+      }
+   }
+   displayMenu(entries);
+}
+
+function showMoveMenu(e) {
+   var widget = e.target.params.widget;
+   var entries = [];
+   for (var idx in WidgetList) {
+      var field = AvailableFields[idx];
+      entries.push({title: field.descr, func: function(e) {orderWidget(e.target.params.widget, e.target.params.after);}, params: {widget: widget, after: WidgetList[idx].widget}});
+   }
+   displayMenu(entries);
+}
+
+function removeWidget(e) {
+   var widget = e.target.params.widget;
+   delete WidgetList[widget.id];
+   widget.remove();
+}
+
+document.addEventListener('click', closeAllMenus);
+window.addEventListener('popstate', function (e) {
+    var state = e.state;
+    if (state !== null) {
+        closeAllMenus();
+    }
+});
       </script>
    </head>
-   <body id="widget-container" onload="createWidgets()">
+   <body id="widget-container" onload="createWidgets(); startWebsocket();">
       <div id="heartbeat-indicator"></div>
    </body>
 </html>
