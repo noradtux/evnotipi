@@ -204,7 +204,7 @@ function replaceWidget(widget, key) {
 }
 
 function orderWidget(target, after) {
-   var new_position = after.style.order + 1;
+   var new_position = parseInt(after.style.order);
    var widgets = document.getElementsByClassName('widget');
    var list = [];
    for (var idx = 0; idx < widgets.length; idx++) {
@@ -216,10 +216,10 @@ function orderWidget(target, after) {
       var widget = list[idx];
       if (widget) {
          if (idx == new_position) {
-            target.style.order = idx;
-            widget.style.order = idx + 1;
+            target.style.order = idx + 1;
+            widget.style.order = idx;
          }
-         if (idx > after.style.order) {
+         if (idx > new_position) {
             widget.style.order = idx + 1;
          }
       }
@@ -371,8 +371,12 @@ function showMoveMenu(e) {
    var entries = [];
    for (var idx in WidgetList) {
       var field = AvailableFields[idx];
-      entries.push({title: field.descr, func: function(e) {orderWidget(e.target.params.widget, e.target.params.after);}, params: {widget: widget, after: WidgetList[idx].widget}});
+      if (idx != widget.id)
+         entries.push({title: field.descr, func: function(e) {orderWidget(e.target.params.widget, e.target.params.after);}, params: {widget: widget, after: WidgetList[idx].widget}});
    }
+   entries = entries.sort((a,b) => {
+      return a.params.after.style.order - b.params.after.style.order;
+   });
    displayMenu(entries);
 }
 
