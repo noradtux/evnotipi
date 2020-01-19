@@ -96,18 +96,6 @@ div.widget .unit {
       <script type="text/javascript">
 'use strict';
 
-var WidgetList = {
-   'SOC_DISPLAY': {},
-   'auxBatteryVoltage': {},
-   'batteryMinTemperature': {},
-   'batteryMaxTemperature': {},
-   'externalTemperature': {},
-   'dcBatteryCurrent': {},
-   'dcBatteryPower': {},
-   'dcBatteryVoltage': {},
-   'speed': {},
-};
-
 var AvailableFields = {
    'SOC_DISPLAY':          {precision: 1, unit: '%',  descr: 'SoC'},
    'auxBatteryVoltage':    {precision: 1, unit: 'V',  descr: 'AuxVolt'},
@@ -141,13 +129,27 @@ var AvailableFields = {
    'fix_mode':    {precision: 0, unit: '', descr: 'GPS Fix'},
 };
 
-var nextIdx = 0;
+var WidgetList = {
+   'SOC_DISPLAY': {order: 0},
+   'auxBatteryVoltage': {order: 1},
+   'batteryMinTemperature': {order: 2},
+   'batteryMaxTemperature': {order: 3},
+   'externalTemperature': {order: 4},
+   'dcBatteryCurrent': {order: 5},
+   'dcBatteryPower': {order: 6},
+   'dcBatteryVoltage': {order: 7},
+   'speed': {order: 8}
+};
 
 function createWidgets() {
    var widgetcontainer = document.getElementById('widget-container');
 
+   if ('widgetList' in localStorage) {
+      WidgetList = JSON.parse(localStorage.widgetList);
+   }
+
    for (var key in WidgetList) {
-      createWidget(key);
+      createWidget(key, WidgetList[key].order);
    }
    var widget = document.getElementById('newwidget');
    if (widget == null) {
@@ -160,14 +162,18 @@ function createWidgets() {
    }
 }
 
-function createWidget(key) {
+function createWidget(key, order) {
    var widgetcontainer = document.getElementById('widget-container');
+
+   if (order === undefined) {
+      order = Object.keys(WidgetList).length;
+   }
 
    if (document.getElementById[key] == null) {
       var widget = document.createElement('div');
       widget.id = key;
       widget.classList.add('widget');
-      widget.style.order = nextIdx++;
+      widget.style.order = order;
 
       var wdescr = document.createElement('div');
       wdescr.classList.add('description');
@@ -188,19 +194,21 @@ function createWidget(key) {
 
       widgetcontainer.appendChild(widget);
 
-
-      WidgetList[key] = {widget: widget, value: wval};
+      WidgetList[key] = {widget: widget, value: wval, order: order};
+      storeWidgetList();
    }
 }
 
 function replaceWidget(widget, key) {
-   delete WidgetList[widget.id];
+   delete localStorage.widgetList[widget.id];
+   var order = ParseInt(widget.style.order);
    widget.id = key;
    var vwal = widget.getElementsByClassName('value')[0];
    vwal.innerText = '--';
    widget.getElementsByClassName('description')[0].innerText = AvailableFields[key].descr;
    widget.getElementsByClassName('unit')[0].innerText = AvailableFields[key].unit;
-   WidgetList[key] = {widget: widget, value: vwal};
+   WidgetList[key] = {widget: widget, value: vwal, order: order};
+   storeWidgetList();
 }
 
 function orderWidget(target, after) {
@@ -222,8 +230,11 @@ function orderWidget(target, after) {
          if (idx > new_position) {
             widget.style.order = idx + 1;
          }
+         WidgetList[widget.id].order = parseInt(widget.style.order);
       }
    }
+   WidgetList[target.id].order = parseInt(target.style.order);
+   storeWidgetList();
 }
 
 function startWebsocket() {
@@ -384,7 +395,17 @@ function removeWidget(e) {
    var widget = e.target.params.widget;
    delete WidgetList[widget.id];
    widget.remove();
+   storeWidgetList();
 }
+
+function storeWidgetList() {
+   var list = {};
+   // Filter data to be saved
+   for (var idx in WidgetList) {
+      list[idx] = {order: WidgetList[idx].order};
+   }
+   localStorage.widgetList = JSON.stringify(list);
+};
 
 document.addEventListener('click', closeAllMenus);
 window.addEventListener('popstate', function (e) {
