@@ -85,8 +85,7 @@ div.widget .description {
 div.widget .value {
    display: inline-block;
 }
-div.widget .outdated .value {
-   display: inline-block;
+div.outdated .value {
    color: grey;
 }
 div.widget .unit {
@@ -251,9 +250,9 @@ function startWebsocket() {
       for (var key in WidgetList) {
          var widget = WidgetList[key];
          if (key in json) {
-            var field = AvailableFields[key];
             var val = json[key];
             if (val !== null) {
+	       var field = AvailableFields[key];
                if ('multiplier' in field) {
                   val *= field.multiplier;
                }
