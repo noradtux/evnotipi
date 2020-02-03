@@ -50,14 +50,6 @@ class EVNotify:
         self.settings = None
         self.socThreshold = 100
 
-        self.log.info("Get settings from backend")
-        while self.settings == None:
-            try:
-                self.settings = self.evnotify.getSettings()
-            except evnotifyapi.CommunicationError as e:
-                self.log.info("Waiting for network connectivity")
-                sleep(3)
-
     def start(self):
         self.running = True
         self.thread = Thread(target = self.submitData, name = "EVNotiPi/EVNotify")
@@ -79,6 +71,14 @@ class EVNotify:
                 self.data_lock.notify()
 
     def submitData(self):
+        self.log.info("Get settings from backend")
+        while self.settings == None:
+            try:
+                self.settings = self.evnotify.getSettings()
+            except evnotifyapi.CommunicationError as e:
+                self.log.info("Waiting for network connectivity")
+                sleep(3)
+
         while self.running:
             with self.data_lock:
                 self.log.debug('Waiting...')
