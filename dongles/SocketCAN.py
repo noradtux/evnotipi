@@ -31,8 +31,8 @@ class SocketCAN:
         self.watchdog = watchdog
         if not watchdog:
             GPIO.setmode(GPIO.BCM)
-            self.pin = config['shutdown_pin']
-            GPIO.setup(self.pin, GPIO.IN, pull_up_down=config['pup_down'])
+            self.pin = dongle['shutdown_pin']
+            GPIO.setup(self.pin, GPIO.IN, pull_up_down=dongle['pup_down'])
 
         self.sock_can = None
         self.sock_isotp = None
@@ -177,10 +177,11 @@ class SocketCAN:
                 sock.setsockopt(SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, self.sock_opt_isotp_fc)
 
                 sock.bind((self.config['port'], canrx, cantx))
-                sock.settimeout(5)
+                sock.settimeout(0.2)
 
                 if self.log.isEnabledFor(logging.DEBUG):
                     self.log.debug("canrx(%s) cantx(%s) cmd(%s)",hex(canrx),hex(cantx),cmd.hex())
+
                 sock.send(cmd)
                 data = sock.recv(4096)
                 if self.log.isEnabledFor(logging.DEBUG):
