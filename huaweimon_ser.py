@@ -32,9 +32,11 @@ Influx = influxdb.InfluxDBClient(C['influxdb']['host'], C['influxdb']['port'],
 if __name__ == "__main__":
     ser = Serial("/dev/ttyUSB0")
     data_queue = []
+    last_transmit = 0
     while True:
         line = ser.readline()
         if line[:6] == b'^RSSI:':
+            now = time.time()
             data = {
                     'Strength': int(line[6:])
                     }
@@ -45,10 +47,12 @@ if __name__ == "__main__":
                 'time': pyrfc3339.generate(datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
                 'tags': {},
                 })
-            try:
-                Influx.write_points(data_queue)
-                data_queue.clear()
-            except Exception as e:
-                print("Exception", e)
+            if now - last_transmit > 10:
+                last_transmit = now
+                try:
+                    Influx.write_points(data_queue)
+                    data_queue.clear()
+                except Exception as e:
+                    print("Exception", e)
 
 #########################
