@@ -27,7 +27,7 @@ class InfluxTelemetry:
         try:
             Influx = influxdb.InfluxDBClient(config['host'], config['port'],
                     config['user'], config['pass'], config['dbname'],
-                    retries=1, timeout=5, ssl=config['ssl'] if 'ssl' in config else False, verify_ssl=True)
+                    retries=1, timeout=5, ssl=config['ssl'] if 'ssl' in config else False, verify_ssl=True, compression=9)
 
         except influxdb.exceptions.InfluxDBClientError as e:
             self.log.error(e)
