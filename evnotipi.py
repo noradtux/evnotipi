@@ -69,7 +69,7 @@ sys.path.remove('cars')
 
 Threads = []
 
-if 'watchdog' in config and config['watchdog'].get('enable') == True:
+if 'watchdog' in config and config['watchdog'].get('enable') is True:
     import watchdog
     Watchdog = watchdog.Watchdog(config['watchdog'])
 else:
@@ -91,26 +91,26 @@ EVNotify = evnotify.EVNotify(config['evnotify'], car)
 Threads.append(EVNotify)
 
 # Init ABRP
-if 'abrp' in config and config['abrp'].get('enable') == True:
+if 'abrp' in config and config['abrp'].get('enable') is True:
     import abrp
     ABRP = abrp.ABRP(config['abrp'], car, EVNotify)
     Threads.append(ABRP)
 
 # Init influx interface
-if 'influxdb' in config and config['influxdb'].get('enable') == True:
+if 'influxdb' in config and config['influxdb'].get('enable') is True:
     import influx_telemetry
     Influx = influx_telemetry.InfluxTelemetry(config['influxdb'], car, gps, EVNotify)
     Threads.append(Influx)
 
 # Init WiFi control
-if 'wifi' in config and config['wifi'].get('enable') == True:
+if 'wifi' in config and config['wifi'].get('enable') is True:
     from wifi_ctrl import WiFiCtrl
     wifi = WiFiCtrl()
 else:
     wifi = None
 
 # Init web service
-if 'webservice' in config and config['webservice'].get('enable') == True:
+if 'webservice' in config and config['webservice'].get('enable') is True:
     import webservice
     WebService = webservice.WebService(config['webservice'], car)
     Threads.append(WebService)
@@ -137,7 +137,7 @@ try:
         watchdogs_ok = True
         for t in Threads:
             status = t.checkWatchdog()
-            if status == False:
+            if status is False:
                 log.error("Watchdog Failed " + str(t))
                 watchdogs_ok = False
                 raise WatchdogFailure(str(t))
@@ -146,7 +146,7 @@ try:
             Systemd.notify("WATCHDOG=1")
 
         if 'system' in config and 'shutdown_delay' in config['system']:
-            if now - car.last_data > config['system']['shutdown_delay'] and dongle.isCarAvailable() == False:
+            if now - car.last_data > config['system']['shutdown_delay'] and dongle.isCarAvailable() is False:
                 usercnt = int(check_output(['who','-q']).split(b'\n')[1].split(b'=')[1])
                 if usercnt == 0:
                     log.info("Not charging and car off => Shutdown")
@@ -161,7 +161,7 @@ try:
                 state = 1
 
         if wifi and config['wifi']['shutdown_delay'] != None:
-            if now - car.last_data > config['wifi']['shutdown_delay'] and dongle.isCarAvailable() == False:
+            if now - car.last_data > config['wifi']['shutdown_delay'] and dongle.isCarAvailable() is False:
                 wifi.disable()
             else:
                 wifi.enable()

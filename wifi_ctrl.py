@@ -10,13 +10,13 @@ class WiFiCtrl:
         self.enable()
 
     def enable(self):
-        if self.state != True:
+        if self.state is not True:
             self.log.info("Enable WiFi")
             check_call(['/bin/systemctl','start','hostapd'])
             self.state = True
 
     def disable(self):
-        if self.state != False:
+        if self.state is not False:
             self.log.info("Disable WiFi")
             if check_output(['/sbin/iw','dev','wlan0','station','dump','|','wc','-0'])  == b'':
                 check_call(['/bin/systemctl','stop','hostapd'])
