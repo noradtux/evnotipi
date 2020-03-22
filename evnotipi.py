@@ -55,16 +55,12 @@ if not "{}.py".format(config['dongle']['type']) in os.listdir('dongles'):
     raise Exception('Unsupported dongle {}'.format(config['dongle']['type']))
 
 # Init ODB2 adapter
-sys.path.insert(0, 'dongles')
-exec("from {0} import {0} as DONGLE".format(config['dongle']['type']))
-sys.path.remove('dongles')
+exec("from dongles.{0} import {0} as DONGLE".format(config['dongle']['type']))
 
 if not "{}.py".format(config['car']['type']) in os.listdir('cars'):
     raise Exception('Unsupported car {}'.format(config['car']['type']))
 
-sys.path.insert(0, 'cars')
-exec("from {0} import {0} as CAR".format(config['car']['type']))
-sys.path.remove('cars')
+exec("from cars.{0} import {0} as CAR".format(config['car']['type']))
 
 
 Threads = []
@@ -76,7 +72,7 @@ else:
     Watchdog = None
 
 # Init dongle
-dongle = DONGLE(config['dongle'], watchdog = Watchdog)
+dongle = DONGLE(config['dongle'], watchdog=Watchdog)
 
 # Init GPS interface
 gps = GpsPoller()
@@ -137,8 +133,8 @@ try:
         watchdogs_ok = True
         for t in Threads:
             status = t.checkWatchdog()
-            if status is False:
-                log.error("Watchdog Failed " + str(t))
+            if not status:
+                log.error("Watchdog Failed %s", str(t))
                 watchdogs_ok = False
                 raise WatchdogFailure(str(t))
 
@@ -146,12 +142,12 @@ try:
             Systemd.notify("WATCHDOG=1")
 
         if 'system' in config and 'shutdown_delay' in config['system']:
-            if now - car.last_data > config['system']['shutdown_delay'] and dongle.isCarAvailable() is False:
-                usercnt = int(check_output(['who','-q']).split(b'\n')[1].split(b'=')[1])
+            if (now - car.last_data > config['system']['shutdown_delay'] and
+                    not dongle.isCarAvailable()):
+                usercnt = int(check_output(['who', '-q']).split(b'\n')[1].split(b'=')[1])
                 if usercnt == 0:
                     log.info("Not charging and car off => Shutdown")
-                    state = 2
-                    check_call(['/bin/systemctl','poweroff'])
+                    check_call(['/bin/systemctl', 'poweroff'])
                     sleep(5)
                 else:
                     if state != 3:
@@ -160,8 +156,9 @@ try:
             else:
                 state = 1
 
-        if wifi and config['wifi']['shutdown_delay'] != None:
-            if now - car.last_data > config['wifi']['shutdown_delay'] and dongle.isCarAvailable() is False:
+        if wifi and config['wifi']['shutdown_delay'] is not None:
+            if (now - car.last_data > config['wifi']['shutdown_delay'] and
+                    not dongle.isCarAvailable()):
                 wifi.disable()
             else:
                 wifi.enable()
@@ -170,7 +167,8 @@ try:
 
         if main_running:
             loop_delay = 1 - (time()-now)
-            if loop_delay > 0: sleep(loop_delay)
+            if loop_delay > 0:
+                sleep(loop_delay)
 
 except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
     main_running = False
@@ -181,4 +179,3 @@ finally:
     for t in Threads[::-1]: # reverse Threads
         t.stop()
     log.info("Bye.")
-
