@@ -1,67 +1,70 @@
 #!/usr/bin/env python3
 
-import threading
-import influxdb
-import pyrfc3339
 from datetime import datetime, timezone
 from time import time, sleep
 from threading import Thread, Condition
 import logging
+import influxdb
+import pyrfc3339
 
-IntFieldList = ('gps_device','charging','fanFeedback','fanStatus','fix_mode',
-        'normalChargePort','rapidChargePort','submit_queue_len','timestamp')
+INT_FIELD_LIST = ('gps_device', 'charging', 'fanFeedback', 'fanStatus', 'fix_mode',
+                  'normalChargePort', 'rapidChargePort', 'submit_queue_len',
+                  'timestamp')
 
 class InfluxTelemetry:
     def __init__(self, config, car, gps, evnotify):
-        self.log = logging.getLogger("EVNotiPi/InfluxDB")
-        self.log.info("Initializing InfluxDB")
+        self._log = logging.getLogger("EVNotiPi/InfluxDB")
+        self._log.info("Initializing InfluxDB")
 
-        self.evn_akey = evnotify.config['akey']
-        self.car = car
-        self.cartype = car.getEVNModel()
-        self.gps = gps
-        self.poll_interval = config['interval']
-        self.running = False
-        self.thread = None
+        self._evn_akey = evnotify.config['akey']
+        self._car = car
+        self._cartype = car.getEVNModel()
+        self._gps = gps
+        self._poll_interval = config['interval']
+        self._running = False
+        self._thread = None
 
         try:
-            Influx = influxdb.InfluxDBClient(config['host'], config['port'],
-                    config['user'], config['pass'], config['dbname'],
-                    retries=1, timeout=5, ssl=config['ssl'] if 'ssl' in config else False, verify_ssl=True, compression=9)
+            influx = influxdb.InfluxDBClient(config['host'], config['port'],
+                                             config['user'], config['pass'],
+                                             config['dbname'], retries=1, timeout=5,
+                                             ssl=config['ssl'] if 'ssl' in config else False,
+                                             verify_ssl=True, compression=9)
 
         except influxdb.exceptions.InfluxDBClientError as e:
-            self.log.error(e)
-            Influx = None
+            self._log.error(e)
+            influx = None
         except influxdb.exceptions.InfluxDBServerError as e:
-            self.log.error(e)
-            Influx = None
+            self._log.error(e)
+            influx = None
 
-        self.influx = Influx
+        self._influx = influx
         self.data_q_lock = Condition()
         self.data_queue = []
 
     def start(self):
-        if self.influx:
-            self.running = True
-            self.thread = Thread(target = self.submitData, name = "EVNotiPi/InfluxDB")
-            self.thread.start()
-            self.car.registerData(self.dataCallback)
+        if self._influx:
+            self._running = True
+            self._thread = Thread(target=self.submitData, name="EVNotiPi/InfluxDB")
+            self._thread.start()
+            self._car.registerData(self.dataCallback)
 
     def stop(self):
-        self.car.unregisterData(self.dataCallback)
-        self.running = False
+        self._car.unregisterData(self.dataCallback)
+        self._running = False
         with self.data_q_lock:
             self.data_q_lock.notify()
-        self.thread.join()
+        self._thread.join()
 
     def dataCallback(self, data):
-        self.log.debug("Enqeue...")
+        self._log.debug("Enqeue...")
         with self.data_q_lock:
             tags = {
-                    "cartype": self.cartype,
-                    "akey": self.evn_akey,
-                    }
-            fields = {k:v if k in IntFieldList else float(v) for k,v in data.items() if v != None}
+                "cartype": self._cartype,
+                "akey": self._evn_akey,
+                }
+            fields = {k:v if k in INT_FIELD_LIST else float(v)
+                      for k, v in data.items() if v is not None}
             fields['submit_queue_len'] = len(self.data_queue)
 
             if 'gps_device' in data:
@@ -77,33 +80,34 @@ class InfluxTelemetry:
             self.data_q_lock.notify()
 
     def submitData(self):
-        while self.running:
+        while self._running:
             now = time()
             did_transfer = False
             with self.data_q_lock:
                 if len(self.data_queue) == 0:
-                    self.log.debug("Waiting...")
+                    self._log.debug("Waiting...")
                     self.data_q_lock.wait()
                 else:
-                    self.log.debug("Transmit...")
+                    self._log.debug("Transmit...")
 
                     try:
-                        self.influx.write_points(self.data_queue)
+                        self._influx.write_points(self.data_queue)
                         self.data_queue.clear()
                         did_transfer = True         # sleep outside of the lock
                     except influxdb.exceptions.InfluxDBClientError as e:
-                        self.log.error("InfluxDBClientError qlen(%i): code(%i) content(%s)", len(self.data_queue), e.code, e.content)
+                        self._log.error("InfluxDBClientError qlen(%i): code(%i) content(%s)",
+                                        len(self.data_queue), e.code, e.content)
                         if e.code == 400:
                             self.data_queue.clear()
                     except Exception as e:
-                        self.log.error("InfluxTelemetry len(%i): %s", len(self.data_queue), e)
+                        self._log.error("InfluxTelemetry len(%i): %s", len(self.data_queue), e)
 
             # Prime next loop iteration
-            if self.running and did_transfer:
+            if self._running and did_transfer:
                 runtime = time() - now
-                interval = self.poll_interval - (runtime if runtime > self.poll_interval else 0)
+                interval = self._poll_interval - (runtime if runtime > self._poll_interval else 0)
                 sleep(min(0, interval))
 
 
     def checkWatchdog(self):
-        return self.thread.is_alive()
+        return self._thread.is_alive()
