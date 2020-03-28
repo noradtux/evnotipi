@@ -1,15 +1,22 @@
 from time import time, sleep
 from threading import Thread
-from dongle import NoData, CanError
 import logging
-from math import isnan
+from ..dongle import NoData, CanError
 
-def ifbu(in_bytes): return int.from_bytes(in_bytes, byteorder='big', signed=False)
-def ifbs(in_bytes): return int.from_bytes(in_bytes, byteorder='big', signed=True)
-def ffbu(in_bytes): return float(int.from_bytes(in_bytes, byteorder='big', signed=False))
-def ffbs(in_bytes): return float(int.from_bytes(in_bytes, byteorder='big', signed=True))
+def ifbu(in_bytes):
+    return int.from_bytes(in_bytes, byteorder='big', signed=False)
 
-class DataError(Exception): pass
+def ifbs(in_bytes):
+    return int.from_bytes(in_bytes, byteorder='big', signed=True)
+
+def ffbu(in_bytes):
+    return float(int.from_bytes(in_bytes, byteorder='big', signed=False))
+
+def ffbs(in_bytes):
+    return float(int.from_bytes(in_bytes, byteorder='big', signed=True))
+
+class DataError(Exception):
+    pass
 
 class Car:
     def __init__(self, config, dongle, gps):
@@ -26,7 +33,7 @@ class Car:
 
     def start(self):
         self.running = True
-        self.thread = Thread(target = self.pollData, name = "EVNotiPi/Car")
+        self.thread = Thread(target=self.pollData, name="EVNotiPi/Car")
         self.thread.start()
 
     def stop(self):
@@ -39,31 +46,31 @@ class Car:
 
             # initialize data with required fields; saves all those checks later
             data = {
-                    'timestamp':    now,
-                    # Base:
-                    'SOC_BMS':      None,
-                    'SOC_DISPLAY':  None,
-                    # Extended:
-                    'auxBatteryVoltage':        None,
-                    'batteryInletTemperature':  None,
-                    'batteryMaxTemperature':    None,
-                    'batteryMinTemperature':    None,
-                    'cumulativeEnergyCharged':  None,
-                    'cumulativeEnergyDischarged':   None,
-                    'charging':                 None,
-                    'normalChargePort':         None,
-                    'rapidChargePort':          None,
-                    'dcBatteryCurrent':         None,
-                    'dcBatteryPower':           None,
-                    'dcBatteryVoltage':         None,
-                    'soh':                      None,
-                    'externalTemperature':      None,
-                    # Location:
-                    'latitude':     None,
-                    'longitude':    None,
-                    'speed':        None,
-                    'fix_mode':     0,
-                    }
+                'timestamp':    now,
+                # Base:
+                'SOC_BMS':      None,
+                'SOC_DISPLAY':  None,
+                # Extended:
+                'auxBatteryVoltage':        None,
+                'batteryInletTemperature':  None,
+                'batteryMaxTemperature':    None,
+                'batteryMinTemperature':    None,
+                'cumulativeEnergyCharged':  None,
+                'cumulativeEnergyDischarged':   None,
+                'charging':                 None,
+                'normalChargePort':         None,
+                'rapidChargePort':          None,
+                'dcBatteryCurrent':         None,
+                'dcBatteryPower':           None,
+                'dcBatteryVoltage':         None,
+                'soh':                      None,
+                'externalTemperature':      None,
+                # Location:
+                'latitude':     None,
+                'longitude':    None,
+                'speed':        None,
+                'fix_mode':     0,
+                }
             if not self.skip_polling or self.dongle.isCarAvailable():
                 if self.skip_polling:
                     self.log.info("Resume polling.")
