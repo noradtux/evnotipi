@@ -5,7 +5,7 @@ import logging
 import math
 import socket
 import struct
-from dongle import *
+from .dongle import *
 
 CANFMT = "<IB3x8s"
 
