@@ -65,6 +65,7 @@ class Car:
                 'dcBatteryVoltage':         None,
                 'soh':                      None,
                 'externalTemperature':      None,
+                'odo':                      None,
                 # Location:
                 'latitude':     None,
                 'longitude':    None,
