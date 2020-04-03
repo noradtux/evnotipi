@@ -165,7 +165,7 @@ try:
 
         if main_running:
             loop_delay = 1 - (time()-now)
-            sleep(min(0, loop_delay))
+            sleep(max(0, loop_delay))
 
 except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
     main_running = False
