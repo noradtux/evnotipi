@@ -364,7 +364,7 @@ class SocketCAN:
         flt = bytearray()
         for f in filters:
             flt.extend(struct.pack("=II",
-                                   f['id'],# | socket.CAN_EFF_FLAG if self.is_extended else f['id'],
+                                   f['id'],
                                    f['mask']))
 
         self.sock_can.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_FILTER, flt)
