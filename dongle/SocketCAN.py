@@ -4,7 +4,6 @@ import math
 import socket
 import struct
 from pyroute2 import IPRoute
-import RPi.GPIO as GPIO
 from .dongle import *
 
 CANFMT = "<IB3x8s"
@@ -29,10 +28,6 @@ class SocketCAN:
         self.config = config
 
         self.watchdog = watchdog
-        if not watchdog:
-            GPIO.setmode(GPIO.BCM)
-            self.pin = config['shutdown_pin']
-            GPIO.setup(self.pin, GPIO.IN, pull_up_down=config['pup_down'])
 
         self.sock_can = None
         self.sock_isotp = None
@@ -375,15 +370,10 @@ class SocketCAN:
         self.sock_can.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_FILTER, flt)
 
     def getObdVoltage(self):
-        if self.watchdog:
-            return round(self.watchdog.getVoltage(), 2)
+        return round(self.watchdog.getVoltage(), 2)
 
     def calibrateObdVoltage(self, realVoltage):
-        if self.watchdog:
-            self.watchdog.calibrateVoltage(realVoltage)
+        self.watchdog.calibrateVoltage(realVoltage)
 
     def isCarAvailable(self):
-        if self.watchdog:
-            return self.watchdog.getShutdownFlag() == 0
-        else:
-            return GPIO.input(self.pin) is False
+        return self.watchdog.getShutdownFlag() == 0

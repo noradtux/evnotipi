@@ -22,13 +22,18 @@ car:
 
 watchdog:
    # Enable if using the Trinket M0 watchdog
-   enable: false
-   i2c_address: 8
-   i2c_bus: 1
+   type: DUMMY
+   #type: I2C
+   #i2c_address: 8
+   #i2c_bus: 1
    #thresholds:
    #   startup:  13.0
    #   shutdown: 12.6
    #   emegency: 11.76 # <<< don't touch!
+   #type: GPIO
+   #shutdown_pin: 24
+   #pup_down: 21    # 21: Pull-Down 22: Pull-Up
+
 
 dongle:
    debug:
@@ -50,9 +55,5 @@ dongle:
    #type:  ELM327
    #port:  /dev/rfcomm0
    #speed: 9600
-
-   # Configure the input pin for the PnP watchdog
-   shutdown_pin: 24
-   pup_down: 21    # 21: Pull-Down 22: Pull-Up
 
 # vim: sw=3 sts=3 expandtab

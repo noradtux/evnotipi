@@ -3,7 +3,6 @@ from time import sleep
 import logging
 import math
 import serial
-import RPi.GPIO as GPIO
 from .dongle import *
 
 class ATBASE:
@@ -17,10 +16,6 @@ class ATBASE:
 
         self.config = dongle
         self.watchdog = watchdog
-        if not watchdog:
-            GPIO.setmode(GPIO.BCM)
-            self.pin = dongle['shutdown_pin']
-            GPIO.setup(self.pin, GPIO.IN, pull_up_down=dongle['pup_down'])
 
         self.current_canid = 0
         self.current_canfilter = 0
@@ -199,8 +194,4 @@ class ATBASE:
         return data
 
     def isCarAvailable(self):
-        if self.watchdog:
-            return self.watchdog.getShutdownFlag() == 0
-        else:
-            #return self.getObdVoltage() > 13.0
-            return GPIO.input(self.pin) is False
+        return self.watchdog.getShutdownFlag() == 0

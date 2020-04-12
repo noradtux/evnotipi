@@ -2,9 +2,9 @@ from threading import Lock
 import logging
 from smbus import SMBus
 
-class Watchdog:
+class I2C:
     def __init__(self, config):
-        self.log = logging.getLogger("EVNotiPi/Watchdog")
+        self.log = logging.getLogger("EVNotiPi/I2C-Watchdog")
         self.i2c_address = config['i2c_address']
         self.i2c_voltage_multiplier = 0.06
         self.i2c_bus_id = config['i2c_bus'] if 'i2c_bus' in config else 0

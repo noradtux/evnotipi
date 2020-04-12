@@ -13,6 +13,7 @@ import evnotify
 from gpspoller import GpsPoller
 import car
 import dongle
+import watchdog
 
 # Exit signalhandler
 def exit_gracefully(signum, frame):
@@ -64,16 +65,16 @@ DONGLE = dongle.Load(config['dongle']['type'])
 # Load car module
 CAR = car.Load(config['car']['type'])
 
+# Load watchdog module
+WATCHDOG = watchdog.Load(config['watchdog']['type'])
+
 Threads = []
 
-if 'watchdog' in config and config['watchdog'].get('enable') is True:
-    import watchdog
-    Watchdog = watchdog.Watchdog(config['watchdog'])
-else:
-    Watchdog = None
+# Init watchdog
+watchdog = WATCHDOG(config['watchdog'])
 
 # Init dongle
-dongle = DONGLE(config['dongle'], watchdog=Watchdog)
+dongle = DONGLE(config['dongle'], watchdog=watchdog)
 
 # Init GPS interface
 gps = GpsPoller()
