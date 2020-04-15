@@ -27,13 +27,13 @@ class I2C:
         #self.i2c_bus.close()
         self.i2c_lock.release()
 
-    def getShutdownFlag(self):
+    def isCarAvailable(self):
         self._BusOpen()
         self.i2c_bus.write_byte(self.i2c_address, 2)
         ret = self.i2c_bus.read_byte(self.i2c_address)
         self._BusClose()
 
-        return ret
+        return ret == 0
 
     def getVoltage(self):
         self._BusOpen()
@@ -82,21 +82,3 @@ class I2C:
                                          int(emergency/self.i2c_voltage_multiplier))
 
         self._BusClose()
-
-
-if __name__ == '__main__':
-    config = {
-        'enable': True,
-        'i2c_address': 8,
-        'i2c_bus': 1,
-        'thresholds': {
-            'startup': 13.0,
-            'shutdown': 12.6
-            }
-        }
-
-    wd = Watchdog(config)
-
-    print(wd.getShutdownFlag(),
-          wd.getVoltage(),
-          wd.getThresholds())

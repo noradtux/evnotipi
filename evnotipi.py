@@ -21,7 +21,7 @@ def exit_gracefully(signum, frame):
 
 Systemd = sdnotify.SystemdNotifier()
 
-class WatchdogFailure(Exception): pass
+class ThreadFailure(Exception): pass
 
 parser = ArgumentParser(description='EVNotiPi')
 parser.add_argument('-d', '--debug', dest='debug',
@@ -74,14 +74,14 @@ Threads = []
 watchdog = WATCHDOG(config['watchdog'])
 
 # Init dongle
-dongle = DONGLE(config['dongle'], watchdog=watchdog)
+dongle = DONGLE(config['dongle'])
 
 # Init GPS interface
 gps = GpsPoller()
 Threads.append(gps)
 
 # Init car
-car = CAR(config['car'], dongle, gps)
+car = CAR(config['car'], dongle, watchdog, gps)
 Threads.append(car)
 
 # Init EVNotify
@@ -129,20 +129,20 @@ log.info("Starting main loop")
 try:
     while main_running:
         now = time()
-        watchdogs_ok = True
+        thread_ok = True
         for t in Threads:
             status = t.checkWatchdog()
             if not status:
                 log.error("Watchdog Failed %s", str(t))
-                watchdogs_ok = False
-                raise WatchdogFailure(str(t))
+                thread_ok = False
+                raise ThreadFailure(str(t))
 
-        if watchdogs_ok:
+        if thread_ok:
             Systemd.notify("WATCHDOG=1")
 
         if 'system' in config and 'shutdown_delay' in config['system']:
             if (now - car.last_data > config['system']['shutdown_delay'] and
-                    not dongle.isCarAvailable()):
+                    not watchdog.isCarAvailable()):
                 user_cnt = int(check_output(['who', '-q']).split(b'\n')[1].split(b'=')[1])
                 if user_cnt == 0:
                     log.info("Not charging and car off => Shutdown")
@@ -157,7 +157,7 @@ try:
 
         if wifi and config['wifi']['shutdown_delay'] is not None:
             if (now - car.last_data > config['wifi']['shutdown_delay'] and
-                    not dongle.isCarAvailable()):
+                    not watchdog.isCarAvailable()):
                 wifi.disable()
             else:
                 wifi.enable()

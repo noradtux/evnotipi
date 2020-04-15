@@ -13,8 +13,8 @@ CMD_CURRENT      = bytes.fromhex('229257')   # PR218
 CMD_SOH          = bytes.fromhex('22927A')   # ET148
 
 class ZOE_ZE50(Car):
-    def __init__(self, config, dongle, gps):
-        Car.__init__(self, config, dongle, gps)
+    def __init__(self, config, dongle, watchdog, gps):
+        Car.__init__(self, config, dongle, watchdog, gps)
         self.dongle.setProtocol('CAN_29_500')
 
     def readDongle(self, data):
@@ -81,28 +81,3 @@ class ZOE_ZE50(Car):
             "NORMAL_SPEED": 22.0,
             "FAST_SPEED": 50.0
         }
-
-
-if __name__ == '__main__':
-    import sys
-    import logging
-    import pprint
-    pp = pprint.PrettyPrinter(indent=2)
-
-    logging.basicConfig(level=logging.DEBUG)
-
-    from ..dongle.SocketCAN import SocketCAN
-
-    config = {
-        'type': 'SocketCAN',
-        'port': 'vcan0',
-        'speed': 500000,
-        }
-
-    dongle = SocketCAN(config, watchdog=None)
-
-    car = ZOE_ZE50({'interval': 1}, dongle)
-
-    data = {}
-    car.readDongle(data)
-    pp.pprint(data)

@@ -21,13 +21,11 @@ CAN_ISOTP_RX_STMIN  = 4
 CAN_ISOTP_LL_OPTS   = 5
 
 class SocketCAN:
-    def __init__(self, config, watchdog=None):
+    def __init__(self, config):
         self.log = logging.getLogger("EVNotiPi/SocketCAN")
         self.log.info("Initializing SocketCAN")
 
         self.config = config
-
-        self.watchdog = watchdog
 
         self.sock_can = None
         self.sock_isotp = None
@@ -203,7 +201,8 @@ class SocketCAN:
 
     def sendCommandEx_CANRAW(self, cmd, cantx, canrx):
         if self.log.isEnabledFor(logging.DEBUG):
-            self.log.debug("sendCommandEx_CANRAW cmd(%s) cantx(%x) canrx(%x)", cmd.hex(), canrx, cantx)
+            self.log.debug("sendCommandEx_CANRAW cmd(%s) cantx(%x) canrx(%x)",
+                           cmd.hex(), canrx, cantx)
 
         if self.is_extended:
             cantx |= socket.CAN_EFF_FLAG
@@ -368,12 +367,3 @@ class SocketCAN:
                                    f['mask']))
 
         self.sock_can.setsockopt(socket.SOL_CAN_RAW, socket.CAN_RAW_FILTER, flt)
-
-    def getObdVoltage(self):
-        return round(self.watchdog.getVoltage(), 2)
-
-    def calibrateObdVoltage(self, realVoltage):
-        self.watchdog.calibrateVoltage(realVoltage)
-
-    def isCarAvailable(self):
-        return self.watchdog.getShutdownFlag() == 0

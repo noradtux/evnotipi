@@ -9,8 +9,8 @@ class GPIO:
         RPi.GPIO.setmode(RPi.GPIO.BCM)
         RPi.GPIO.setup(self._shutdown_pin, RPi.GPIO.IN, pull_up_down=self._pup_down)
 
-    def getShutdownFlag(self):
-        return RPi.GPIO.input(self._shutdown_pin) is False
+    def isCarAvailable(self):
+        return RPi.GPIO.input(self._shutdown_pin) == 0
 
     def getVoltage(self):
         return None

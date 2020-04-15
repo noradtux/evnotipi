@@ -19,10 +19,11 @@ class DataError(Exception):
     pass
 
 class Car:
-    def __init__(self, config, dongle, gps):
+    def __init__(self, config, dongle, watchdog, gps):
         self.log = logging.getLogger("EVNotiPi/Car")
         self.config = config
         self.dongle = dongle
+        self.watchdog = watchdog
         self.gps = gps
         self.poll_interval = config['interval']
         self.thread = None
@@ -72,7 +73,7 @@ class Car:
                 'speed':        None,
                 'fix_mode':     0,
                 }
-            if not self.skip_polling or self.dongle.isCarAvailable():
+            if not self.skip_polling or self.watchdog.isCarAvailable():
                 if self.skip_polling:
                     self.log.info("Resume polling.")
                     self.skip_polling = False
@@ -83,7 +84,7 @@ class Car:
                     self.log.warning(e)
                 except NoData:
                     self.log.info("NO DATA")
-                    if not self.dongle.isCarAvailable():
+                    if not self.watchdog.isCarAvailable():
                         self.log.info("Car off detected. Stop polling until car on.")
                         self.skip_polling = True
                     sleep(1)
@@ -109,12 +110,19 @@ class Car:
                     'gps_device':   fix['device'],
                     })
 
-            if self.dongle.watchdog:
+            if hasattr(self.dongle, 'getObdVoltage'):
+                data.update({
+                    'obdVoltage':       self.dongle.getObdVoltage(),
+                    })
+            elif hasattr(self.watchdog, 'getVoltage'):
+                data.update({
+                    'obdVoltage':       self.watchdog.getVoltage(),
+                    })
+
+            if hasattr(self.watchdog, 'getThresholds'):
                 thresholds = self.dongle.watchdog.getThresholds()
-                volt = self.dongle.getObdVoltage()
 
                 data.update({
-                    'obdVoltage':               volt,
                     'startupThreshold':         thresholds['startup'],
                     'shutdownThreshold':        thresholds['shutdown'],
                     'emergencyThreshold':       thresholds['emergency'],

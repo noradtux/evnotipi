@@ -4,8 +4,8 @@ class DUMMY:
     def __init__(self, config=None):
         self._log = logging.getLogger("EVNotiPi/DUMMY-Watchdog")
 
-    def getShutdownFlag(self):
-        return False
+    def isCarAvailable(self):
+        return True
 
     def getVoltage(self):
         return None

@@ -7,8 +7,8 @@ B22b002 = bytes.fromhex('22b002')
 
 class KONA_EV(Car):
 
-    def __init__(self, config, dongle, gps):
-        Car.__init__(self, config, dongle, gps)
+    def __init__(self, config, dongle, watchdog, gps):
+        Car.__init__(self, config, dongle, watchdog, gps)
         self.dongle.setProtocol('CAN_11_500')
 
     def readDongle(self, data):

@@ -6,7 +6,7 @@ import serial
 from .dongle import *
 
 class ATBASE:
-    def __init__(self, dongle, watchdog=None):
+    def __init__(self, dongle):
         self.log = logging.getLogger("EVNotiPi/{}".format(__name__))
         self.log.info("Initializing PiOBD2Hat")
 
@@ -15,7 +15,6 @@ class ATBASE:
         self.initDongle()
 
         self.config = dongle
-        self.watchdog = watchdog
 
         self.current_canid = 0
         self.current_canfilter = 0
@@ -192,6 +191,3 @@ class ATBASE:
             raise CanError("Failed Command {}\n{}".format(cmd, ret))
 
         return data
-
-    def isCarAvailable(self):
-        return self.watchdog.getShutdownFlag() == 0
