@@ -95,8 +95,6 @@ class IONIQ_BEV(Car):
 
             'availableChargePower':     ifbu(raw[B2101][7:9]) / 100.0,
             'availableDischargePower':  ifbu(raw[B2101][9:11]) / 100.0,
-
-            'obdVoltage':               self.dongle.getObdVoltage(),
             })
 
         for i, temp in enumerate(cell_temps):

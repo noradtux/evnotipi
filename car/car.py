@@ -120,7 +120,7 @@ class Car:
                     })
 
             if hasattr(self.watchdog, 'getThresholds'):
-                thresholds = self.dongle.watchdog.getThresholds()
+                thresholds = self.watchdog.getThresholds()
 
                 data.update({
                     'startupThreshold':         thresholds['startup'],
