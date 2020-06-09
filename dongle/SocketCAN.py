@@ -77,16 +77,20 @@ class SocketCAN:
             # select implementation of sendCommandEx
             self.sendCommandEx = self.sendCommandEx_ISOTP
             self.log.info("using ISO-TP support")
-        except OSError:
+        except OSError as e:
             # CAN_ISOTP not supported
-            self.sendCommandEx = self.sendCommandEx_CANRAW
+            if e.errno == 93:
+                self.sendCommandEx = self.sendCommandEx_CANRAW
+            else:
+                raise
 
         self.sock_can = socket.socket(PF_CAN, SOCK_RAW, CAN_RAW)
         try:
             self.sock_can.bind((self.config['port'],))
             self.sock_can.settimeout(0.2)
-        except OSError:
-            self.log.error("Could not bind to %i", self.config['port'])
+        except OSError as e:
+            self.log.error("%s: Could not bind to %i", e, self.config['port'])
+            raise
 
     def sendCommand(self, cmd):
         try:
