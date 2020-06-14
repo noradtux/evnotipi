@@ -16,6 +16,7 @@ CAN_ISOTP = getattr(socket, 'CAN_ISOTP', 6)
 CAN_RAW = getattr(socket, 'CAN_RAW', 1)
 CAN_EFF_FLAG = getattr(socket, 'CAN_EFF_FLAG', 0x80000000)
 CAN_EFF_MASK = getattr(socket, 'CAN_EFF_MASK', 0x1fffffff)
+CAN_RAW_FILTER = getattr(socket, 'CAN_RAW_FILTER', 1)
 
 SOL_CAN_BASE        = getattr(socket, 'SOL_CAN_BASE', 0x64)
 SOL_CAN_ISOTP       = SOL_CAN_BASE + CAN_ISOTP
@@ -30,6 +31,47 @@ def canStr(msg):
     can_id, length, data = struct.unpack(CANFMT, msg)
     return "{:x}#{} ({})".format(can_id & CAN_EFF_MASK, data.hex(), length)
 
+class CanSocket(socket.socket):
+    def setCanID(self, can_id):
+        if not isinstance(can_id, int):
+            raise ValueError
+
+        self.can_id = can_id
+
+    def setCANRxMask(self, mask):
+        if not isinstance(mask, int):
+            raise ValueError
+
+        self.can_mask = mask
+
+        if getattr(self, 'can_filter'):
+            self.setFiltersEx([{
+                'id':   self.can_filter,
+                'mask': self.can_mask,
+                }])
+
+    def setCANRxFilter(self, addr):
+        if not isinstance(addr, int):
+            raise ValueError
+
+        self.can_filter = addr
+
+        if getattr(self, 'can_mask'):
+            self.setFiltersEx([{
+                'id':   self.can_filter,
+                'mask': self.can_mask,
+                }])
+
+    def setFiltersEx(self, filters):
+        flt = bytearray()
+        for f in filters:
+            flt.extend(struct.pack("=II",
+                                   f['id'],# | socket.CAN_EFF_FLAG if self.is_extended else f['id'],
+                                   f['mask']))
+
+        self.setsockopt(SOL_CAN_RAW, CAN_RAW_FILTER, flt)
+
+
 class SocketCAN:
     def __init__(self, config):
         self.log = logging.getLogger("EVNotiPi/SocketCAN")
@@ -37,12 +79,12 @@ class SocketCAN:
 
         self.config = config
 
-        self.sock_can = None
-        self.sock_isotp = None
+        self.watchdog = watchdog
+        if not watchdog:
+            GPIO.setmode(GPIO.BCM)
+            self.pin = config['shutdown_pin']
+            GPIO.setup(self.pin, GPIO.IN, pull_up_down=config['pup_down'])
 
-        self.can_id = 0x7df
-        self.can_filter = None
-        self.can_mask = 0x7ff
         self.is_extended = False
 
         self.initDongle()
@@ -59,124 +101,30 @@ class SocketCAN:
         ip.link('set', index=ifidx, state='up')
         ip.close()
 
-        if self.sock_can:
-            self.sock_can.close()
-
-        try:
-            # check if kernel supports CAN_ISOTP
-            s = socket.socket(AF_CAN, SOCK_DGRAM, CAN_ISOTP)
-            s.close()
-            # CAN_ISOTP_TX_PADDING CAN_ISOTP_RX_PADDING CAN_ISOTP_CHK_PAD_LEN CAN_ISOTP_CHK_PAD_DATA
-            #opts = 0x004 | 0x008 | 0x010 | 0x020
-            opts = 0x004 | 0x008 | 0x010
-            if self.is_extended:
-                # CAN_ISOTP_EXTEND_ADDR
-                opts |= 0x002
-            self.sock_opt_isotp_opt = struct.pack("=LLBBBB", opts, 0, 0, 0xAA, 0xFF, 0)
-            self.sock_opt_isotp_fc = struct.pack("=BBB", 0, 0, 0)
-            # select implementation of sendCommandEx
-            self.sendCommandEx = self.sendCommandEx_ISOTP
-            self.log.info("using ISO-TP support")
-        except OSError as e:
-            # CAN_ISOTP not supported
-            if e.errno == 93:
-                self.sendCommandEx = self.sendCommandEx_CANRAW
-            else:
-                raise
-
-        self.sock_can = socket.socket(PF_CAN, SOCK_RAW, CAN_RAW)
-        try:
-            self.sock_can.bind((self.config['port'],))
-            self.sock_can.settimeout(0.2)
-        except OSError as e:
-            self.log.error("%s: Could not bind to %i", e, self.config['port'])
-            raise
-
-    def sendCommand(self, cmd):
-        try:
-            cmd_len = len(cmd)
-            assert cmd_len < 8
-
-            msg_data = (bytes([cmd_len]) + cmd).ljust(8, b'\x00') # Pad cmd to 8 bytes
-
-            cmd_msg = struct.pack(CANFMT, self.can_id | CAN_EFF_FLAG \
-                    if self.is_extended else self.can_id, len(msg_data), msg_data)
-
-            if self.log.isEnabledFor(logging.DEBUG):
-                self.log.debug("%s send message", canStr(cmd_msg))
-
-            self.sock_can.send(cmd_msg)
-
-            data = {}
-            data_len = {}
-
-            while True:
-                msg = self.sock_can.recv(16)
-                can_id, length, msg_data = struct.unpack(CANFMT, msg)
-                can_id &= CAN_EFF_MASK
-                msg_data = msg_data[:length]
-                frame_type = msg_data[0] & 0xf0
-
-                if frame_type == 0x00:
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("%s single frame", canStr(msg))
-
-                    data_len[can_id] = msg_data[0] & 0x0f
-                    data[can_id] = [bytes(msg_data[1:])]
-                    break
-
-                elif frame_type == 0x10:
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("%s first frame", canStr(msg))
-
-                    data_len[can_id] = (msg_data[0] & 0x0f) + msg_data[1]
-                    lines = math.ceil(data_len[can_id] / 7)
-                    data[can_id] = [None] * lines
-                    data[can_id][0] = bytes(msg_data[2:])
-
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("Send flow control message")
-
-                    flow_msg = struct.pack(CANFMT, self.can_id | CAN_EFF_FLAG \
-                            if self.is_extended else self.can_id,
-                                           8, b'0\x00\x00\x00\x00\x00\x00\x00')
-
-                    self.sock_can.send(flow_msg)
-
-                elif frame_type == 0x20:
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("%s consecutive frame", canStr(msg))
-
-                    idx = msg_data[0] & 0x0f
-                    data[can_id][idx] = bytes(msg_data[1:])
-                    if idx + 1 == data_len[can_id]:
-                        # All frames seen, exit loop
-                        break
-
-                elif frame_type == 0x30:
-                    raise CanError("Unexpected flow control: {}".format(canStr(msg)))
+        if not self.is_extended:
+            try:
+                # check if kernel supports CAN_ISOTP
+                s = CanSocket(AF_CAN, SOCK_DGRAM, CAN_ISOTP)
+                s.close()
+                # CAN_ISOTP_TX_PADDING CAN_ISOTP_RX_PADDING CAN_ISOTP_CHK_PAD_LEN CAN_ISOTP_CHK_PAD_DATA
+                #opts = 0x004 | 0x008 | 0x010 | 0x020
+                opts = 0x004 | 0x008 | 0x010
+                if self.is_extended:
+                    # CAN_ISOTP_EXTEND_ADDR
+                    opts |= 0x002
+                self.sock_opt_isotp_opt = struct.pack("=LLBBBB", opts, 0, 0, 0xAA, 0xFF, 0)
+                self.sock_opt_isotp_fc = struct.pack("=BBB", 0, 0, 0)
+                # select implementation of sendCommandEx
+                self.sendCommandEx = self.sendCommandEx_ISOTP
+                self.log.info("using ISO-TP support")
+            except OSError as e:
+                if e.errno == 93:
+                    # CAN_ISOTP not supported
+                    self.sendCommandEx = self.sendCommandEx_CANRAW
                 else:
-                    raise CanError("Unexpected message: {}".format(canStr(msg)))
+                    raise
 
-        except socket.timeout as e:
-            raise NoData("Command timed out {}: {}".format(cmd.hex(), e))
-        except OSError as e:
-            raise CanError("Failed Command {}: {}".format(cmd.hex(), e))
-
-        if len(data) == 0:
-            raise NoData(b'NO DATA')
-
-        try:
-            # Check if all entries are filled
-            for key, val in data.items():
-                for i in val:
-                    if i is None:
-                        raise ValueError
-
-        except ValueError:
-            raise CanError("Failed Command {}: {}".format(cmd.hex(), data))
-
-        return data
+        self.can_raw_sock = CanSocket(PF_CAN, SOCK_RAW, CAN_RAW)
 
     def sendCommandEx_ISOTP(self, cmd, cantx, canrx):
         if self.log.isEnabledFor(logging.DEBUG):
@@ -188,7 +136,7 @@ class SocketCAN:
             canrx |= CAN_EFF_FLAG
 
         try:
-            with socket.socket(AF_CAN, SOCK_DGRAM, CAN_ISOTP) as sock:
+            with CanSocket(AF_CAN, SOCK_DGRAM, CAN_ISOTP) as sock:
                 sock.setsockopt(SOL_CAN_ISOTP, CAN_ISOTP_OPTS, self.sock_opt_isotp_opt)
                 sock.setsockopt(SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, self.sock_opt_isotp_fc)
 
@@ -238,66 +186,70 @@ class SocketCAN:
             if self.log.isEnabledFor(logging.DEBUG):
                 self.log.debug("%s send messsage", canStr(cmd_msg))
 
-            self.sock_can.send(cmd_msg)
+            with CanSocket(PF_CAN, SOCK_RAW, CAN_RAW) as sock:
+                sock.bind((self.config['port'],))
+                sock.settimeout(0.2)
 
-            data = None
-            data_len = 0
-            last_idx = 0
+                sock.send(cmd_msg)
 
-            while True:
-                self.log.debug("waiting recv msg")
-                msg = self.sock_can.recv(72)
-                can_id, length, msg_data = struct.unpack(CANFMT, msg)
-                self.log.debug("Got %x %i %s", can_id, length, msg_data.hex())
-                can_id &= CAN_EFF_MASK
-                msg_data = msg_data[:length]
-                frame_type = msg_data[0] & 0xf0
+                data = None
+                data_len = 0
+                last_idx = 0
 
-                if frame_type == 0x00:
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("%s single frame", canStr(msg))
+                while True:
+                    self.log.debug("waiting recv msg")
+                    msg = sock.recv(72)
+                    can_id, length, msg_data = struct.unpack(CANFMT, msg)
+                    self.log.debug("Got %x %i %s", can_id, length, msg_data.hex())
+                    can_id &= CAN_EFF_MASK
+                    msg_data = msg_data[:length]
+                    frame_type = msg_data[0] & 0xf0
 
-                    data_len = msg_data[0] & 0x0f
-                    data = bytes(msg_data[1:data_len+1])
-                    break
+                    if frame_type == 0x00:
+                        if self.log.isEnabledFor(logging.DEBUG):
+                            self.log.debug("%s single frame", canStr(msg))
 
-                elif frame_type == 0x10:
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("%s first frame", canStr(msg))
-
-                    data_len = (msg_data[0] & 0x0f) + msg_data[1]
-                    data = bytearray(msg_data[2:])
-
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("Send flow control message")
-
-                    flow_msg = struct.pack(CANFMT, cantx, 8, b'0\x00\x00\x00\x00\x00\x00\x00')
-
-                    self.sock_can.send(flow_msg)
-
-                    last_idx = 0
-
-                elif frame_type == 0x20:
-                    if self.log.isEnabledFor(logging.DEBUG):
-                        self.log.debug("%s consecutive frame", canStr(msg))
-
-                    idx = msg_data[0] & 0x0f
-                    if (last_idx + 1) % 0x10 != idx:
-                        raise CanError("Bad frame order: last_idx({}) idx({})"
-                                       .format(last_idx, idx))
-
-                    frame_len = min(7, data_len - len(data))
-                    data.extend(msg_data[1:frame_len+1])
-                    last_idx = idx
-
-                    if data_len == len(data):
-                        # All frames seen, exit loop
+                        data_len = msg_data[0] & 0x0f
+                        data = bytes(msg_data[1:data_len+1])
                         break
 
-                elif frame_type == 0x30:
-                    raise CanError("Unexpected flow control: {}".format(canStr(msg)))
-                else:
-                    raise CanError("Unexpected message: {}".format(canStr(msg)))
+                    elif frame_type == 0x10:
+                        if self.log.isEnabledFor(logging.DEBUG):
+                            self.log.debug("%s first frame", canStr(msg))
+
+                        data_len = (msg_data[0] & 0x0f) + msg_data[1]
+                        data = bytearray(msg_data[2:])
+
+                        if self.log.isEnabledFor(logging.DEBUG):
+                            self.log.debug("Send flow control message")
+
+                        flow_msg = struct.pack(CANFMT, cantx, 8, b'0\x00\x00\x00\x00\x00\x00\x00')
+
+                        self.sock_can.send(flow_msg)
+
+                        last_idx = 0
+
+                    elif frame_type == 0x20:
+                        if self.log.isEnabledFor(logging.DEBUG):
+                            self.log.debug("%s consecutive frame", canStr(msg))
+
+                        idx = msg_data[0] & 0x0f
+                        if (last_idx + 1) % 0x10 != idx:
+                            raise CanError("Bad frame order: last_idx({}) idx({})"
+                                           .format(last_idx, idx))
+
+                        frame_len = min(7, data_len - len(data))
+                        data.extend(msg_data[1:frame_len+1])
+                        last_idx = idx
+
+                        if data_len == len(data):
+                            # All frames seen, exit loop
+                            break
+
+                    elif frame_type == 0x30:
+                        raise CanError("Unexpected flow control: {}".format(canStr(msg)))
+                    else:
+                        raise CanError("Unexpected message: {}".format(canStr(msg)))
 
         except socket.timeout as e:
             raise NoData("Command timed out {}: {}".format(cmd.hex(), e))
@@ -312,27 +264,39 @@ class SocketCAN:
 
         return data
 
-    def readDataSimple(self, timeout=None):
+    def readRawData(self, timeout=None):
         try:
-            data = {}
+            self.can_raw_sock.settimeout(timeout)
 
-            msg = self.sock_can.recv(72)
+            msg = self.can_raw_sock.recv(72)
+
             can_id, length, msg_data = struct.unpack(CANFMT, msg)
             can_id &= CAN_EFF_MASK
-            msg_data = msg_data[:length]
 
-            data[can_id] = msg_data
+            if len(msg_data) == 0:
+                raise NoData(b'NO DATA')
+
+            data = {
+                'can_id': can_id,
+                'data_len': length,
+                'data': msg_data[:length]
+                }
+
+            return data
 
         except socket.timeout as e:
-            raise CanError("Recv timed out: {}".format(e))
+            raise NoData("Recv timed out: {}".format(e))
         except OSError as e:
             raise CanError("CAN read error: {}".format(e))
 
+    def setRawMask(self, mask):
+        self.can_raw_sock.setCANRxMask(mask)
 
-        if len(data) == 0:
-            raise NoData(b'NO DATA')
+    def setRawFilter(self, addr):
+        self.can_raw_sock.setCANRxFilter(addr)
 
-        return data
+    def setRawFiltersEx(self, filters):
+        self.can_raw_sock.setFiltersEx(filters)
 
     def setProtocol(self, prot):
         # SocketCAN doesn't support anything else
@@ -345,39 +309,16 @@ class SocketCAN:
 
         self.initDongle()
 
-    def setCanID(self, can_id):
-        if not isinstance(can_id, int):
-            raise ValueError
+    def getObdVoltage(self):
+        if self.watchdog:
+            return round(self.watchdog.getVoltage(), 2)
 
-        self.can_id = can_id
+    def calibrateObdVoltage(self, realVoltage):
+        if self.watchdog:
+            self.watchdog.calibrateVoltage(realVoltage)
 
-    def setCANRxMask(self, mask):
-        if not isinstance(mask, int):
-            raise ValueError
-
-        self.can_mask = mask
-
-        self.setFiltersEx([{
-            'id':   self.can_filter,
-            'mask': self.can_mask,
-            }])
-
-    def setCANRxFilter(self, addr):
-        if not isinstance(addr, int):
-            raise ValueError
-
-        self.can_filter = addr
-
-        self.setFiltersEx([{
-            'id':   self.can_filter,
-            'mask': self.can_mask,
-            }])
-
-    def setFiltersEx(self, filters):
-        flt = bytearray()
-        for f in filters:
-            flt.extend(struct.pack("=II",
-                                   f['id'],
-                                   f['mask']))
-
-        self.sock_can.setsockopt(SOL_CAN_RAW, CAN_RAW_FILTER, flt)
+    def isCarAvailable(self):
+        if self.watchdog:
+            return self.watchdog.getShutdownFlag() == 0
+        else:
+            return GPIO.input(self.pin) is False
