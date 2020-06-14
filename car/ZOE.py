@@ -1,14 +1,14 @@
 from time import time
-from threading import Thread
+from threading import Thread, Lock
 from .car import *
 
 class ZOE(Car):
 
-    def __init__(self, config, dongle, watchdog, gps):
-        raise Exception('Old ZOE not working yet')
-        Car.__init__(self, config, dongle, watchdog, gps)
+    def __init__(self, config, dongle, gps):
+        #raise NotImplementedError('Old ZOE not working yet')
+        Car.__init__(self, config, dongle, gps)
         self.dongle.setProtocol('CAN_11_500')
-        self.dongle.setFiltersEx([
+        self.dongle.setRawFiltersEx([
             {'id': 0x1f6, 'mask': 0x7ff},
             {'id': 0x29a, 'mask': 0x7ff},
             {'id': 0x35c, 'mask': 0x7ff},
@@ -24,87 +24,98 @@ class ZOE(Car):
             {'id': 0x6f8, 'mask': 0x7ff},
             {'id': 0x7bb, 'mask': 0x7ff},
             ])
-        self.data = self.getBaseData()
-        self.data = {}
-        self.readerthread = Thread(name="Zoe-Reader-Thread", target=self.readerThread)
+        self._data = self.getBaseData()
+        self._data = {}
+        self._data_lock = Lock()
+        self._reader_thread = Thread(name="Zoe-Reader-Thread", target=self.readerThread)
+        self._reader_running = False
 
     def start(self):
-        self.running = True
-        self.readerthread.start()
+        Car.start(self)
+        self._reader_running = True
+        self._reader_thread.start()
 
     def stop(self):
-        if self.running:
-            self.running = False
-            self.readerthread.join()
+        if self._reader_running:
+            self._reader_running = False
+            self._reader_thread.join()
+        Car.stop(self)
 
     def readerThread(self):
-        while self.running:
-            now = time()
-            self.watchdog = now
-            raw = self.dongle.readDataSimple(1)
+        while self._reader_running:
+            try:
+                data = self.dongle.readRawData(1)
+                self._last_data = time()
 
-            if raw == None:
-                continue
+                with self._data_lock:
+                    can_id = data['can_id']
+                    msg = data['msg']
 
-            with self.datalock.gen_wlock():
-                for sid, line in raw.items():
-                    if sid == 0x42e:
-                        self.data.update({
-                            'SOC_DISPLAY':                  (ifbu(line[0:2]) >> 3 & 0x1fff) * 0.02,
+                    if can_id == 0x42e:
+                        self._data.update({
+                            'SOC_DISPLAY':                  (ifbu(msg[0:2]) >> 3 & 0x1fff) * 0.02,
                             })
-                        self.data.update({
-                            'dcBatteryVoltage':             (ifbu(line[3:5]) >> 5 & 0x03ff) * 0.5,
-                            'batteryMaxTemperature':        (ifbu(line[5:7]) >> 5 & 0x007f) - 40,
-                            'batteryMinTemperature':        (ifbu(line[5:7]) >> 5 & 0x007f) - 40,
+                        self._data.update({
+                            'dcBatteryVoltage':             (ifbu(msg[3:5]) >> 5 & 0x03ff) * 0.5,
+                            'batteryMaxTemperature':        (ifbu(msg[5:7]) >> 5 & 0x007f) - 40,
+                            'batteryMinTemperature':        (ifbu(msg[5:7]) >> 5 & 0x007f) - 40,
                             })
-                        if 'dcBatteryPower' in self.data:
-                            self.data['dcBatteryCurrent']: self.data['dcBatteryPower'] / self.data['dcBatteryVoltage']
-                    #elif sid == 0x637:
-                    #    self.data.update({
-                    #        'cumulativeEnergyCharged':      ifbu(line[5:7]) >> 4 & 0x0fff,
+                        if 'dcBatteryPower' in self._data:
+                            self._data['dcBatteryCurrent'] = \
+                                self._data['dcBatteryPower'] / self._data['dcBatteryVoltage']
+                    #elif can_id == 0x637:
+                    #    self._data.update({
+                    #        'cumulativeEnergyCharged':      ifbu(msg[5:7]) >> 4 & 0x0fff,
                     #        })
-                    elif sid == 0x5d7:
-                        self.data.update({
-                            'odo':                          (ifbu(line[2:6]) >> 4) * 0.01,
+                    elif can_id == 0x5d7:
+                        self._data.update({
+                            'odo':                          (ifbu(msg[2:6]) >> 4) * 0.01,
                             })
-                    elif sid == 0x638:
-                        self.data.update({
-                            'dcBatteryPower':               line[0] - 80.0,
+                    elif can_id == 0x638:
+                        self._data.update({
+                            'dcBatteryPower':               msg[0] - 80.0,
                             })
-                        if 'dcBatteryVoltage' in self.data:
-                            self.data['dcBatteryCurrent']: self.data['dcBatteryPower'] / self.data['dcBatteryVoltage']
-                    #elif sid == 0x652:
-                    #    self.data.update({
-                    #        'cumulativeEnergyDischarged':   ifbu(line[4:6]) & 0x3fff,
+                        if 'dcBatteryVoltage' in self._data:
+                            self._data['dcBatteryCurrent'] = \
+                                self._data['dcBatteryPower'] / self._data['dcBatteryVoltage']
+                    #elif can_id == 0x652:
+                    #    self._data.update({
+                    #        'cumulativeEnergyDischarged':   ifbu(msg[4:6]) & 0x3fff,
                     #        })
-                    elif sid == 0x654:
-                        cpc = line[0] >> 5 & 0x1
-                        ect = line[2] >> 6 & 0x3
+                    elif can_id == 0x654:
+                        cpc = msg[0] >> 5 & 0x1
+                        #ect = msg[2] >> 6 & 0x3
 
-                        self.data.update({
-                            'normalChargePort':             1 if cpc == 1 else 0,
+                        self._data.update({
+                            'normalChargePort':             int(cpc == 1),
                             })
-                    elif sid == 0x656:
-                        self.data.update({
-                            'outsideTemp':                  line[6] - 40.0,
+                    elif can_id == 0x656:
+                        self._data.update({
+                            'outcan_ideTemp':               msg[6] - 40.0,
                             })
-                    elif sid == 0x658:
-                        self.data.update({
-                            'charging':                     line[5] >> 5 & 0x1,
-                            'soh':                          line[4] & 0x7f,
+                    elif can_id == 0x658:
+                        self._data.update({
+                            'charging':                     msg[5] >> 5 & 0x1,
+                            'soh':                          msg[4] & 0x7f,
                             })
-                    elif sid == 0x6f8:
-                        self.data.update({
-                            'auxBatteryVoltage':            line[2] * 0.0625,
+                    elif can_id == 0x6f8:
+                        self._data.update({
+                            'auxBatteryVoltage':            msg[2] * 0.0625,
                             })
-                    #elif sid == 0x7bb:
-                    #    self.data.update({
-                    #        'SOC_BMS':                      line[] * 0.01,
+                    #elif can_id == 0x7bb:
+                    #    self._data.update({
+                    #        'SOC_BMS':                      msg[] * 0.01,
                     #        })
-                    #elif sid == 0x7ec:
-                    #    self.data.update({
+                    #elif can_id == 0x7ec:
+                    #    self._data.update({
                     #        '
 
+            except NoData:
+                self.log.debug('NoData')
+
+    def readDongle(self, data):
+        with self._data_lock:
+            data.update(self._data)
 
     def getBaseData(self):
         return {
