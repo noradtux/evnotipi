@@ -41,6 +41,9 @@ class Car:
         self.running = False
         self.thread.join()
 
+    def readDongle(self, data):
+        raise NotImplementedError()
+
     def pollData(self):
         while self.running:
             now = time()
@@ -149,3 +152,6 @@ class Car:
 
     def checkWatchdog(self):
         return self.thread.is_alive()
+
+    def getBaseData(self):
+        raise NotImplementedError()
