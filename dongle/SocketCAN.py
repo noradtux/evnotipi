@@ -79,12 +79,6 @@ class SocketCAN:
 
         self.config = config
 
-        self.watchdog = watchdog
-        if not watchdog:
-            GPIO.setmode(GPIO.BCM)
-            self.pin = config['shutdown_pin']
-            GPIO.setup(self.pin, GPIO.IN, pull_up_down=config['pup_down'])
-
         self.is_extended = False
 
         self.initDongle()
@@ -308,17 +302,3 @@ class SocketCAN:
             raise Exception('Unsupported protocol %s' % prot)
 
         self.initDongle()
-
-    def getObdVoltage(self):
-        if self.watchdog:
-            return round(self.watchdog.getVoltage(), 2)
-
-    def calibrateObdVoltage(self, realVoltage):
-        if self.watchdog:
-            self.watchdog.calibrateVoltage(realVoltage)
-
-    def isCarAvailable(self):
-        if self.watchdog:
-            return self.watchdog.getShutdownFlag() == 0
-        else:
-            return GPIO.input(self.pin) is False
