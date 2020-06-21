@@ -29,7 +29,7 @@ class InfluxTelemetry:
                                              config['user'], config['pass'],
                                              config['dbname'], retries=1, timeout=5,
                                              ssl=config['ssl'] if 'ssl' in config else False,
-                                             verify_ssl=True, compression=9)
+                                             verify_ssl=True, gzip=True)
 
         except influxdb.exceptions.InfluxDBClientError as e:
             self._log.error(e)
