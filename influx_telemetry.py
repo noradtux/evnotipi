@@ -16,6 +16,7 @@ class InfluxTelemetry:
         self._log = logging.getLogger("EVNotiPi/InfluxDB")
         self._log.info("Initializing InfluxDB")
 
+        self._config = config
         self._evn_akey = evnotify.config['akey']
         self._car = car
         self._cartype = car.getEVNModel()
@@ -24,30 +25,14 @@ class InfluxTelemetry:
         self._running = False
         self._thread = None
 
-        try:
-            influx = influxdb.InfluxDBClient(config['host'], config['port'],
-                                             config['user'], config['pass'],
-                                             config['dbname'], retries=1, timeout=5,
-                                             ssl=config['ssl'] if 'ssl' in config else False,
-                                             verify_ssl=True, gzip=True)
-
-        except influxdb.exceptions.InfluxDBClientError as e:
-            self._log.error(e)
-            influx = None
-        except influxdb.exceptions.InfluxDBServerError as e:
-            self._log.error(e)
-            influx = None
-
-        self._influx = influx
         self.data_q_lock = Condition()
         self.data_queue = []
 
     def start(self):
-        if self._influx:
-            self._running = True
-            self._thread = Thread(target=self.submitData, name="EVNotiPi/InfluxDB")
-            self._thread.start()
-            self._car.registerData(self.dataCallback)
+        self._running = True
+        self._thread = Thread(target=self.submitData, name="EVNotiPi/InfluxDB")
+        self._thread.start()
+        self._car.registerData(self.dataCallback)
 
     def stop(self):
         self._car.unregisterData(self.dataCallback)
@@ -80,6 +65,24 @@ class InfluxTelemetry:
             self.data_q_lock.notify()
 
     def submitData(self):
+        influx = None
+        while self._running and influx is None:
+            try:
+                influx = influxdb.InfluxDBClient(self._config['host'], self._config['port'],
+                                                 self._config['user'], self._config['pass'],
+                                                 self._config['dbname'], retries=1, timeout=5,
+                                                 ssl=self._config['ssl'] if 'ssl' in self._config else False,
+                                                 verify_ssl=True, gzip=True)
+
+            except influxdb.exceptions.InfluxDBClientError as e:
+                self._log.error(e)
+                influx = None
+                sleep(3)
+            except influxdb.exceptions.InfluxDBServerError as e:
+                self._log.error(e)
+                influx = None
+                sleep(3)
+
         while self._running:
             now = time()
             did_transfer = False
@@ -91,7 +94,7 @@ class InfluxTelemetry:
                     self._log.debug("Transmit...")
 
                     try:
-                        self._influx.write_points(self.data_queue)
+                        influx.write_points(self.data_queue)
                         self.data_queue.clear()
                         did_transfer = True         # sleep outside of the lock
                     except influxdb.exceptions.InfluxDBClientError as e:
