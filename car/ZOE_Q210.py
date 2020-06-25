@@ -1,4 +1,5 @@
 from .ZOE import *
 
 class ZOE_Q210(ZOE):
-    pass
+    def getABRPModel(self):
+        return 'renault:zoe:q210:22:other'

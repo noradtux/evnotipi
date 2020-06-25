@@ -125,7 +125,5 @@ class ZOE(Car):
             "FAST_SPEED": 43.0
         }
 
-    def getABRPModel(self): return 'renault:zoe:q210:22:other'
-
-    def getEVNModel(self): return 'ZOE'
-
+    def getEVNModel(self):
+        return 'ZOE'
