@@ -119,6 +119,7 @@ class SocketCAN:
                     raise
 
         self.can_raw_sock = CanSocket(PF_CAN, SOCK_RAW, CAN_RAW)
+        self.can_raw_sock.bind((self.config['port'],))
 
     def sendCommandEx_ISOTP(self, cmd, cantx, canrx):
         if self.log.isEnabledFor(logging.DEBUG):
@@ -172,17 +173,17 @@ class SocketCAN:
 
             cmd_msg = struct.pack(CANFMT, cantx, len(msg_data), msg_data)
 
-            self.setFiltersEx([{
-                'id':   canrx,
-                'mask': 0x1fffffff if self.is_extended else 0x7ff
-                }])
-
             if self.log.isEnabledFor(logging.DEBUG):
                 self.log.debug("%s send messsage", canStr(cmd_msg))
 
             with CanSocket(PF_CAN, SOCK_RAW, CAN_RAW) as sock:
                 sock.bind((self.config['port'],))
                 sock.settimeout(0.2)
+
+                sock.setFiltersEx([{
+                    'id':   canrx,
+                    'mask': 0x1fffffff if self.is_extended else 0x7ff
+                    }])
 
                 sock.send(cmd_msg)
 
@@ -219,7 +220,7 @@ class SocketCAN:
 
                         flow_msg = struct.pack(CANFMT, cantx, 8, b'0\x00\x00\x00\x00\x00\x00\x00')
 
-                        self.sock_can.send(flow_msg)
+                        sock.sock_can.send(flow_msg)
 
                         last_idx = 0
 
