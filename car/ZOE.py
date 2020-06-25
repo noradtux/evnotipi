@@ -4,9 +4,12 @@ from .car import *
 
 class ZOE(Car):
 
-    def __init__(self, config, dongle, gps):
+    def __init__(self, config, dongle, watchdog, gps):
         #raise NotImplementedError('Old ZOE not working yet')
-        Car.__init__(self, config, dongle, gps)
+        if config.get('interval') < 1:
+            config['interval'] = 1
+
+        Car.__init__(self, config, dongle, watchdog, gps)
         self.dongle.setProtocol('CAN_11_500')
         self.dongle.setRawFiltersEx([
             {'id': 0x1f6, 'mask': 0x7ff},
@@ -27,6 +30,7 @@ class ZOE(Car):
         self._data = self.getBaseData()
         self._data = {}
         self._data_lock = Lock()
+        self._last_data = 0
         self._reader_thread = Thread(name="Zoe-Reader-Thread", target=self.readerThread)
         self._reader_running = False
 
@@ -49,7 +53,10 @@ class ZOE(Car):
 
                 with self._data_lock:
                     can_id = data['can_id']
-                    msg = data['msg']
+                    msg = data['data']
+
+                    if self.log.isEnabledFor(logging.DEBUG):
+                        self.log.debug("data can_id(%x) msg(%s)", can_id, msg.hex())
 
                     if can_id == 0x42e:
                         self._data.update({
