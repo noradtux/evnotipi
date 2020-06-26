@@ -25,7 +25,7 @@ else:
 
 Influx = influxdb.InfluxDBClient(C['influxdb']['host'], C['influxdb']['port'],
         C['influxdb']['user'], C['influxdb']['pass'], C['influxdb']['dbname'],
-        retries = 1, timeout = 1)
+        retries=1, timeout=1, gzip=True)
 
 ##############################################################################
 
