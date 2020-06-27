@@ -33,6 +33,14 @@ class KONA_EV(Car):
         dc_battery_current = ifbs(raw[B220101][13:15]) / 10.0
         dc_battery_voltage = ifbu(raw[B220101][15:17]) / 10.0
 
+        cell_voltages = []
+        for cmd in [B220102, B220103]:
+            for byte in range(8, 40):
+                cell_voltages.append(raw[cmd][byte] / 50.0)
+
+        for byte in range(8, 32):
+            cell_voltages.append(raw[B220104][byte] / 50.0)
+
         data.update({
             # Base:
             'SOC_BMS':                  raw[B220101][7] / 2.0,
@@ -54,6 +62,10 @@ class KONA_EV(Car):
             #'externalTemperature':      (raw[B220100][0x7ce][1][3] - 80) / 2.0,
             'odo':                      ffbu(raw[B22b002][9:12]) if B22b002 in raw else None,
             })
+
+        for i, cvolt in enumerate(cell_voltages):
+            key = "cellVoltage{:02d}".format(i+1)
+            data[key] = float(cvolt)
 
     def getBaseData(self):
         return {
