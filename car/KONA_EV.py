@@ -44,12 +44,12 @@ class KONA_EV(Car):
             'charging':                 1 if (charging_bits & 0xc) == 0x8 else 0,
             'normalChargePort':         1 if (charging_bits & 0x80) and raw[B220101][12] == 3 else 0,
             'rapidChargePort':          1 if (charging_bits & 0x80) and raw[B220101][12] != 3 else 0,
-            'dc_battery_current':         dc_battery_current,
+            'dcBatteryCurrent':         dc_battery_current,
             'dcBatteryPower':           dc_battery_current * dc_battery_voltage / 1000.0,
-            'dc_battery_voltage':         dc_battery_voltage,
+            'dcBatteryVoltage':         dc_battery_voltage,
             'soh':                      ifbu(raw[B220105][28:30]) / 10.0,
             #'externalTemperature':      (raw[B220100][0x7ce][1][3] - 80) / 2.0,
-            'odo':                      ffbu(raw[B22b002][11:15]) if B22b002 in raw else None,
+            'odo':                      ffbu(raw[B22b002][9:12]) if B22b002 in raw else None,
             })
 
     def getBaseData(self):
