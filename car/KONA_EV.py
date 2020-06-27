@@ -33,6 +33,12 @@ class KONA_EV(Car):
         dc_battery_current = ifbs(raw[B220101][13:15]) / 10.0
         dc_battery_voltage = ifbu(raw[B220101][15:17]) / 10.0
 
+        cell_temps = [
+            ifbs(raw[B220101][19:20]),
+            ifbs(raw[B220101][20:21]),
+            ifbs(raw[B220101][21:22]),
+            ifbs(raw[B220101][22:23])]
+
         cell_voltages = []
         for cmd in [B220102, B220103]:
             for byte in range(7, 39):
@@ -62,6 +68,10 @@ class KONA_EV(Car):
             #'externalTemperature':      (raw[B220100][0x7ce][1][3] - 80) / 2.0,
             'odo':                      ffbu(raw[B22b002][9:12]) if B22b002 in raw else None,
             })
+
+        for i, temp in enumerate(cell_temps):
+            key = "cellTemp{:02d}".format(i+1)
+            data[key] = float(temp)
 
         for i, cvolt in enumerate(cell_voltages):
             key = "cellVoltage{:02d}".format(i+1)
