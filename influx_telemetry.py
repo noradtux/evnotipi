@@ -27,7 +27,7 @@ class InfluxTelemetry:
         try:
             influx = influxdb.InfluxDBClient(config['host'], config['port'],
                                              config['user'], config['pass'],
-                                             config['dbname'], retries=1, timeout=5,
+                                             config['dbname'], retries=2, timeout=10,
                                              ssl=config['ssl'] if 'ssl' in config else False,
                                              verify_ssl=True, gzip=True)
 
@@ -97,8 +97,8 @@ class InfluxTelemetry:
                     except influxdb.exceptions.InfluxDBClientError as e:
                         self._log.error("InfluxDBClientError qlen(%i): code(%i) content(%s)",
                                         len(self.data_queue), e.code, e.content)
-                        if e.code == 400:
-                            self.data_queue.clear()
+                        #if e.code == 400:
+                        #    self.data_queue.clear()
                     except Exception as e:
                         self._log.error("InfluxTelemetry len(%i): %s", len(self.data_queue), e)
 
