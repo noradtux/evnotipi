@@ -25,7 +25,7 @@ else:
 
 Influx = influxdb.InfluxDBClient(C['influxdb']['host'], C['influxdb']['port'],
         C['influxdb']['user'], C['influxdb']['pass'], C['influxdb']['dbname'],
-        ssl=False, gzip=True, retries=1, timeout=1)
+        ssl=False, gzip=True, retries=2, timeout=2)
 
 ##############################################################################
 
@@ -104,7 +104,6 @@ if __name__ == "__main__":
             'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
             'fields': data,
             'time': pyrfc3339.generate(datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
-            'tags': {},
             })
         try:
             Influx.write_points(data_queue)
