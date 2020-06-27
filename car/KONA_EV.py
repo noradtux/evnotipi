@@ -2,6 +2,9 @@ from .car import *
 
 B220100 = bytes.fromhex('220100')
 B220101 = bytes.fromhex('220101')
+B220102 = bytes.fromhex('220102')
+B220103 = bytes.fromhex('220103')
+B220104 = bytes.fromhex('220104')
 B220105 = bytes.fromhex('220105')
 B22b002 = bytes.fromhex('22b002')
 
@@ -15,7 +18,7 @@ class KONA_EV(Car):
         now = time()
         raw = {}
 
-        for cmd in [B220101, B220105]:
+        for cmd in [B220101, B220102, B220103, B220104, B220105]:
             raw[cmd] = self.dongle.sendCommandEx(cmd, canrx=0x7ec, cantx=0x7e4)
 
         try:
