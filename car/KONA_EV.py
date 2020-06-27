@@ -35,10 +35,10 @@ class KONA_EV(Car):
 
         cell_voltages = []
         for cmd in [B220102, B220103]:
-            for byte in range(8, 40):
+            for byte in range(7, 39):
                 cell_voltages.append(raw[cmd][byte] / 50.0)
 
-        for byte in range(8, 32):
+        for byte in range(7, 31):
             cell_voltages.append(raw[B220104][byte] / 50.0)
 
         data.update({
