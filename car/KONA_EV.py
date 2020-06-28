@@ -2,6 +2,9 @@ from .car import *
 
 B220100 = bytes.fromhex('220100')
 B220101 = bytes.fromhex('220101')
+B220102 = bytes.fromhex('220102')
+B220103 = bytes.fromhex('220103')
+B220104 = bytes.fromhex('220104')
 B220105 = bytes.fromhex('220105')
 B22b002 = bytes.fromhex('22b002')
 
@@ -15,7 +18,7 @@ class KONA_EV(Car):
         now = time()
         raw = {}
 
-        for cmd in [B220101, B220105]:
+        for cmd in [B220101, B220102, B220103, B220104, B220105]:
             raw[cmd] = self.dongle.sendCommandEx(cmd, canrx=0x7ec, cantx=0x7e4)
 
         try:
@@ -29,6 +32,20 @@ class KONA_EV(Car):
         charging_bits = raw[B220101][53]
         dc_battery_current = ifbs(raw[B220101][13:15]) / 10.0
         dc_battery_voltage = ifbu(raw[B220101][15:17]) / 10.0
+
+        cell_temps = [
+            ifbs(raw[B220101][19:20]),
+            ifbs(raw[B220101][20:21]),
+            ifbs(raw[B220101][21:22]),
+            ifbs(raw[B220101][22:23])]
+
+        cell_voltages = []
+        for cmd in [B220102, B220103]:
+            for byte in range(7, 39):
+                cell_voltages.append(raw[cmd][byte] / 50.0)
+
+        for byte in range(7, 31):
+            cell_voltages.append(raw[B220104][byte] / 50.0)
 
         data.update({
             # Base:
@@ -51,6 +68,14 @@ class KONA_EV(Car):
             #'externalTemperature':      (raw[B220100][0x7ce][1][3] - 80) / 2.0,
             'odo':                      ffbu(raw[B22b002][9:12]) if B22b002 in raw else None,
             })
+
+        for i, temp in enumerate(cell_temps):
+            key = "cellTemp{:02d}".format(i+1)
+            data[key] = float(temp)
+
+        for i, cvolt in enumerate(cell_voltages):
+            key = "cellVoltage{:02d}".format(i+1)
+            data[key] = float(cvolt)
 
     def getBaseData(self):
         return {

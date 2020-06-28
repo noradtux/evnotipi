@@ -25,7 +25,7 @@ else:
 
 Influx = influxdb.InfluxDBClient(C['influxdb']['host'], C['influxdb']['port'],
         C['influxdb']['user'], C['influxdb']['pass'], C['influxdb']['dbname'],
-        retries=1, timeout=1, gzip=True)
+        ssl=False, gzip=True, retries=2, timeout=10)
 
 ##############################################################################
 
@@ -101,9 +101,9 @@ if __name__ == "__main__":
         data = getData(WEB, s)
         data_queue.append({
             'measurement': 'mobile_net',
+            'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
             'fields': data,
             'time': pyrfc3339.generate(datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
-            'tags': {},
             })
         try:
             Influx.write_points(data_queue)
@@ -111,7 +111,6 @@ if __name__ == "__main__":
         except Exception as e:
             print("Exception", e)
         delay = 10 - (time.time()-now)
-        if delay > 0:
-            time.sleep(delay)
+        time.sleep(max(0, delay))
 
 #########################

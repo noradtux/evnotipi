@@ -70,7 +70,7 @@ class InfluxTelemetry:
             try:
                 influx = influxdb.InfluxDBClient(self._config['host'], self._config['port'],
                                                  self._config['user'], self._config['pass'],
-                                                 self._config['dbname'], retries=1, timeout=5,
+                                                 self._config['dbname'], retries=1, timeout=30,
                                                  ssl=self._config['ssl'] if 'ssl' in self._config else False,
                                                  verify_ssl=True, gzip=True)
 
@@ -83,6 +83,7 @@ class InfluxTelemetry:
                 influx = None
                 sleep(3)
 
+        send_queue = []
         while self._running:
             now = time()
             did_transfer = False
@@ -93,17 +94,20 @@ class InfluxTelemetry:
                 else:
                     self._log.debug("Transmit...")
 
-                    try:
-                        influx.write_points(self.data_queue)
-                        self.data_queue.clear()
-                        did_transfer = True         # sleep outside of the lock
-                    except influxdb.exceptions.InfluxDBClientError as e:
-                        self._log.error("InfluxDBClientError qlen(%i): code(%i) content(%s)",
-                                        len(self.data_queue), e.code, e.content)
-                        if e.code == 400:
-                            self.data_queue.clear()
-                    except Exception as e:
-                        self._log.error("InfluxTelemetry len(%i): %s", len(self.data_queue), e)
+                    send_queue += self.data_queue
+                    self.data_queue.clear()
+
+            try:
+                influx.write_points(send_queue)
+                send_queue.clear()
+                did_transfer = True         # sleep outside of the lock
+            except influxdb.exceptions.InfluxDBClientError as e:
+                self._log.error("InfluxDBClientError qlen(%i): code(%i) content(%s)",
+                                len(send_queue), e.code, e.content)
+                if e.code == 400:
+                    send_queue.clear()
+            except Exception as e:
+                self._log.error("InfluxTelemetry len(%i): %s", len(send_queue), e)
 
             # Prime next loop iteration
             if self._running and did_transfer:
