@@ -24,8 +24,10 @@ else:
     raise Exception('No config found')
 
 Influx = influxdb.InfluxDBClient(C['influxdb']['host'], C['influxdb']['port'],
-        C['influxdb']['user'], C['influxdb']['pass'], C['influxdb']['dbname'],
-        retries=1, timeout=5, ssl=C['influxdb']['ssl'] if 'ssl' in C['influxdb'] else False, verify_ssl=True, gzip=True)
+                                 C['influxdb']['user'], C['influxdb']['pass'],
+                                 C['influxdb']['dbname'], retries=1, timeout=10,
+                                 ssl=C['influxdb'].get('ssl', False),
+                                 verify_ssl=True, gzip=True)
 
 ##############################################################################
 
@@ -38,14 +40,15 @@ if __name__ == "__main__":
         if line[:6] == b'^RSSI:':
             now = time.time()
             data = {
-                    'Strength': int(line[6:])
-                    }
+                'Strength': int(line[6:])
+                }
             now = time.time()
             data_queue.append({
                 'measurement': 'mobile_net',
+                'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
                 'fields': data,
-                'time': pyrfc3339.generate(datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
-                'tags': {},
+                'time': pyrfc3339.generate(
+                    datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
                 })
             if now - last_transmit > 10:
                 last_transmit = now

@@ -24,8 +24,10 @@ else:
     raise Exception('No config found')
 
 Influx = influxdb.InfluxDBClient(C['influxdb']['host'], C['influxdb']['port'],
-        C['influxdb']['user'], C['influxdb']['pass'], C['influxdb']['dbname'],
-        ssl=False, gzip=True, retries=2, timeout=10)
+                                 C['influxdb']['user'], C['influxdb']['pass'],
+                                 C['influxdb']['dbname'], retries=1, timeout=10,
+                                 ssl=C['influxdb'].get('ssl', False),
+                                 verify_ssl=True, gzip=True)
 
 ##############################################################################
 
@@ -65,10 +67,10 @@ def getData(baseurl, session):
     TotalDownload = xml.findall("./TotalDownload")[0].text
 
     return {
-            'Strength': int(SignalStrength),
-            'Upload': int(TotalUpload),
-            'Download': int(TotalDownload)
-            }
+        'Strength': int(SignalStrength),
+        'Upload': int(TotalUpload),
+        'Download': int(TotalDownload)
+        }
 
 
 def grep_csrf(html):
@@ -81,7 +83,7 @@ def login_data(username, password, csrf_token):
     def encrypt(text):
         m = hashlib.sha256()
         m.update(bytes(text, 'utf-8'))
-        return str(base64.b64encode(bytes(m.hexdigest(),'utf-8')))
+        return str(base64.b64encode(bytes(m.hexdigest(), 'utf-8')))
 
     password_hash = encrypt(username + encrypt(password) + csrf_token)
 

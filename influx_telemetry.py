@@ -50,7 +50,6 @@ class InfluxTelemetry:
                 }
             fields = {k:v if k in INT_FIELD_LIST else float(v)
                       for k, v in data.items() if v is not None}
-            fields['submit_queue_len'] = len(self.data_queue)
 
             if 'gps_device' in data:
                 tags['gps_device'] = data['gps_device']
@@ -71,7 +70,7 @@ class InfluxTelemetry:
                 influx = influxdb.InfluxDBClient(self._config['host'], self._config['port'],
                                                  self._config['user'], self._config['pass'],
                                                  self._config['dbname'], retries=1, timeout=30,
-                                                 ssl=self._config['ssl'] if 'ssl' in self._config else False,
+                                                 ssl=self._config.get('ssl', False),
                                                  verify_ssl=True, gzip=True)
 
             except influxdb.exceptions.InfluxDBClientError as e:
