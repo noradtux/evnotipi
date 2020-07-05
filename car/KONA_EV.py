@@ -38,23 +38,20 @@ Fields = {
              },
     B220102: {'canrx': 0x7ec, 'cantx': 0x7e4,
               'fields': (
-                  {'format': '6x'}, # 7 bytes padding
+                  {'format': '7x'}, # 7 bytes padding
                   {'name': 'cellVoltage{:02d}', 'idx': 1, 'cnt': 32, 'format': 'B', 'scale': .02},
-                  {'format': 'x'}, # one byte padding
                   )
              },
     B220103: {'canrx': 0x7ec, 'cantx': 0x7e4,
               'fields': (
-                  {'format': '6x'}, # 7 bytes padding
+                  {'format': '7x'}, # 7 bytes padding
                   {'name': 'cellVoltage{:02d}', 'idx': 33, 'cnt': 32, 'format': 'B', 'scale': .02},
-                  {'format': 'x'}, # one byte padding
                   )
              },
     B220104: {'canrx': 0x7ec, 'cantx': 0x7e4,
               'fields': (
-                  {'format': '6x'}, # 7 bytes padding
+                  {'format': '7x'}, # 7 bytes padding
                   {'name': 'cellVoltage{:02d}', 'idx': 65, 'cnt': 32, 'format': 'B', 'scale': .02},
-                  {'format': 'x'}, # one byte padding
                   )
              },
     B220105: {'canrx': 0x7ec, 'cantx': 0x7e4,
