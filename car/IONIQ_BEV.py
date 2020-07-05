@@ -1,7 +1,5 @@
 """ Decoder for the Hyundai Ioniq EV 28kWh """
 
-from struct import unpack
-from dongle.dongle import NoData
 from .car import Car
 from .isotp_decoder import IsoTpDecoder
 
@@ -36,7 +34,8 @@ Fields = {
                 {'name': 'cumulativeDischargeCurrent', 'format': 'L', 'scale': .1},
                 {'name': 'cumulativeEnergyCharged', 'format': 'L', 'scale': .01},
                 {'name': 'cumulativeEnergyDischarged', 'format': 'L', 'scale': .01},
-                {'format': '7x'},
+                {'name': 'operatingTime', 'format': 'L'}, # seconds
+                {'format': '3x'},
                 {'name': 'driveMotorSpeed', 'format': 'h', 'offset': 0, 'scale': 1},
                 {'format': '4x'},
                 # Len: 56
