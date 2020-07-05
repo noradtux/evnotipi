@@ -6,6 +6,12 @@ B2103 = bytes.fromhex('2103')
 B2104 = bytes.fromhex('2104')
 B2105 = bytes.fromhex('2105')
 B2180 = bytes.fromhex('2180')
+B220100 = bytes.fromhex('220100')
+B220101 = bytes.fromhex('220101')
+B220102 = bytes.fromhex('220102')
+B220103 = bytes.fromhex('220103')
+B220104 = bytes.fromhex('220104')
+B220105 = bytes.fromhex('220105')
 B22b002 = bytes.fromhex('22b002')
 
 data = {
@@ -57,7 +63,51 @@ data = {
                                     0000AD00B56C00
                                     00000000000000""")[:0x00f],
             }
-        }
+        },
+    'IONIQ_FL_EV': {
+        0x7e4: {
+            B220101: bytes.fromhex("""620101FFFDE7
+                                    FFC10000000003
+                                    00060E491F1E1E
+                                    1D1D1F1F001BD0
+                                    09CF2500009400
+                                    05516200047810
+                                    0001C924000168
+                                    A0005D9CB00D01
+                                    6D0000000003E8""")[:0x03e],
+            B220102: bytes.fromhex("""620102FFFFFF
+                                    FFCFCFCFCFCFCF
+                                    CFCFD0CFCFD0CF
+                                    CFCFCFCFCFCFCF
+                                    CFCFCFCFCFCFCF
+                                    CFCFCFCFCFAAAA""")[:0x027],
+            B220103: bytes.fromhex("""620103FFFFFF
+                                    FFCFCFCFCFCFCF
+                                    CFCFCFCFCFCFCF
+                                    CFCFCFCFCFCFCF
+                                    CFCFCFCFCFCFCF
+                                    CFCFCFCFCFAAAA""")[:0x027],
+            B220104: bytes.fromhex("""620104FFFFFF
+                                    00CFCFCFCFCFCF
+                                    CFCFCFCFCFCFCF
+                                    CFCFCFCFCFCFCF
+                                    CFCFCFCF010000
+                                    0000000402AAAA""")[:0x027],
+            B220105: bytes.fromhex("""620105003F46
+                                    10000000000000
+                                    0000001B940010
+                                    EC2C2400015019
+                                    C703E80903E823
+                                    C7001002090525
+                                    186D010000AAAA""")[:0x02e],
+            },
+        0x7c6: {
+            B22b002: bytes.fromhex("""62B002E00000
+                                    00FFB300862900
+                                    00000000000000""")[:0x00f],
+            },
+        },
+
     }
 
 class FakeDongle:
