@@ -1,24 +1,33 @@
+""" The car polling loop and associaterd infrastructure """
+
 from threading import Thread
 from time import time, sleep
 import logging
 from dongle.dongle import NoData, CanError
 
 def ifbu(in_bytes):
+    """ convert bytes to unsigned integer """
     return int.from_bytes(in_bytes, byteorder='big', signed=False)
 
 def ifbs(in_bytes):
+    """ convert bytes to signed integer """
     return int.from_bytes(in_bytes, byteorder='big', signed=True)
 
 def ffbu(in_bytes):
+    """ convert bytes to float """
     return float(int.from_bytes(in_bytes, byteorder='big', signed=False))
 
 def ffbs(in_bytes):
+    """ convert bytes to float """
     return float(int.from_bytes(in_bytes, byteorder='big', signed=True))
 
-class DataError(Exception):
-    pass
+class DataError(ValueError):
+    """ Something is wrong with data """
 
 class Car:
+    """ Abstract class implementing the car polling loop.
+        Subclasses need to implement readDongle """
+
     def __init__(self, config, dongle, watchdog, gps):
         self.log = logging.getLogger("EVNotiPi/Car")
         self.config = config
@@ -33,18 +42,22 @@ class Car:
         self.data_callbacks = []
 
     def start(self):
+        """ start the poller thread """
         self.running = True
         self.thread = Thread(target=self.pollData, name="EVNotiPi/Car")
         self.thread.start()
 
     def stop(self):
+        """ stop the poller thread """
         self.running = False
         self.thread.join()
 
     def readDongle(self, data):
+        """ Get data from CAN bus and put it into "data" dictionary """
         raise NotImplementedError()
 
     def pollData(self):
+        """ The polling thread """
         while self.running:
             now = time()
 
@@ -144,14 +157,14 @@ class Car:
                     sleep(1)
 
     def registerData(self, callback):
+        """ Register a function to be called when new data is available """
         if callback not in self.data_callbacks:
             self.data_callbacks.append(callback)
 
     def unregisterData(self, callback):
+        """ Unregister a function to be called when new data is available """
         self.data_callbacks.remove(callback)
 
     def checkWatchdog(self):
+        """ Check if polling thread is still alive """
         return self.thread.is_alive()
-
-    def getBaseData(self):
-        raise NotImplementedError()
