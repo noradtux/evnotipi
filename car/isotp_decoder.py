@@ -1,6 +1,6 @@
 """ Generic decoder for ISO-TP based cars """
 import logging
-from struct import unpack, calcsize
+import struct
 from dongle.dongle import NoData
 
 class IsoTpDecoder:
@@ -38,9 +38,7 @@ class IsoTpDecoder:
             for cmd, cdata in self._fields.items():
                 raw = self._dongle.sendCommandEx(cmd, canrx=cdata['canrx'],
                                                  cantx=cdata['cantx'])
-                #self._log.debug("fmt(%s) %i %i raw(%s)", cdata['cmd_format'],
-                #                calcsize(cdata['cmd_format']), len(raw), raw.hex())
-                struct = unpack(cdata['cmd_format'], raw)
+                raw_fields = struct.unpack(cdata['cmd_format'], raw)
 
                 for field in cdata['fields']:
                     if 'name' in field:
@@ -58,14 +56,19 @@ class IsoTpDecoder:
                                 iname = name
 
                             if 'lambda' in field:
-                                value = field['lambda'](struct[fmt_idx+idx:fmt_idx+idx+fmt_len])
+                                value = field['lambda'](raw_fields[fmt_idx+idx:fmt_idx+idx+fmt_len])
                             else:
-                                value = struct[fmt_idx + idx]
+                                value = raw_fields[fmt_idx + idx]
 
                             data[iname] = value * field['scale'] + field['offset']
 
         except NoData:
             if not cdata.get('optional', False):
                 raise
+        except struct.error as e:
+            self._log.error("cmd(%s) fmt(%s):%d raw(%s):%d", cmd.hex(),
+                            cdata['cmd_format'], struct.calcsize(cdata['cmd_format']),
+                            raw.hex(), len(raw))
+            raise
 
         return data
