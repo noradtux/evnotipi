@@ -1,23 +1,71 @@
-import logging
-from .dongle import *
+""" Dongle for testing """
+
+B2101 = bytes.fromhex('2101')
+B2102 = bytes.fromhex('2102')
+B2103 = bytes.fromhex('2103')
+B2104 = bytes.fromhex('2104')
+B2105 = bytes.fromhex('2105')
+B2180 = bytes.fromhex('2180')
+B22b002 = bytes.fromhex('22b002')
 
 data = {
-        b'!\x01': {2028: [b'a\x01\xff\xff\xff\xff', b'\xa8&H&H\x03\x00', b'\x06\x0e\xf6\x18\x17\x17\x17', b'\x17\x17\x17\x00\x17\xc7\x15', b'\xc7\n\x00\x00\x8c\x00\x02', b'{\xbf\x00\x02y\x8c\x00', b'\x00\xe9\xa1\x00\x00\xe1O', b'\x00m\xd4\xae\r\x01~', b'\x00\x00\x00\x00\x03\xe8\x00']},
-        b'!\x02': {2028: [b'a\x02\xff\xff\xff\xff', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\x00\x00\x00']},
-        b'!\x03': {2028: [b'a\x03\xff\xff\xff\xff', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\x00\x00\x00']},
-        b'!\x04': {2028: [b'a\x04\xff\xff\xff\xff', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\xc7\xc7\xc7', b'\xc7\xc7\xc7\xc7\x00\x00\x00']},
-        b'!\x05': {2028: [b'a\x05\xff\xff\xff\xff', b'\x00\x00\x00\x00\x00\x17\x17', b'\x18\x17\x17\x17\x17&H', b'&H\x00\x01P\x16\x17', b'\x03\xe8\x14\x03\xe8\n\xb0', b'\x001\x00\x00\x00\x00\x00', b'\x00\x00\x00\x00\x00\x00\x00']},
-        b'!\x80': {2030: [b'a\x80\xc3f\xc0\x00', b'\x01\x13\x00\x00\x00\x00\x00', b"'}\x00A>\x00\x00", b'\x81\x13\x00\x91\x91\x00\x00']},
-	}
+    'IONIQ_BEV': {
+        0x7e4: {
+            B2101:   bytes.fromhex("""6101FFFFFFFF
+                                21A5264326480300
+                                22070EE912121212
+                                231212120012C615
+                                24C60A0000910003
+                                254F0E00034C0400
+                                2601374300012C20
+                                27009B02DE0D017D
+                                280000000003E800""")[:0x03d],
+            B2102:   bytes.fromhex("""6102FFFFFFFF
+                                21C6C6C6C6C6C6C6
+                                22C6C6C6C6C6C6C6
+                                23C6C6C6C6C6C6C6
+                                24C6C6C6C6C6C6C6
+                                25C6C6C6C6000000""")[:0x026],
+            B2103:   bytes.fromhex("""6103FFFFFFFF
+                                21C6C6C6C6C6C6C6
+                                22C6C6C6C6C6C6C6
+                                23C6C6C6C6C6C6C6
+                                24C6C6C6C6C6C6C6
+                                25C6C6C6C6000000""")[:0x026],
+            B2104:   bytes.fromhex("""6104FFFFFFFF
+                                21C6C6C6C6C6C6C6
+                                22C6C6C6C6C6C6C6
+                                23C6C6C6C6C6C6C6
+                                24C6C6C6C6C6C6C6
+                                25C6C6C6C6000000""")[:0x026],
+            B2105:   bytes.fromhex("""6105FFFFFFFF
+                                2100000000001212
+                                2212121212122643
+                                2326480001501112
+                                2403E81003E80AAD
+                                2500310000000000
+                                2600000000000000""")[:0x02d],
+            },
+        0x7e6: {
+            B2180:   bytes.fromhex("""6180C366C000
+                                2101130000000000
+                                222273003B3A0000
+                                237A130096960000""")[:0x019],
+            },
+        0x7c6: {
+            B22b002: bytes.fromhex("""62B002E00000
+                                210000AD00B56C00
+                                2200000000000000""")[:0x00f],
+            }
+        }
+    }
 
 class FakeDongle:
     def __init__(self, config):
-        self.config = config
+        self._data = data[config['car_type']]
 
-    def sendCommand(self, cmd):
-        return data[cmd]
+    def sendCommandEx(self, cmd, cantx, canrx):
+        return self._data[cantx][cmd]
 
-    def setProtocol(self, protocol): pass
-    def setCANRxFilter(self, rxfilter): pass
-    def setCANRxMask(self, rxmask): pass
-    def setCanID(self, can_id): pass
+    def setProtocol(self, bla):
+        pass
