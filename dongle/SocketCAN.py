@@ -29,7 +29,7 @@ CAN_ISOTP_LL_OPTS   = 5
 
 def canStr(msg):
     can_id, length, data = struct.unpack(CANFMT, msg)
-    return "{:x}#{} ({})".format(can_id & CAN_EFF_MASK, data.hex(), length)
+    return "%x#%s (%d)" % (can_id & CAN_EFF_MASK, data.hex(), length)
 
 class CanSocket(socket.socket):
     def setCanID(self, can_id):
@@ -147,9 +147,9 @@ class SocketCAN:
                 if self.log.isEnabledFor(logging.DEBUG):
                     self.log.debug(data.hex())
         except socket.timeout as e:
-            raise NoData("Command timed out {}: {}".format(cmd.hex(), e))
+            raise NoData("Command timed out %s: %s" % (cmd.hex(), str(e)))
         except OSError as e:
-            raise CanError("Failed Command {}: {}".format(cmd.hex(), e))
+            raise CanError("Failed Command %s: %s" % (cmd.hex(), str(e)))
 
         if not data or len(data) == 0:
             raise NoData('NO DATA')
@@ -230,8 +230,7 @@ class SocketCAN:
 
                         idx = msg_data[0] & 0x0f
                         if (last_idx + 1) % 0x10 != idx:
-                            raise CanError("Bad frame order: last_idx({}) idx({})"
-                                           .format(last_idx, idx))
+                            raise CanError("Bad frame order: last_idx(%d) idx(%d)" % (last_idx, idx))
 
                         frame_len = min(7, data_len - len(data))
                         data.extend(msg_data[1:frame_len+1])
@@ -242,20 +241,19 @@ class SocketCAN:
                             break
 
                     elif frame_type == 0x30:
-                        raise CanError("Unexpected flow control: {}".format(canStr(msg)))
+                        raise CanError("Unexpected flow control: %s" % (canStr(msg)))
                     else:
-                        raise CanError("Unexpected message: {}".format(canStr(msg)))
+                        raise CanError("Unexpected message: %s" % (canStr(msg)))
 
         except socket.timeout as e:
-            raise NoData("Command timed out {}: {}".format(cmd.hex(), e))
+            raise NoData("Command timed out %s: %s" % (cmd.hex(), str(e)))
         except OSError as e:
-            raise CanError("Failed Command {}: {}".format(cmd.hex(), e))
+            raise CanError("Failed Command %s: %s" % (cmd.hex(), str(e)))
 
         if not data or data_len == 0:
             raise NoData('NO DATA')
         if data_len != len(data):
-            raise CanError("Data length mismatch {}: {} vs {} {}"
-                           .format(cmd.hex(), data_len, len(data), data.hex()))
+            raise CanError("Data length mismatch %s: %d vs %d %s" % (cmd.hex(), data_len, len(data), data.hex()))
 
         return data
 
@@ -280,9 +278,9 @@ class SocketCAN:
             return data
 
         except socket.timeout as e:
-            raise NoData("Recv timed out: {}".format(e))
+            raise NoData("Recv timed out: %s" % (e))
         except OSError as e:
-            raise CanError("CAN read error: {}".format(e))
+            raise CanError("CAN read error: %s" % (e))
 
     def setRawMask(self, mask):
         self.can_raw_sock.setCANRxMask(mask)

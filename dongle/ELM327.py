@@ -66,5 +66,4 @@ class ELM327(ATBASE):
 
     def calibrateObdVoltage(self, realVoltage):
         # CV dddd Calibrate the Voltage to dd.dd volts
-        self.sendAtCmd('ATCV{:04.0f}'.format(realVoltage))
-
+        self.sendAtCmd('ATCV%04d' % (realVoltage))

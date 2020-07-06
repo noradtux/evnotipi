@@ -84,19 +84,19 @@ class ZOE_ZE50(Car):
 
         idx = 1
         for i in range(0x21, 0x84):
-            c = bytes.fromhex("2290{:02x}".format(i))
+            c = bytes.fromhex("2290%02x" % (i))
             Fields[c] = {'canrx': 0x18daf1db, 'cantx': 0x18dadbf1,
                     'fields': ({'format': '3x'},
-                        {'name': 'cellVolt{:02d}'.format(idx), 'format': 'B', 'scale': .001})
+                        {'name': 'cellVolt%02d' % (idx), 'format': 'B', 'scale': .001})
                     }
             idx += 1
 
         idx = 1
         for i in range(0x31, 0x3d):
-            c = bytes.fromhex("2291{:02x}".format(i))
+            c = bytes.fromhex("2291%02x" % (i))
             Fields[c] = {'canrx': 0x18daf1db, 'cantx': 0x18dadbf1,
                     'fields': ({'format': '3x'},
-                        {'name': 'cellTemp{:02d}'.format(idx), 'format': 'B', 'scale': .1, 'offset': -60})
+                        {'name': 'cellTemp%02d' % (idx), 'format': 'B', 'scale': .1, 'offset': -60})
                     }
             idx += 1
 
