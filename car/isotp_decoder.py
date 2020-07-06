@@ -16,21 +16,36 @@ class IsoTpDecoder:
         """ Preprocess field structure, creating format strings for unpack etc.,"""
         for cdata in self._fields.values():
             fmt = ">"
-            idx = 0
+            fmt_idx = 0
+
             cdata['computed'] = cdata.get('computed', False)
+
             if cdata['computed'] == False:
+                new_fields = []
                 for field in cdata['fields']:
                     fmt += str(field.get('cnt', '')) + field['format']
-                    field['cnt'] = field.get('cnt', 1)
                     field['scale'] = field.get('scale', 1)
                     field['offset'] = field.get('offset', 0)
+
                     if 'name' in field:
-                        field['fmt_idx'] = idx
-                        field['fmt_len'] = len(field['format'] * field['cnt'])
-                        idx += field['fmt_len']
+                        start = field.get('idx', 0)
+                        cnt = field.get('cnt', 1)
+
+                        for field_idx in range(start, start + cnt):
+                            new_field = field.copy()
+                            if cnt > 1:
+                                new_field['name'] %= field_idx
+
+                            new_field['fmt_idx'] = fmt_idx
+                            new_field['fmt_len'] = len(field['format'])
+                            fmt_idx += new_field['fmt_len']
+
+
+                            new_fields.append(new_field)
 
                 self._log.debug("fmt(%s)", fmt)
                 cdata['cmd_format'] = fmt
+                cdata['fields'] = new_fields
 
     def get_data(self):
         """ Takes a structure which describes adresses,
@@ -49,27 +64,16 @@ class IsoTpDecoder:
                     raw_fields = struct.unpack(cdata['cmd_format'], raw)
 
                     for field in cdata['fields']:
-                        if 'name' in field:
-                            name = field['name']
-                            fmt_idx = field['fmt_idx']
-                            fmt_len = field['fmt_len']
-                            field_cnt = field['cnt']
-                            if field_cnt > 1:
-                                base_idx = field['idx']
+                        name = field['name']
+                        fmt_idx = field['fmt_idx']
+                        fmt_len = field['fmt_len']
 
-                            for idx in range(0, field_cnt):
-                                if field_cnt > 1:
-                                    iname = name % (base_idx + idx)
-                                else:
-                                    iname = name
+                        if 'lambda' in field:
+                            value = field['lambda'](raw_fields[fmt_idx:fmt_idx+fmt_len])
+                        else:
+                            value = raw_fields[fmt_idx]
 
-                                #print(iname)
-                                if 'lambda' in field:
-                                    value = field['lambda'](raw_fields[fmt_idx+idx:fmt_idx+idx+fmt_len])
-                                else:
-                                    value = raw_fields[fmt_idx + idx]
-
-                                data[iname] = value * field['scale'] + field['offset']
+                        data[name] = value * field['scale'] + field['offset']
 
         except NoData:
             if not cdata.get('optional', False):
