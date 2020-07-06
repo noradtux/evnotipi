@@ -37,6 +37,7 @@ if False:
     sortby = SortKey.CUMULATIVE
     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
     ps.print_stats()
+    ps.print_callers()
     print(s.getvalue())
 else:
     car.readDongle(data)
