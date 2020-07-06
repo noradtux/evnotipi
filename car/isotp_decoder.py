@@ -17,18 +17,20 @@ class IsoTpDecoder:
         for cdata in self._fields.values():
             fmt = ">"
             idx = 0
-            for field in cdata['fields']:
-                fmt += str(field.get('cnt', '')) + field['format']
-                field['cnt'] = field.get('cnt', 1)
-                field['scale'] = field.get('scale', 1)
-                field['offset'] = field.get('offset', 0)
-                if 'name' in field:
-                    field['fmt_idx'] = idx
-                    field['fmt_len'] = len(field['format'] * field['cnt'])
-                    idx += field['fmt_len']
+            cdata['computed'] = cdata.get('computed', False)
+            if cdata['computed'] == False:
+                for field in cdata['fields']:
+                    fmt += str(field.get('cnt', '')) + field['format']
+                    field['cnt'] = field.get('cnt', 1)
+                    field['scale'] = field.get('scale', 1)
+                    field['offset'] = field.get('offset', 0)
+                    if 'name' in field:
+                        field['fmt_idx'] = idx
+                        field['fmt_len'] = len(field['format'] * field['cnt'])
+                        idx += field['fmt_len']
 
-            self._log.debug("fmt(%s)", fmt)
-            cdata['cmd_format'] = fmt
+                self._log.debug("fmt(%s)", fmt)
+                cdata['cmd_format'] = fmt
 
     def get_data(self):
         """ Takes a structure which describes adresses,
@@ -36,31 +38,37 @@ class IsoTpDecoder:
         data = {}
         try:
             for cmd, cdata in self._fields.items():
-                raw = self._dongle.sendCommandEx(cmd, canrx=cdata['canrx'],
-                                                 cantx=cdata['cantx'])
-                raw_fields = struct.unpack(cdata['cmd_format'], raw)
-
-                for field in cdata['fields']:
-                    if 'name' in field:
+                if cdata['computed']:
+                    for field in cdata['fields']:
                         name = field['name']
-                        fmt_idx = field['fmt_idx']
-                        fmt_len = field['fmt_len']
-                        field_cnt = field['cnt']
-                        if field_cnt > 1:
-                            base_idx = field['idx']
+                        func = field['lambda']
+                        data[name] = func(data)
+                else:
+                    raw = self._dongle.sendCommandEx(cmd, canrx=cdata['canrx'],
+                                                     cantx=cdata['cantx'])
+                    raw_fields = struct.unpack(cdata['cmd_format'], raw)
 
-                        for idx in range(0, field_cnt):
+                    for field in cdata['fields']:
+                        if 'name' in field:
+                            name = field['name']
+                            fmt_idx = field['fmt_idx']
+                            fmt_len = field['fmt_len']
+                            field_cnt = field['cnt']
                             if field_cnt > 1:
-                                iname = name.format(base_idx + idx)
-                            else:
-                                iname = name
+                                base_idx = field['idx']
 
-                            if 'lambda' in field:
-                                value = field['lambda'](raw_fields[fmt_idx+idx:fmt_idx+idx+fmt_len])
-                            else:
-                                value = raw_fields[fmt_idx + idx]
+                            for idx in range(0, field_cnt):
+                                if field_cnt > 1:
+                                    iname = name.format(base_idx + idx)
+                                else:
+                                    iname = name
 
-                            data[iname] = value * field['scale'] + field['offset']
+                                if 'lambda' in field:
+                                    value = field['lambda'](raw_fields[fmt_idx+idx:fmt_idx+idx+fmt_len])
+                                else:
+                                    value = raw_fields[fmt_idx + idx]
+
+                                data[iname] = value * field['scale'] + field['offset']
 
         except NoData:
             if not cdata.get('optional', False):
