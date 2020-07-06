@@ -90,6 +90,14 @@ Fields = {
                   # Len: 15
                   )
               },
+    'CALC': {'computed': True,
+             'fields': (
+                 {'name': 'dcBatteryPower', 'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
+                 {'name': 'charging', 'lambda': lambda d: int(d['charging_bits'] & 0x80)},
+                 {'name': 'normalChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x20)},
+                 {'name': 'rapidChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x40)},
+                 )
+             },
     }
 
 class IONIQ_BEV(Car):
@@ -107,13 +115,6 @@ class IONIQ_BEV(Car):
 
         data.update(self.getBaseData())
         data.update(self._isotp.get_data())
-        charging_bits = data['charging_bits']
-        data.update({
-            'dcBatteryPower': data['dcBatteryCurrent'] * data['dcBatteryVoltage'] / 1000.0,
-            'charging':                 1 if charging_bits & 0x80 else 0,
-            'normalChargePort':         1 if charging_bits & 0x20 else 0,
-            'rapidChargePort':          1 if charging_bits & 0x40 else 0,
-            })
 
         #'batteryAvgTemperature':    sum(cell_temps) / len(cell_temps),
 

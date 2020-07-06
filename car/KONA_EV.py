@@ -70,7 +70,19 @@ Fields = {
                   {'format': '3x'},
                   )
              },
-    }
+    'CALC': {'computed': True,
+             'fields': (
+                 {'name': 'dcBatteryPower',
+                  'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
+                 {'name': 'charging',
+                  'lambda': lambda d: int(d['charging_bits2'] & 0xc == 0x8)},
+                 {'name': 'normalChargePort',
+                  'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] == 3)},
+                 {'name': 'rapidChargePort',
+                  'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] != 3)},
+                 )
+             },
+     }
 
 class KONA_EV(Car):
     """ Decoder Class for Kona """
@@ -81,17 +93,8 @@ class KONA_EV(Car):
         self._isotp = IsoTpDecoder(self.dongle, Fields)
 
     def readDongle(self, data):
-
         data.update(self.getBaseData())
         data.update(self._isotp.get_data())
-        charging_bits1 = data['charging_bits1']
-        charging_bits2 = data['charging_bits2']
-        data.update({
-            'dcBatteryPower': data['dcBatteryCurrent'] * data['dcBatteryVoltage'] / 1000.0,
-            'charging':                 1 if (charging_bits2 & 0xc) == 0x8 else 0,
-            'normalChargePort':         1 if (charging_bits2 & 0x80) and charging_bits1 == 3 else 0,
-            'rapidChargePort':          1 if (charging_bits2 & 0x80) and charging_bits1 != 3 else 0,
-            })
 
     def getBaseData(self):
         return {
