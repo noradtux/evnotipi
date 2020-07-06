@@ -23,7 +23,7 @@ Fields = {
                 {'name': 'dcBatteryVoltage', 'format': 'H', 'scale': .1},
                 {'name': 'batteryMaxTemperature', 'format': 'b'},
                 {'name': 'batteryMinTemperature', 'format': 'b'},
-                {'name': 'cellTemp{:02d}', 'idx': 1, 'cnt': 5, 'format': 'b'},
+                {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'format': 'b'},
                 {'format': 'x'},
                 {'name': 'batteryInletTemperature', 'format': 'b'},
                 {'format': '4x'},
@@ -44,28 +44,28 @@ Fields = {
     B2102: {'canrx': 0x7ec, 'cantx': 0x7e4,
             'fields': (
                 {'format': '6x'},
-                {'name': 'cellVoltage{:02d}', 'idx': 1, 'cnt': 32, 'format': 'B', 'scale': .02},
+                {'name': 'cellVoltage%02d', 'idx': 1, 'cnt': 32, 'format': 'B', 'scale': .02},
                 # Len: 38
                 )
             },
     B2103: {'canrx': 0x7ec, 'cantx': 0x7e4,
             'fields': (
                 {'format': '6x'},
-                {'name': 'cellVoltage{:02d}', 'idx': 33, 'cnt': 32, 'format': 'B', 'scale': .02},
+                {'name': 'cellVoltage%02d', 'idx': 33, 'cnt': 32, 'format': 'B', 'scale': .02},
                 # Len: 38
                 )
             },
     B2104: {'canrx': 0x7ec, 'cantx': 0x7e4,
             'fields': (
                 {'format': '6x'},
-                {'name': 'cellVoltage{:02d}', 'idx': 65, 'cnt': 32, 'format': 'B', 'scale': .02},
+                {'name': 'cellVoltage%02d', 'idx': 65, 'cnt': 32, 'format': 'B', 'scale': .02},
                 # Len: 38
                 )
             },
     B2105: {'canrx': 0x7ec, 'cantx': 0x7e4,
             'fields': (
                 {'format': '11x'},
-                {'name': 'cellTemp{:02d}', 'idx': 6, 'cnt': 7, 'format': 'b'},
+                {'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'format': 'b'},
                 {'format': '9x'},
                 {'name': 'soh', 'format': 'H', 'scale': .1},
                 {'format': '4x'},

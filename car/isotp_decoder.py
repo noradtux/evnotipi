@@ -59,10 +59,11 @@ class IsoTpDecoder:
 
                             for idx in range(0, field_cnt):
                                 if field_cnt > 1:
-                                    iname = name.format(base_idx + idx)
+                                    iname = name % (base_idx + idx)
                                 else:
                                     iname = name
 
+                                #print(iname)
                                 if 'lambda' in field:
                                     value = field['lambda'](raw_fields[fmt_idx+idx:fmt_idx+idx+fmt_len])
                                 else:
