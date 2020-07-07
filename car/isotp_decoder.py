@@ -18,20 +18,32 @@ class IsoTpDecoder:
             fmt = ">"
             fmt_idx = 0
 
+            """ make sure 'computed' is set so we don't need to check for it
+                in the decoder. Checking is slow. """
             cdata['computed'] = cdata.get('computed', False)
 
             if cdata['computed'] == False:
+                """ Build a new array instead of inserting into the existing one.
+                    Should be quicker. """
                 new_fields = []
                 for field in cdata['fields']:
+                    """ For patterned fields (i.e. cellVolts%02d) use multiplyer
+                        in format string. """
                     fmt += str(field.get('cnt', '')) + field['format']
                     field['scale'] = field.get('scale', 1)
                     field['offset'] = field.get('offset', 0)
 
                     if 'name' in field:
+                        """ Skip nameless fields. Those must be padding. """
                         start = field.get('idx', 0)
                         cnt = field.get('cnt', 1)
 
                         for field_idx in range(start, start + cnt):
+                            """ Expand patterned fields into simple fields to
+                                match the format string. Append new field to the
+                                array of new fields. We need to copy the existing
+                                field, else all field names will reference the same
+                                string """
                             new_field = field.copy()
                             if cnt > 1:
                                 new_field['name'] %= field_idx
@@ -54,11 +66,17 @@ class IsoTpDecoder:
         try:
             for cmd, cdata in self._fields.items():
                 if cdata['computed']:
+                    """ Fields of computed "commands" are filled by executing
+                        the fields lambda with the data dict as argument """
                     for field in cdata['fields']:
                         name = field['name']
                         func = field['lambda']
                         data[name] = func(data)
                 else:
+                    """ Send a command to the CAN bus and parse the resulting
+                        bytearray using unpack. The format for unpack was generated
+                        in the preprocessor. Extracted values are scaled, shifted
+                        and a lambda function is executed if provided """
                     raw = self._dongle.sendCommandEx(cmd, canrx=cdata['canrx'],
                                                      cantx=cdata['cantx'])
                     raw_fields = struct.unpack(cdata['cmd_format'], raw)
