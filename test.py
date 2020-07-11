@@ -9,7 +9,7 @@ import car
 import dongle
 import watchdog
 
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 pp = PrettyPrinter(indent=2)
 pp = pp.pprint
