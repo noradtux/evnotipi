@@ -11,78 +11,78 @@ B220104 = bytes.fromhex('220104')
 B220105 = bytes.fromhex('220105')
 B22b002 = bytes.fromhex('22b002')
 
-Fields = {
-    B220101: {'canrx': 0x7ec, 'cantx': 0x7e4,
-              'fields': (
-                  {'format': '7x'}, # 7 bytes padding
-                  {'name': 'SOC_BMS', 'format': 'B', 'scale': .5},
-                  {'format': '4x'}, # 4 bytes padding
-                  {'name': 'charging_bits1', 'format': 'B'},
-                  {'name': 'dcBatteryCurrent', 'format': 'h', 'scale': .1},
-                  {'name': 'dcBatteryVoltage', 'format': 'H', 'scale': .1},
-                  {'name': 'batteryMaxTemperature', 'format': 'b'},
-                  {'name': 'batteryMinTemperature', 'format': 'b'},
-                  {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 4, 'format': 'b'},
-                  {'format': '2x'}, # 2 bytes padding
-                  {'name': 'batteryInletTemperature', 'format': 'b'},
-                  {'format': '6x'}, # 6 bytes padding
-                  {'name': 'auxBatteryVoltage', 'format': 'B', 'scale': .1},
-                  {'name': 'cumulativeChargeCurrent', 'format': 'L', 'scale': .1},
-                  {'name': 'cumulativeDischargeCurrent', 'format': 'L', 'scale': .1},
-                  {'name': 'cumulativeEnergyCharged', 'format': 'L', 'scale': .1},
-                  {'name': 'cumulativeEnergyDischarged', 'format': 'L', 'scale': .1},
-                  {'name': 'operatingTime', 'format': 'L'}, # seconds
-                  {'name': 'charging_bits2', 'format': 'B'},
-                  {'format': '8x'}, # 8 bytes padding
-                  )
-             },
-    B220102: {'canrx': 0x7ec, 'cantx': 0x7e4,
-              'fields': (
-                  {'format': '7x'}, # 7 bytes padding
-                  {'name': 'cellVoltage%02d', 'idx': 1, 'cnt': 32, 'format': 'B', 'scale': .02},
-                  )
-             },
-    B220103: {'canrx': 0x7ec, 'cantx': 0x7e4,
-              'fields': (
-                  {'format': '7x'}, # 7 bytes padding
-                  {'name': 'cellVoltage%02d', 'idx': 33, 'cnt': 32, 'format': 'B', 'scale': .02},
-                  )
-             },
-    B220104: {'canrx': 0x7ec, 'cantx': 0x7e4,
-              'fields': (
-                  {'format': '7x'}, # 7 bytes padding
-                  {'name': 'cellVoltage%02d', 'idx': 65, 'cnt': 32, 'format': 'B', 'scale': .02},
-                  )
-             },
-    B220105: {'canrx': 0x7ec, 'cantx': 0x7e4,
-              'fields': (
-                  {'format': '28x'}, # 28 bytes padding
-                  {'name': 'soh', 'format': 'H', 'scale': .1},
-                  {'format': '4x'}, # 4 bytes padding
-                  {'name': 'SOC_DISPLAY', 'format': 'B', 'scale': .5},
-                  {'format': '11x'}, # 11 bytes padding
-                  )
-             },
-    B22b002: {'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
-              'fields': (
-                  {'format': '9x'},
-                  {'name': 'odo', 'format': 'BH', 'lambda': lambda o: o[0]<<16 | o[1]},
-                  {'format': '3x'},
-                  )
-             },
-    'CALC': {'computed': True,
-             'fields': (
-                 {'name': 'dcBatteryPower',
-                  'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
-                 {'name': 'charging',
-                  'lambda': lambda d: int(d['charging_bits2'] & 0xc == 0x8)},
-                 {'name': 'normalChargePort',
-                  'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] == 3)},
-                 {'name': 'rapidChargePort',
-                  'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] != 3)},
-                 )
-             },
-     }
+Fields = (
+    {'cmd': B220101, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 7},
+         {'name': 'SOC_BMS', 'width': 1, 'scale': .5},
+         {'padding': 4},
+         {'name': 'charging_bits1', 'width': 1},
+         {'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},
+         {'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
+         {'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
+         {'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
+         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 4, 'width': 1, 'signed': True},
+         {'padding': 2},
+         {'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
+         {'padding': 6},
+         {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
+         {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
+         {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
+         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},
+         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},
+         {'name': 'operatingTime', 'width': 4}, # seconds
+         {'name': 'charging_bits2', 'width': 1},
+         {'padding': 8},
+         )
+    },
+    {'cmd': B220102, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 7},
+         {'name': 'cellVoltage%02d', 'idx': 1, 'cnt': 32, 'width': 1, 'scale': .02},
+         )
+    },
+    {'cmd': B220103, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 7},
+         {'name': 'cellVoltage%02d', 'idx': 33, 'cnt': 32, 'width': 1, 'scale': .02},
+         )
+    },
+    {'cmd': B220104, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 7},
+         {'name': 'cellVoltage%02d', 'idx': 65, 'cnt': 32, 'width': 1, 'scale': .02},
+         )
+    },
+    {'cmd': B220105, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 28},
+         {'name': 'soh', 'width': 2, 'scale': .1},
+         {'padding': 4},
+         {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
+         {'padding': 11},
+         )
+    },
+    {'cmd': B22b002, 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
+     'fields': (
+         {'padding': 9},
+         {'name': 'odo', 'width': 3},
+         {'padding': 3},
+         )
+    },
+    {'computed': True,
+     'fields': (
+         {'name': 'dcBatteryPower',
+          'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
+         {'name': 'charging',
+          'lambda': lambda d: int(d['charging_bits2'] & 0xc == 0x8)},
+         {'name': 'normalChargePort',
+          'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] == 3)},
+         {'name': 'rapidChargePort',
+          'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] != 3)},
+         )
+    },
+    )
 
 class KONA_EV(Car):
     """ Decoder Class for Kona """
