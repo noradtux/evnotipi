@@ -7,7 +7,7 @@ from .dongle import *
 
 class ATBASE:
     def __init__(self, dongle):
-        self.log = logging.getLogger("EVNotiPi/{}".format(__name__))
+        self.log = logging.getLogger("EVNotiPi/%s" % (__name__))
         self.log.info("Initializing PiOBD2Hat")
 
         self.serial_lock = Lock()
@@ -52,7 +52,7 @@ class ATBASE:
                 if expect:
                     expect = bytes(expect, 'ascii')
                     if expect not in ret:
-                        raise Exception("Expected {}, got {}".format(expect, ret))
+                        raise Exception("Expected %s, got %s" % (expect, ret))
 
         except serial.SerialTimeoutException:
             ret = b'TIMEOUT'
@@ -71,7 +71,7 @@ class ATBASE:
         if ret in self.ret_NoData:
             raise NoData(ret)
         elif ret in self.ret_CanError:
-            raise CanError("Failed Command {}\n{}".format(cmd, ret))
+            raise CanError("Failed Command %s\n%s" % (cmd, ret))
 
         try:
             data = {}
@@ -112,7 +112,7 @@ class ATBASE:
                         raise ValueError
 
         except ValueError:
-            raise CanError("Failed Command {}\n{}".format(cmd, ret))
+            raise CanError("Failed Command %s\n%s" % (cmd, ret))
 
         return data
 
@@ -127,7 +127,7 @@ class ATBASE:
         if ret in self.ret_NoData:
             raise NoData(ret)
         elif ret in self.ret_CanError:
-            raise CanError("Failed Command {}\n{}".format(cmd, ret))
+            raise CanError("Failed Command %s\n%s" % (cmd, ret))
 
         try:
             data = None
@@ -168,8 +168,7 @@ class ATBASE:
                         self.log.debug("%s consecutive frame", line)
                     idx = int(line[offset+1:offset+2], 16)
                     if (last_idx + 1) % 0x10 != idx:
-                        raise CanError("Bad frame order: last_idx({}) idx({})"
-                                       .format(last_idx, idx))
+                        raise CanError("Bad frame order: last_idx(%d) idx(%d)" % (last_idx, idx))
 
                     frame_len = min(7, data_len - len(data))
                     data.extend(bytearray.fromhex(line[offset+2:frame_len*2+offset+2]))
@@ -184,10 +183,9 @@ class ATBASE:
             if not data or data_len == 0:
                 raise NoData('NO DATA')
             if data_len != len(data):
-                raise CanError("Data length mismatch {}: {} vs {} {}"
-                               .format(cmd, data_len, len(data), data.hex()))
+                raise CanError("Data length mismatch %s: %d vs %d %s" % (cmd, data_len, len(data), data.hex()))
 
         except ValueError:
-            raise CanError("Failed Command {}\n{}".format(cmd, ret))
+            raise CanError("Failed Command %s\n%s" % (cmd, ret))
 
         return data

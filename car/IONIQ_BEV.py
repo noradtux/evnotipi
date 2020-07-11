@@ -1,6 +1,7 @@
-from time import time
-from dongle.dongle import NoData
-from .car import *
+""" Decoder for the Hyundai Ioniq EV 28kWh """
+
+from .car import Car
+from .isotp_decoder import IsoTpDecoder
 
 B2101 = bytes.fromhex('2101')
 B2102 = bytes.fromhex('2102')
@@ -10,100 +11,115 @@ B2105 = bytes.fromhex('2105')
 B2180 = bytes.fromhex('2180')
 B22b002 = bytes.fromhex('22b002')
 
+Fields = (
+    {'cmd': B2101, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 6},
+         {'name': 'SOC_BMS', 'width': 1, 'scale': .5},
+         {'name': 'availableChargePower', 'width': 2, 'scale': .01},
+         {'name': 'availableDischargePower', 'width': 2, 'scale': .01},
+         {'name': 'charging_bits', 'width': 1},
+         {'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},
+         {'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
+         {'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
+         {'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
+         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5,
+          'width': 1, 'signed': True},
+         {'padding': 1},
+         {'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
+         {'padding': 4},
+         {'name': 'fanStatus', 'width': 1},
+         {'name': 'fanFeedback', 'width': 1},
+         {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
+         {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
+         {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
+         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .01},
+         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .01},
+         {'name': 'operatingTime', 'width': 4}, # seconds
+         {'padding': 3},
+         {'name': 'driveMotorSpeed', 'width': 2, 'signed': True,
+          'offset': 0, 'scale': 1},
+         {'padding': 4},
+         # Len: 56
+         )
+    },
+    {'cmd': B2102, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 6},
+         {'name': 'cellVoltage%02d', 'idx': 1, 'cnt': 32, 'width': 1, 'scale': .02},
+         # Len: 38
+         )
+    },
+    {'cmd': B2103, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 6},
+         {'name': 'cellVoltage%02d', 'idx': 33, 'cnt': 32, 'width': 1, 'scale': .02},
+         # Len: 38
+         )
+    },
+    {'cmd': B2104, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 6},
+         {'name': 'cellVoltage%02d', 'idx': 65, 'cnt': 32, 'width': 1, 'scale': .02},
+         # Len: 38
+         )
+    },
+    {'cmd': B2105, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     'fields': (
+         {'padding': 11},
+         {'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},
+         {'padding': 9},
+         {'name': 'soh', 'width': 2, 'scale': .1},
+         {'padding': 4},
+         {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
+         {'padding': 11},
+         # Len: 45
+         )
+    },
+    {'cmd': B2180, 'canrx': 0x7ee, 'cantx': 0x7e6,
+     'fields': (
+         {'padding': 14},
+         {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'padding': 10},
+         # Len: 25
+         )
+     },
+    {'cmd': B22b002, 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
+     'fields': (
+         {'padding': 9},
+         {'name': 'odo', 'width': 3},
+         {'padding': 3},
+         # Len: 15
+         )
+    },
+    {'computed': True,
+     'fields': (
+         {'name': 'dcBatteryPower', 'lambda': lambda d: d['dcBatteryCurrent'] *
+                                              d['dcBatteryVoltage'] / 1000.0},
+         {'name': 'charging', 'lambda': lambda d: int(d['charging_bits'] & 0x80)},
+         {'name': 'normalChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x20)},
+         {'name': 'rapidChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x40)},
+         )
+    },
+    )
+
 class IONIQ_BEV(Car):
+    """ Decoder class for Ioniq EV """
 
     def __init__(self, config, dongle, watchdog, gps):
         Car.__init__(self, config, dongle, watchdog, gps)
         self.dongle.setProtocol('CAN_11_500')
+        self._isotp = IsoTpDecoder(self.dongle, Fields)
 
     def readDongle(self, data):
-        now = time()
-        raw = {}
-
-        for cmd in [B2101, B2102, B2103, B2104, B2105]:
-            raw[cmd] = self.dongle.sendCommandEx(cmd, canrx=0x7ec, cantx=0x7e4)
-
-        raw[B2180] = self.dongle.sendCommandEx(B2180, canrx=0x7ee, cantx=0x7e6)
-
-        try:
-            raw[B22b002] = self.dongle.sendCommandEx(B22b002, canrx=0x7ce, cantx=0x7c6)
-        except NoData:
-            # 0x7ce is only available while driving
-            pass
+        """ Fetch data from CAN-bus and decode it.
+            "data" needs to be a dictionary that will
+            be modified with decoded data """
 
         data.update(self.getBaseData())
+        data.update(self._isotp.get_data())
 
-        charging_bits = raw[B2101][11]
-        dc_battery_current = ifbs(raw[B2101][12:14]) / 10.0
-        dc_battery_voltage = ifbu(raw[B2101][14:16]) / 10.0
-
-        cell_temps = [
-            ifbs(raw[B2101][18:19]), #  0
-            ifbs(raw[B2101][19:20]), #  1
-            ifbs(raw[B2101][20:21]), #  2
-            ifbs(raw[B2101][21:22]), #  3
-            ifbs(raw[B2101][22:23]), #  4
-            ifbs(raw[B2105][11:12]), #  5
-            ifbs(raw[B2105][12:13]), #  6
-            ifbs(raw[B2105][13:14]), #  7
-            ifbs(raw[B2105][14:15]), #  8
-            ifbs(raw[B2105][15:16]), #  9
-            ifbs(raw[B2105][16:17]), # 10
-            ifbs(raw[B2105][17:18])] # 11
-
-        cell_voltages = []
-        for cmd in [B2102, B2103, B2104]:
-            for byte in range(6, 38):
-                cell_voltages.append(raw[cmd][byte] / 50.0)
-
-        data.update({
-            # Base:
-            'SOC_BMS':                  raw[B2101][6] / 2.0,
-            'SOC_DISPLAY':              raw[B2105][33] / 2.0,
-
-            # Extended:
-            'auxBatteryVoltage':        raw[B2101][31] / 10.0,
-
-            'batteryInletTemperature':  ifbs(raw[B2101][22:23]),
-            'batteryMaxTemperature':    ifbs(raw[B2101][16:17]),
-            'batteryMinTemperature':    ifbs(raw[B2101][17:18]),
-
-            'cumulativeEnergyCharged':  ifbu(raw[B2101][40:44]) / 10.0,
-            'cumulativeEnergyDischarged': ifbu(raw[B2101][44:48]) / 10.0,
-
-            'charging':                 1 if charging_bits & 0x80 else 0,
-            'normalChargePort':         1 if charging_bits & 0x20 else 0,
-            'rapidChargePort':          1 if charging_bits & 0x40 else 0,
-
-            'dcBatteryCurrent':         dc_battery_current,
-            'dcBatteryPower':           dc_battery_current * dc_battery_voltage / 1000.0,
-            'dcBatteryVoltage':         dc_battery_voltage,
-
-            'soh':                      ifbu(raw[B2105][27:29]) / 10.0,
-            'externalTemperature':      (raw[B2180][14] - 80) / 2.0,
-            'odo':                      ffbu(raw[B22b002][9:12]) if B22b002 in raw else None,
-
-            # Additional:
-            'cumulativeChargeCurrent':  ifbu(raw[B2101][32:36]) / 10.0,
-            'cumulativeDischargeCurrent': ifbu(raw[B2101][36:40]) / 10.0,
-
-            'batteryAvgTemperature':    sum(cell_temps) / len(cell_temps),
-            'driveMotorSpeed':          ifbs(raw[B2101][55:57]),
-
-            'fanStatus':                raw[B2101][29],
-            'fanFeedback':              raw[B2101][30],
-
-            'availableChargePower':     ifbu(raw[B2101][7:9]) / 100.0,
-            'availableDischargePower':  ifbu(raw[B2101][9:11]) / 100.0,
-            })
-
-        for i, temp in enumerate(cell_temps):
-            key = "cellTemp{:02d}".format(i+1)
-            data[key] = float(temp)
-
-        for i, cvolt in enumerate(cell_voltages):
-            key = "cellVoltage{:02d}".format(i+1)
-            data[key] = float(cvolt)
+        #'batteryAvgTemperature':    sum(cell_temps) / len(cell_temps),
 
     def getBaseData(self):
         return {
@@ -118,3 +134,4 @@ class IONIQ_BEV(Car):
 
     def getEVNModel(self):
         return 'IONIQ_BEV'
+

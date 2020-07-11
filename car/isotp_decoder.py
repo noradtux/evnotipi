@@ -1,9 +1,24 @@
 """ Generic decoder for ISO-TP based cars """
-from struct import unpack
+import logging
+import struct
+from dongle.dongle import NoData
+
+FormatMap = {
+        0: {'f': 'x'},
+        1: {'f': 'b'},
+        2: {'f': 'h'},
+        3: {'f': 'bh', 'l': lambda o: o[0]<<16 | o[1]},
+        4: {'f': 'i'},
+        8: {'f': 'l'},
+    }
+
+def is_power_of_two(n):
+    return ((n & (n-1) == 0) and n != 0)
 
 class IsoTpDecoder:
     """ Generic decoder for ISO-TP based cars """
     def __init__(self, dongle, fields):
+        self._log = logging.getLogger("EVNotiPi/ISO-TP-Decoder")
         self._dongle = dongle
         self._fields = fields
 
@@ -11,36 +26,121 @@ class IsoTpDecoder:
 
     def preprocess_fields(self):
         """ Preprocess field structure, creating format strings for unpack etc.,"""
-        for cdata in self._fields.values():
-            fmt = ""
-            idx = 0
-            for field in cdata['fields']:
-                fmt += field['format']
-                if 'name' in field:
-                    field['fmt_idx'] = idx
-                    field['fmt_len'] = len(field['format'])
-                    idx += field['fmt_len']
+        for cmd_data in self._fields:
+            fmt = ">"
+            fmt_idx = 0
 
-            cdata['cmd_format'] = fmt
+            # make sure 'computed' is set so we don't need to check for it
+            # in the decoder. Checking is slow.
+            cmd_data['computed'] = cmd_data.get('computed', False)
+
+            if not cmd_data['computed']:
+                # Build a new array instead of inserting into the existing one.
+                # Should be quicker.
+                new_fields = []
+                for field in cmd_data['fields']:
+                    self._log.debug(field)
+                    # Non power of two types are hard as is. For now those can
+                    # not be used in patterned fields.
+                    if field.get('cnt', 1) > 1 and not is_power_of_two(field['width']):
+                        raise ValueError('Non power of two field in patterned field not allowed')
+                    elif not field.get('width', 0) in FormatMap.keys():
+                        raise ValueError('Unsupported field length')
+
+                    if field.get('padding', 0) > 0:
+                        field_fmt = str(field.get('padding')) + 'x'
+                        self._log.debug("field_fmt(%s)", field_fmt)
+                        fmt += field_fmt
+                    elif not field.get('computed', False):
+                        # For patterned fields (i.e. cellVolts%02d) use multiplyer
+                        # in format string.
+                        field_fmt = str(field.get('cnt', ''))
+                        if field.get('signed', False):
+                            field_fmt += FormatMap[field['width']]['f'].lower()
+                        else:
+                            field_fmt += FormatMap[field['width']]['f'].upper()
+
+                        self._log.debug("field_fmt(%s)", field_fmt)
+                        fmt += field_fmt
+
+                        if not is_power_of_two(field['width']):
+                            if 'lanbda' in field:
+                                self._log.warn('defining lambda on non power ow two length fields may give unexpected results!')
+                            else:
+                                field['lambda'] = FormatMap[field['width']]['l']
+
+                        field['scale'] = field.get('scale', 1)
+                        field['offset'] = field.get('offset', 0)
+
+                        if not 'name' in field:
+                            raise ValueError('Name missing in Field')
+
+                        start = field.get('idx', 0)
+                        cnt = field.get('cnt', 1)
+
+                        for field_idx in range(start, start + cnt):
+                            # Expand patterned fields into simple fields to
+                            # match the format string. Append new field to the
+                            # array of new fields. We need to copy the existing
+                            # field, else all field names will reference the same
+                            # string
+                            new_field = field.copy()
+                            if cnt > 1:
+                                new_field['name'] %= field_idx
+
+                            new_field['fmt_idx'] = fmt_idx
+                            new_field['fmt_len'] = len(FormatMap[field['width']])
+                            fmt_idx += new_field['fmt_len']
 
 
-    def base_decode(self):
+                            new_fields.append(new_field)
+
+                self._log.debug("fmt(%s)", fmt)
+                cmd_data['cmd_format'] = fmt
+                cmd_data['fields'] = new_fields
+
+    def get_data(self):
         """ Takes a structure which describes adresses,
             commands and how to decode the return """
         data = {}
-        for cmd, cdata in self._fields.items():
-            raw = self._dongle.sendCommandEx(cmd, canrx=cdata['canrx'], cantx=cdata['cantx'])
-            struct = unpack(cdata['cmd_format'], raw)
-
-            for field in cdata['fields']:
-                name = field['name']
-                fmt_idx = field['fmt_idx']
-                fmt_len = field['fmt_len']
-                if 'lambda' in field:
-                    value = field['lambda'](struct[fmt_idx:fmt_idx+fmt_len])
+        try:
+            for cmd_data in self._fields:
+                if cmd_data['computed']:
+                    # Fields of computed "commands" are filled by executing
+                    # the fields lambda with the data dict as argument
+                    for field in cmd_data['fields']:
+                        name = field['name']
+                        func = field['lambda']
+                        data[name] = func(data)
                 else:
-                    value = struct[fmt_idx]
+                    # Send a command to the CAN bus and parse the resulting
+                    # bytearray using unpack. The format for unpack was generated
+                    # in the preprocessor. Extracted values are scaled, shifted
+                    # and a lambda function is executed if provided
+                    raw = self._dongle.sendCommandEx(cmd_data['cmd'],
+                                                     canrx=cmd_data['canrx'],
+                                                     cantx=cmd_data['cantx'])
+                    raw_fields = struct.unpack(cmd_data['cmd_format'], raw)
 
-                data[name] = value * field.get('scale', 1) + field.get('offset', 0)
+                    for field in cmd_data['fields']:
+                        name = field['name']
+                        fmt_idx = field['fmt_idx']
+                        fmt_len = field['fmt_len']
+
+                        if 'lambda' in field:
+                            value = field['lambda'](raw_fields[fmt_idx:fmt_idx+fmt_len])
+                        else:
+                            value = raw_fields[fmt_idx]
+
+                        data[name] = value * field['scale'] + field['offset']
+
+        except NoData:
+            if not cmd_data.get('optional', False):
+                raise
+        except struct.error as err:
+            self._log.error("err(%s) cmd(%s) fmt(%s):%d raw(%s):%d", err, cmd_data['cmd'].hex(),
+                            cmd_data['cmd_format'], struct.calcsize(cmd_data['cmd_format']),
+                            raw.hex(), len(raw))
+            raise
 
         return data
