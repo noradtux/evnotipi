@@ -97,7 +97,7 @@ class IsoTpDecoder:
             if not cdata.get('optional', False):
                 raise
         except struct.error as e:
-            self._log.error("cmd(%s) fmt(%s):%d raw(%s):%d", cmd.hex(),
+            self._log.error("err(%s) cmd(%s) fmt(%s):%d raw(%s):%d", e, cmd.hex(),
                             cdata['cmd_format'], struct.calcsize(cdata['cmd_format']),
                             raw.hex(), len(raw))
             raise
