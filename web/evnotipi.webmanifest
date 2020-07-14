@@ -1,0 +1,13 @@
+{
+  "name": "EVNotiPi Local",
+  "short_name": "EVN Local",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    }
+  ]
+}
