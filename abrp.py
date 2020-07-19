@@ -7,18 +7,18 @@ import logging
 import requests
 
 PID_MAP = {
-        "dcBatteryCurrent": "current",
-        "dcBatteryVoltage": "voltage",
-        "dcBatteryPower":   "power",
-        "SOC_DISPLAY":      "soc",
-        "soh":              "soh",
-        "charging":         "is_charging",
-        "speed":            "speed",
-        "altitude":         "elevation",
-        "longitude":        "lon",
-        "latitude":         "lat",
-        "externalTemperature":   "ext_temp",
-        "batteryAvgTemperature": "batt_temp",
+        "dcBatteryCurrent": ["current", 2],
+        "dcBatteryVoltage": ["voltage", 2],
+        "dcBatteryPower":   ["power", 2],
+        "SOC_DISPLAY":      ["soc", 1],
+        "soh":              ["soh", 0],
+        "charging":         ["is_charging", 0],
+        "speed":            ["speed", 0],
+        "altitude":         ["elevation", 1],
+        "longitude":        ["lon", 9],
+        "latitude":         ["lat", 9],
+        "externalTemperature":   ["ext_temp", 1],
+        "batteryAvgTemperature": ["batt_temp", 1],
         }
 
 API_URL = "https://api.iternio.com/1/tlm"
@@ -93,11 +93,11 @@ class ABRP:
                 'car_model': self._car_model,
                 'utc':       data['timestamp'],
                 }
-            payload.update({v:data[k] for k, v in PID_MAP.items()
+            payload.update({v[0]:round(data[k], v[1]) for k, v in PID_MAP.items()
                             if k in data and data[k] is not None})
 
             # Apply averages
-            payload.update({PID_MAP[k]:sum(v)/len(v) for k, v in avgs.items() if len(v) > 0})
+            payload.update({PID_MAP[k][0]:round(sum(v)/len(v), PID_MAP[k][1]) for k, v in avgs.items() if len(v) > 0})
 
             if 'speed' in payload and 'lon' in payload and 'lat' in payload:
                 payload['speed'] *= 3.6      # convert from m/s to km/h
