@@ -77,9 +77,9 @@ Fields = (
          {'name': 'charging',
           'lambda': lambda d: int(d['charging_bits2'] & 0xc == 0x8)},
          {'name': 'normalChargePort',
-          'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] == 3)},
+          'lambda': lambda d: int((d['charging_bits2'] & 0x80) != 0 and d['charging_bits1'] == 3)},
          {'name': 'rapidChargePort',
-          'lambda': lambda d: int((d['charging_bits2'] & 0x80) and d['charging_bits1'] != 3)},
+          'lambda': lambda d: int((d['charging_bits2'] & 0x80) != 0 and d['charging_bits1'] != 3)},
          )
     },
     )
