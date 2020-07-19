@@ -99,12 +99,13 @@ class IsoTpDecoder:
                 cmd_data['cmd_format'] = fmt
                 cmd_data['fields'] = new_fields
 
+
     def get_data(self):
         """ Takes a structure which describes adresses,
             commands and how to decode the return """
         data = {}
-        try:
-            for cmd_data in self._fields:
+        for cmd_data in self._fields:
+            try:
                 if cmd_data['computed']:
                     # Fields of computed "commands" are filled by executing
                     # the fields lambda with the data dict as argument
@@ -134,13 +135,13 @@ class IsoTpDecoder:
 
                         data[name] = value * field['scale'] + field['offset']
 
-        except NoData:
-            if not cmd_data.get('optional', False):
+            except NoData:
+                if not cmd_data.get('optional', False):
+                    raise
+            except struct.error as err:
+                self._log.error("err(%s) cmd(%s) fmt(%s):%d raw(%s):%d", err, cmd_data['cmd'].hex(),
+                                cmd_data['cmd_format'], struct.calcsize(cmd_data['cmd_format']),
+                                raw.hex(), len(raw))
                 raise
-        except struct.error as err:
-            self._log.error("err(%s) cmd(%s) fmt(%s):%d raw(%s):%d", err, cmd_data['cmd'].hex(),
-                            cmd_data['cmd_format'], struct.calcsize(cmd_data['cmd_format']),
-                            raw.hex(), len(raw))
-            raise
 
         return data
