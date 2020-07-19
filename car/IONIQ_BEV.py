@@ -83,7 +83,7 @@ Fields = (
          {'padding': 10},
          # Len: 25
          )
-     },
+    },
     {'cmd': B22b002, 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
      'fields': (
          {'padding': 9},
@@ -96,9 +96,9 @@ Fields = (
      'fields': (
          {'name': 'dcBatteryPower', 'lambda': lambda d: d['dcBatteryCurrent'] *
                                               d['dcBatteryVoltage'] / 1000.0},
-         {'name': 'charging', 'lambda': lambda d: int(d['charging_bits'] & 0x80)},
-         {'name': 'normalChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x20)},
-         {'name': 'rapidChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x40)},
+         {'name': 'charging', 'lambda': lambda d: int(d['charging_bits'] & 0x80 != 0)},
+         {'name': 'normalChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x20 != 0)},
+         {'name': 'rapidChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x40 != 0)},
          )
     },
     )
