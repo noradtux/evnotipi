@@ -114,7 +114,7 @@ class ABRP:
                                          data={'api_key': self._api_key,
                                                'token': self._token,
                                                'tlm': payload_str})
-                self._log.debug("Post result: %i %s", ret.status_code, ret.json())
+                self._log.debug("Post result: %i %s", ret.status_code, ret.text)
 
                 if ret.status_code != requests.codes.ok or ret.json()['status'] != "ok":
                     self._log.error("Submit error: %s %s %s", payload_str, str(ret), ret.text)
