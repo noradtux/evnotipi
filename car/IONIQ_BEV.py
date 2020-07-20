@@ -33,8 +33,8 @@ Fields = (
          {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
          {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
          {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
-         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .01},
-         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .01},
+         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},
+         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},
          {'name': 'operatingTime', 'width': 4}, # seconds
          {'padding': 3},
          {'name': 'driveMotorSpeed', 'width': 2, 'signed': True,
