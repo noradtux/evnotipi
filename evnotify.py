@@ -50,8 +50,7 @@ class EVNotify:
     def start(self):
         """ Start submit thread. """
         self._running = True
-        self._thread = Thread(target=self.submit_data,
-                              name="EVNotiPi/EVNotify")
+        self._thread = Thread(target=self.submit_data, name="EVNotiPi/EVNotify")
         self._thread.start()
         self._car.register_data(self.data_callback)
 
@@ -143,8 +142,7 @@ class EVNotify:
                 current_soc = data['SOC_DISPLAY'] or data['SOC_BMS']
 
                 is_charging = bool(data['charging'])
-                is_connected = bool(
-                    data['normalChargePort'] or data['rapidChargePort'])
+                is_connected = bool(data['normalChargePort'] or data['rapidChargePort'])
 
                 if data['fix_mode'] > 1:
                     location = {a: data[a]
@@ -200,8 +198,7 @@ class EVNotify:
 
             # Prime next loop iteration
             if self._running:
-                runtime = time() - now
-                interval = self._poll_interval - runtime
+                interval = self._poll_interval - (time() - now)
                 sleep(max(0, interval))
 
     def check_thread(self):
