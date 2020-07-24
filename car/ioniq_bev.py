@@ -1,18 +1,17 @@
-""" Decoder for the Hyundai Ioniq EV 28kWh """
-
+""" Module for the Hyundai Ioniq Electric 28kWh """
 from .car import Car
 from .isotp_decoder import IsoTpDecoder
 
-B2101 = bytes.fromhex('2101')
-B2102 = bytes.fromhex('2102')
-B2103 = bytes.fromhex('2103')
-B2104 = bytes.fromhex('2104')
-B2105 = bytes.fromhex('2105')
-B2180 = bytes.fromhex('2180')
-B22b002 = bytes.fromhex('22b002')
+b2101 = bytes.fromhex('2101')
+b2102 = bytes.fromhex('2102')
+b2103 = bytes.fromhex('2103')
+b2104 = bytes.fromhex('2104')
+b2105 = bytes.fromhex('2105')
+b2180 = bytes.fromhex('2180')
+b22b002 = bytes.fromhex('22b002')
 
 Fields = (
-    {'cmd': B2101, 'canrx': 0x7ec, 'cantx': 0x7e4,
+    {'cmd': b2101, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
          {'name': 'SOC_BMS', 'width': 1, 'scale': .5},
@@ -23,8 +22,7 @@ Fields = (
          {'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
          {'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
          {'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
-         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5,
-          'width': 1, 'signed': True},
+         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True},
          {'padding': 1},
          {'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
          {'padding': 4},
@@ -35,36 +33,36 @@ Fields = (
          {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
          {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},
          {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},
-         {'name': 'operatingTime', 'width': 4}, # seconds
+         {'name': 'operatingTime', 'width': 4},  # seconds
          {'padding': 3},
          {'name': 'driveMotorSpeed', 'width': 2, 'signed': True,
           'offset': 0, 'scale': 1},
          {'padding': 4},
          # Len: 56
-         )
-    },
-    {'cmd': B2102, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     )
+     },
+    {'cmd': b2102, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
          {'name': 'cellVoltage%02d', 'idx': 1, 'cnt': 32, 'width': 1, 'scale': .02},
          # Len: 38
-         )
-    },
-    {'cmd': B2103, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     )
+     },
+    {'cmd': b2103, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
          {'name': 'cellVoltage%02d', 'idx': 33, 'cnt': 32, 'width': 1, 'scale': .02},
          # Len: 38
-         )
-    },
-    {'cmd': B2104, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     )
+     },
+    {'cmd': b2104, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 6},
          {'name': 'cellVoltage%02d', 'idx': 65, 'cnt': 32, 'width': 1, 'scale': .02},
          # Len: 38
-         )
-    },
-    {'cmd': B2105, 'canrx': 0x7ec, 'cantx': 0x7e4,
+     )
+     },
+    {'cmd': b2105, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
          {'padding': 11},
          {'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},
@@ -74,44 +72,48 @@ Fields = (
          {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
          {'padding': 11},
          # Len: 45
-         )
-    },
-    {'cmd': B2180, 'canrx': 0x7ee, 'cantx': 0x7e6,
+     )
+     },
+    {'cmd': b2180, 'canrx': 0x7ee, 'cantx': 0x7e6,
      'fields': (
          {'padding': 14},
          {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
          {'padding': 10},
          # Len: 25
-         )
-    },
-    {'cmd': B22b002, 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
+     )
+     },
+    {'cmd': b22b002, 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
      'fields': (
          {'padding': 9},
          {'name': 'odo', 'width': 3},
          {'padding': 3},
          # Len: 15
-         )
-    },
+     )
+     },
     {'computed': True,
      'fields': (
-         {'name': 'dcBatteryPower', 'lambda': lambda d: d['dcBatteryCurrent'] *
-                                              d['dcBatteryVoltage'] / 1000.0},
-         {'name': 'charging', 'lambda': lambda d: int(d['charging_bits'] & 0x80 != 0)},
-         {'name': 'normalChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x20 != 0)},
-         {'name': 'rapidChargePort', 'lambda': lambda d: int(d['charging_bits'] & 0x40 != 0)},
-         )
-    },
-    )
+         {'name': 'dcBatteryPower',
+          'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
+         {'name': 'charging',
+          'lambda': lambda d: int(d['charging_bits'] & 0x80 != 0)},
+         {'name': 'normalChargePort',
+          'lambda': lambda d: int(d['charging_bits'] & 0x20 != 0)},
+         {'name': 'rapidChargePort',
+          'lambda': lambda d: int(d['charging_bits'] & 0x40 != 0)},
+     )
+     },
+)
 
-class IONIQ_BEV(Car):
-    """ Decoder class for Ioniq EV """
+
+class IoniqBev(Car):
+    """ Class for Ioniq Electric """
 
     def __init__(self, config, dongle, watchdog, gps):
         Car.__init__(self, config, dongle, watchdog, gps)
-        self.dongle.setProtocol('CAN_11_500')
+        self._dongle.set_protocol('CAN_11_500')
         self._isotp = IsoTpDecoder(self.dongle, Fields)
 
-    def readDongle(self, data):
+    def read_dongle(self, data):
         """ Fetch data from CAN-bus and decode it.
             "data" needs to be a dictionary that will
             be modified with decoded data """
@@ -119,9 +121,7 @@ class IONIQ_BEV(Car):
         data.update(self.getBaseData())
         data.update(self._isotp.get_data())
 
-        #'batteryAvgTemperature':    sum(cell_temps) / len(cell_temps),
-
-    def getBaseData(self):
+    def get_base_data(self):
         return {
             "CAPACITY": 28,
             "SLOW_SPEED": 2.3,
@@ -129,9 +129,8 @@ class IONIQ_BEV(Car):
             "FAST_SPEED": 50.0
         }
 
-    def getABRPModel(self):
+    def get_abrp_model(self):
         return 'hyundai:ioniq:17:28:other'
 
-    def getEVNModel(self):
+    def get_evn_model(self):
         return 'IONIQ_BEV'
-

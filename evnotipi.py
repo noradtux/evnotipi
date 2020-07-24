@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
+""" EVNotiPi main module """
 
 from gevent.monkey import patch_all; patch_all()
-from subprocess import check_call, check_output
 from time import sleep, time
+from subprocess import check_call, check_output
 from argparse import ArgumentParser
-import os
 import sys
 import signal
+import os
 import logging
 import sdnotify
-import evnotify
 from gpspoller import GpsPoller
-import car
-import dongle
 import watchdog
-
-# Exit signalhandler
-def exit_gracefully(signum, frame):
-    sys.exit(0)
+import dongle
+import car
+import evnotify
 
 Systemd = sdnotify.SystemdNotifier()
 
-class ThreadFailure(Exception): pass
+
+class ThreadFailure(Exception):
+    """ Raised when a sub thread fails """
+
 
 parser = ArgumentParser(description='EVNotiPi')
 parser.add_argument('-d', '--debug', dest='debug',
@@ -59,14 +59,24 @@ log = logging.getLogger("EVNotiPi")
 
 del args
 
+# emulate old config if watchdog section is missing
+if 'watchdog' not in config or 'type' not in config['watchdog']:
+    log.warning(
+        'Old watchdog config syntax detected. Please adjust according to config.yaml.template.')
+    config['watchdog'] = {
+        'type': 'GPIO',
+        'shutdown_pin': config['dongle'].get('shutdown_pin', 24),
+        'pup_down': config['dongle'].get('pup_down', 21),
+    }
+
 # Load OBD2 interface module
-DONGLE = dongle.Load(config['dongle']['type'])
+DONGLE = dongle.load(config['dongle']['type'])
 
 # Load car module
-CAR = car.Load(config['car']['type'])
+CAR = car.load(config['car']['type'])
 
 # Load watchdog module
-WATCHDOG = watchdog.Load(config['watchdog']['type'])
+WATCHDOG = watchdog.load(config['watchdog']['type'])
 
 Threads = []
 
@@ -91,13 +101,14 @@ Threads.append(EVNotify)
 # Init ABRP
 if 'abrp' in config and config['abrp'].get('enable') is True:
     import abrp
-    ABRP = abrp.ABRP(config['abrp'], car, EVNotify)
+    ABRP = abrp.ABRP(config['abrp'], car)
     Threads.append(ABRP)
 
 # Init influx interface
 if 'influxdb' in config and config['influxdb'].get('enable') is True:
     import influx_telemetry
-    Influx = influx_telemetry.InfluxTelemetry(config['influxdb'], car, gps, EVNotify)
+    Influx = influx_telemetry.InfluxTelemetry(
+        config['influxdb'], car, gps, EVNotify)
     Threads.append(Influx)
 
 # Init WiFi control
@@ -113,47 +124,50 @@ if 'webservice' in config and config['webservice'].get('enable') is True:
     WebService = webservice.WebService(config['webservice'], car)
     Threads.append(WebService)
 
-# Init some variables
-main_running = True
-
 # Set up signal handling
+
+
+def exit_gracefully(signum, frame):
+    """ Signalhandler for SIGTERM """
+    sys.exit(0)
+
+
 signal.signal(signal.SIGTERM, exit_gracefully)
 
 # Start polling loops
 for t in Threads:
     t.start()
 
-state = 0
-Systemd.notify("READY=1")
-log.info("Starting main loop")
+Systemd.notify('READY=1')
+log.info('Starting main loop')
+
+main_running = True
 try:
     while main_running:
         now = time()
-        thread_ok = True
+        threads_ok = True
         for t in Threads:
-            status = t.checkWatchdog()
+            status = t.check_thread()
             if not status:
-                log.error("Watchdog Failed %s", str(t))
-                thread_ok = False
+                log.error('Thread Failed (%s)', str(t))
+                threads_ok = False
                 raise ThreadFailure(str(t))
 
-        if thread_ok:
-            Systemd.notify("WATCHDOG=1")
+        if threads_ok:
+            Systemd.notify('WATCHDOG=1')
 
         if 'system' in config and 'shutdown_delay' in config['system']:
             if (now - car.last_data > config['system']['shutdown_delay'] and
-                    not watchdog.isCarAvailable()):
-                user_cnt = int(check_output(['who', '-q']).split(b'\n')[1].split(b'=')[1])
-                if user_cnt == 0:
-                    log.info("Not charging and car off => Shutdown")
+                    not watchdog.is_car_available()):
+                usercnt = int(check_output(
+                    ['who', '-q']).split(b'\n')[1].split(b'=')[1])
+                if usercnt == 0:
+                    log.info('Not charging and car off => Shutdown')
                     check_call(['/bin/systemctl', 'poweroff'])
                     sleep(5)
                 else:
-                    if state != 3:
-                        log.info("Not charging and car off; Not shutting down, users connected")
-                        state = 3
-            else:
-                state = 1
+                    log.info(
+                        'Not charging and car off; Not shutting down, users connected')
 
         if wifi and config['wifi']['shutdown_delay'] is not None:
             if (now - car.last_data > config['wifi']['shutdown_delay'] and
@@ -162,18 +176,19 @@ try:
             else:
                 wifi.enable()
 
+        # Ensure messages get printed to the console.
         sys.stdout.flush()
 
         if main_running:
             loop_delay = 1 - (time()-now)
             sleep(max(0, loop_delay))
 
-except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
+except (KeyboardInterrupt, SystemExit):  # when you press ctrl+c
     main_running = False
-    Systemd.notify("STOPPING=1")
+    Systemd.notify('STOPPING=1')
 finally:
-    Systemd.notify("STOPPING=1")
-    log.info("Exiting ...")
-    for t in Threads[::-1]: # reverse Threads
+    Systemd.notify('STOPPING=1')
+    log.info('Exiting ...')
+    for t in Threads[::-1]:  # reverse Threads
         t.stop()
-    log.info("Bye.")
+    log.info('Bye.')

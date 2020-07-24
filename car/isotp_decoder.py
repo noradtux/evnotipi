@@ -1,22 +1,26 @@
 """ Generic decoder for ISO-TP based cars """
 import logging
 import struct
-from dongle.dongle import NoData
+from dongle import NoData
 
 FormatMap = {
-        0: {'f': 'x'},
-        1: {'f': 'b'},
-        2: {'f': 'h'},
-        3: {'f': 'bh', 'l': lambda o: o[0]<<16 | o[1]},
-        4: {'f': 'i'},
-        8: {'f': 'l'},
-    }
+    0: {'f': 'x'},
+    1: {'f': 'b'},
+    2: {'f': 'h'},
+    3: {'f': 'bh', 'l': lambda o: o[0] << 16 | o[1]},
+    4: {'f': 'i'},
+    8: {'f': 'l'},
+}
 
-def is_power_of_two(n):
-    return ((n & (n-1) == 0) and n != 0)
+
+def is_power_of_two(number):
+    """ Check of argument has power of two """
+    return (number & (number-1) == 0) and number != 0
+
 
 class IsoTpDecoder:
     """ Generic decoder for ISO-TP based cars """
+
     def __init__(self, dongle, fields):
         self._log = logging.getLogger("EVNotiPi/ISO-TP-Decoder")
         self._dongle = dongle
@@ -44,7 +48,8 @@ class IsoTpDecoder:
                     # not be used in patterned fields.
                     if field.get('cnt', 1) > 1 and not is_power_of_two(field['width']):
                         raise ValueError('Non power of two field in patterned field not allowed')
-                    elif not field.get('width', 0) in FormatMap.keys():
+
+                    if not field.get('width', 0) in FormatMap.keys():
                         raise ValueError('Unsupported field length')
 
                     if field.get('padding', 0) > 0:
@@ -65,14 +70,14 @@ class IsoTpDecoder:
 
                         if not is_power_of_two(field['width']):
                             if 'lanbda' in field:
-                                self._log.warn('defining lambda on non power ow two length fields may give unexpected results!')
+                                self._log.warning('defining lambda on non power ow two length fields may give unexpected results!')
                             else:
                                 field['lambda'] = FormatMap[field['width']]['l']
 
                         field['scale'] = field.get('scale', 1)
                         field['offset'] = field.get('offset', 0)
 
-                        if not 'name' in field:
+                        if 'name' not in field:
                             raise ValueError('Name missing in Field')
 
                         start = field.get('idx', 0)
@@ -92,13 +97,11 @@ class IsoTpDecoder:
                             new_field['fmt_len'] = len(FormatMap[field['width']])
                             fmt_idx += new_field['fmt_len']
 
-
                             new_fields.append(new_field)
 
                 self._log.debug("fmt(%s)", fmt)
                 cmd_data['cmd_format'] = fmt
                 cmd_data['fields'] = new_fields
-
 
     def get_data(self):
         """ Takes a structure which describes adresses,
