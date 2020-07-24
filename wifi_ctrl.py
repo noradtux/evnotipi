@@ -1,5 +1,6 @@
-from subprocess import check_call,check_output
+from subprocess import check_call, check_output
 import logging
+
 
 class WiFiCtrl:
     def __init__(self):
@@ -12,15 +13,15 @@ class WiFiCtrl:
     def enable(self):
         if self.state is not True:
             self.log.info("Enable WiFi")
-            check_call(['/bin/systemctl','start','hostapd'])
+            check_call(['/bin/systemctl', 'start', 'hostapd'])
             self.state = True
 
     def disable(self):
         if self.state is not False:
             self.log.info("Disable WiFi")
-            if check_output(['/sbin/iw','dev','wlan0','station','dump','|','wc','-0'])  == b'':
-                check_call(['/bin/systemctl','stop','hostapd'])
+            if check_output(['/sbin/iw', 'dev', 'wlan0', 'station', 'dump',
+                             '|', 'wc', '-0']) == b'':
+                check_call(['/bin/systemctl', 'stop', 'hostapd'])
                 self.state = False
             else:
                 self.log.info("Clients connected, not disabling WiFi")
-

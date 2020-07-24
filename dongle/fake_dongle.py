@@ -114,8 +114,8 @@ class FakeDongle:
     def __init__(self, config):
         self._data = data[config['car_type']]
 
-    def sendCommandEx(self, cmd, cantx, canrx):
+    def send_command_ex(self, cmd, cantx, canrx):
         return self._data[cantx][cmd]
 
-    def setProtocol(self, bla):
+    def set_protocol(self, bla):
         pass
