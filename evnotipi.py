@@ -168,7 +168,7 @@ try:
 
         if wifi and config['wifi']['shutdown_delay'] is not None:
             if (now - car.last_data > config['wifi']['shutdown_delay'] and
-                    not watchdog.isCarAvailable()):
+                    not watchdog.is_car_available()):
                 wifi.disable()
             else:
                 wifi.enable()
