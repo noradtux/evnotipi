@@ -59,10 +59,10 @@ class WebService(Bottle):
             ('0.0.0.0', 8080), self, handler_class=WebSocketHandler)
         self.thread = Thread(target=self.server.serve_forever)
         self.thread.start()
-        self.car.registerData(self.data_callback)
+        self.car.register_data(self.data_callback)
 
     def stop(self):
-        self.car.unregisterData(self.data_callback)
+        self.car.unregister_data(self.data_callback)
         self.running = False
         self.server.stop()
         self.server.close()

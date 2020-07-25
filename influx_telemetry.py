@@ -19,9 +19,9 @@ class InfluxTelemetry:
         self._log.info("Initializing InfluxDB")
 
         self._config = config
-        self._evn_akey = evnotify.config['akey']
+        self._evn_akey = evnotify._config['akey']
         self._car = car
-        self._cartype = car.getEVNModel()
+        self._cartype = car.get_evn_model()
         self._gps = gps
         self._poll_interval = config['interval']
         self._running = False
@@ -35,11 +35,11 @@ class InfluxTelemetry:
         self._running = True
         self._thread = Thread(target=self.submit_data, name="EVNotiPi/InfluxDB")
         self._thread.start()
-        self._car.registerData(self.data_callback)
+        self._car.register_data(self.data_callback)
 
     def stop(self):
         """ Stop the submission thread """
-        self._car.unregisterData(self.data_callback)
+        self._car.unregister_data(self.data_callback)
         self._running = False
         with self._data_q_lock:
             self._data_q_lock.notify()
