@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import logging
-import cProfile, pstats, io
+import cProfile
+import pstats
+import io
 from pstats import SortKey
 from pprint import PrettyPrinter
 from sys import argv
@@ -16,9 +18,9 @@ pp = pp.pprint
 
 pr = cProfile.Profile()
 
-DONGLE = dongle.Load('FakeDongle')
-WATCHDOG = watchdog.Load('DUMMY')
-CAR = car.Load(argv[1])
+DONGLE = dongle.load('FakeDongle')
+WATCHDOG = watchdog.load('DUMMY')
+CAR = car.load(argv[1])
 
 watchdog = WATCHDOG({})
 dongle = DONGLE({'car_type': argv[1]})
@@ -31,7 +33,7 @@ if False:
 #if True:
     pr.enable()
     for i in range(0, 100000):
-        car.readDongle(data)
+        car.read_dongle(data)
     pr.disable()
     s = io.StringIO()
     sortby = SortKey.CUMULATIVE
@@ -40,5 +42,5 @@ if False:
     ps.print_callers()
     print(s.getvalue())
 else:
-    car.readDongle(data)
+    car.read_dongle(data)
     pp(data)
