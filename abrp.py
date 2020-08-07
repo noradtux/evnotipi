@@ -82,19 +82,22 @@ class ABRP:
                 'longitude': [],
                 'altitude': [],
             }
+
             with self._data_queue_lock:
                 self._log.debug('Waiting...')
                 self._data_queue_lock.wait()
                 if len(self._data_queue) == 0:
                     continue
 
-                for data in self._data_queue:
-                    for key, values in avgs.items():
-                        if key in data and data[key] is not None:
-                            values.append(data[key])
-
-                data = self._data_queue[-1]
+                new_data = self._data_queue.copy()
                 self._data_queue.clear()
+
+            for data in new_data:
+                for key, values in avgs.items():
+                    if key in data and data[key] is not None:
+                        values.append(data[key])
+
+            data = new_data[-1]
 
             payload = {
                 'car_model': self._car_model,

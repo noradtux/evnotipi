@@ -111,15 +111,14 @@ class InfluxTelemetry:
                                 len(send_queue), err.code, err.content)
                 if err.code == 400:
                     send_queue.clear()
-            except Exception as err:
-                self._log.error("InfluxTelemetry len(%i): %s", len(send_queue), err)
+            #except Exception as err:
+            #    self._log.error("InfluxTelemetry len(%i): %s", len(send_queue), err)
 
             # Prime next loop iteration
             if self._running and did_transfer:
                 runtime = time() - now
                 interval = self._poll_interval - (runtime if runtime > self._poll_interval else 0)
                 sleep(max(0, interval))
-
 
     def check_thread(self):
         """ Return the status of the thread """
