@@ -35,7 +35,6 @@ class WebService(Bottle):
 
         while True:
             try:
-                #measurement = json.dumps(queue.get())
                 with self.data_lock:
                     self.data_lock.wait()
                     data = self.data
