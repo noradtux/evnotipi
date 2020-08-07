@@ -27,4 +27,4 @@ class WiFiCtrl:
                 self.state = False
             elif self.log_flag:
                 self.log.info("Clients connected, not disabling WiFi")
-                self.log_flags = False
+                self.log_flag = False
