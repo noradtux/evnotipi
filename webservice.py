@@ -1,4 +1,4 @@
-""" Simple weeb service """
+""" Simple web service """
 import logging
 import json
 from geventwebsocket.handler import WebSocketHandler
