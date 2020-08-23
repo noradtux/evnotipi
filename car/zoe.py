@@ -126,11 +126,14 @@ class Zoe(Car):
         with self._data_lock:
             data.update(self._data)
 
-    def get_base_data(self):
+    @staticmethod
+    def get_base_data():
         raise NotImplementedError()
 
-    def get_abrp_model(self):
+    @staticmethod
+    def get_abrp_model():
         raise NotImplementedError()
 
-    def get_evn_model(self):
+    @staticmethod
+    def get_evn_model():
         raise NotImplementedError()

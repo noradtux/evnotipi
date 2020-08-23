@@ -5,7 +5,8 @@ from .zoe import Zoe
 class ZoeQ210(Zoe):
     """ Class for the Zoe Q210 """
 
-    def get_base_data(self):
+    @staticmethod
+    def get_base_data():
         return {
             "CAPACITY": 22,
             "SLOW_SPEED": 2.3,
@@ -13,8 +14,10 @@ class ZoeQ210(Zoe):
             "FAST_SPEED": 43.0
         }
 
-    def get_abrp_model(self):
+    @staticmethod
+    def get_abrp_model():
         return 'renault:zoe:q210:22:other'
 
-    def get_evn_model(self):
+    @staticmethod
+    def get_evn_model():
         return 'ZOE_Q210'

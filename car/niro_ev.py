@@ -5,7 +5,8 @@ from .kona_ev import KonaEv
 class NiroEv(KonaEv):
     """ Class for the Kia e-Niro """
 
-    def get_base_data(self):
+    @staticmethod
+    def get_base_data():
         return {
             "CAPACITY": 64,
             "SLOW_SPEED": 2.3,
@@ -13,5 +14,6 @@ class NiroEv(KonaEv):
             "FAST_SPEED": 50.0
         }
 
-    def get_evn_model(self):
+    @staticmethod
+    def get_evn_model():
         return 'NIRO_EV'

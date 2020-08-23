@@ -97,7 +97,8 @@ class KonaEv(Car):
         data.update(self.get_base_data())
         data.update(self._isotp.get_data())
 
-    def get_base_data(self):
+    @staticmethod
+    def get_base_data():
         return {
             "CAPACITY": 64,
             "SLOW_SPEED": 2.3,
@@ -105,5 +106,6 @@ class KonaEv(Car):
             "FAST_SPEED": 50.0
         }
 
-    def get_evn_model(self):
+    @staticmethod
+    def get_evn_model():
         return 'KONA_EV'
