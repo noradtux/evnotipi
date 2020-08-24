@@ -11,7 +11,7 @@ BCB_TX = 0x18dadef1
 
 CMD_AUX_VOLTAGE = bytes.fromhex('222005')  # EVC
 CMD_CHARGE_STATE = bytes.fromhex('225017')  # BCB 0:Nok;1:AC mono;2:AC tri;3:DC;4:AC bi
-CMD_SOC = bytes.fromhex('222002')  # EVC
+CMD_SOC = bytes.fromhex('229002')  # EVC
 CMD_SOC_BMS = bytes.fromhex('229002')  # LBC
 CMD_VOLTAGE = bytes.fromhex('229006')
 CMD_BMS_ENERGY = bytes.fromhex('2291C8')  # PR155
@@ -24,7 +24,7 @@ Fields = [
     {'cmd': CMD_AUX_VOLTAGE, 'canrx': EVC_RX, 'cantx': EVC_TX,
      'fields': (
          {'padding': 3},
-         {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .01},
+         {'name': 'auxBatteryVoltage', 'width': 2, 'scale': .01},
      )
      },
     {'cmd': CMD_CHARGE_STATE, 'canrx': BCB_RX, 'cantx': BCB_TX,
@@ -33,48 +33,48 @@ Fields = [
          {'name': 'charge_state', 'width': 1},
      )
      },
-    {'cmd': CMD_SOC, 'canrx': EVC_RX, 'cantx': EVC_TX,
+    {'cmd': CMD_SOC, 'canrx': LBC_RX, 'cantx': LBC_TX,
      'fields': (
          {'padding': 3},
-         {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .02},
+         {'name': 'SOC_DISPLAY', 'width': 2, 'scale': .02},
      )
      },
     {'cmd': CMD_SOC_BMS, 'canrx': LBC_RX, 'cantx': LBC_TX,
      'fields': (
          {'padding': 3},
-         {'name': 'SOC_BMS', 'width': 1, 'scale': .01},
+         {'name': 'SOC_BMS', 'width': 2, 'scale': .01},
      )
      },
     {'cmd': CMD_VOLTAGE, 'canrx': LBC_RX, 'cantx': LBC_TX,
      'fields': (
          {'padding': 3},
-         {'name': 'dcBatteryVoltage', 'width': 1, 'scale': .001},
+         {'name': 'dcBatteryVoltage', 'width': 4, 'scale': .001},
      )
      },
     {'cmd': CMD_BMS_ENERGY, 'canrx': LBC_RX, 'cantx': LBC_TX,
      'fields': (
          {'padding': 3},
-         {'name': 'cumulativeEnergyCharged', 'width': 1, 'scale': .001},
+         {'name': 'cumulativeEnergyCharged', 'width': 3, 'scale': .001},
      )
      },
     {'cmd': CMD_ODO, 'canrx': EVC_RX, 'cantx': EVC_TX,
      'fields': (
          {'padding': 3},
-         {'name': 'odo', 'width': 2},
+         {'name': 'odo', 'width': 3},
      )
      },
     {'cmd': CMD_NRG_DISCHARG, 'canrx': LBC_RX, 'cantx': LBC_TX,
      'fields': (
          {'padding': 3},
-         {'name': 'cumulativeEnergyDischarged', 'width': 1, 'scale': .001},
+         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .001},
      )
      },
-    {'cmd': CMD_CURRENT, 'canrx': EVC_RX, 'cantx': EVC_TX,
-     'fields': (
-         {'padding': 3},
-         {'name': 'dcBatteryCurrent', 'width': 1, 'scale': 1},
-     )
-     },
+    #{'cmd': CMD_CURRENT, 'canrx': EVC_RX, 'cantx': EVC_TX,
+    # 'fields': (
+    #     {'padding': 3},
+    #     {'name': 'dcBatteryCurrent', 'width': 1, 'scale': 1},
+    # )
+    # },
     # {'cmd': CMD_SOH, 'canrx': EVC_RX, 'cantx': EVC_TX,
     #    'fields': (
     #        {'padding': 3},
@@ -83,8 +83,8 @@ Fields = [
     #    },
     {'computed': True,
      'fields': (
-         {'name': 'dcBatteryPower',
-          'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
+    #     {'name': 'dcBatteryPower',
+    #      'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
          {'name': 'charging',
           'lambda': lambda d: int(d['charge_state'] != 0)},
          {'name': 'normalChargePort',
@@ -104,12 +104,12 @@ class ZoeZe50(Car):
         self._dongle.set_protocol('CAN_29_500')
 
         idx = 1
-        for i in range(0x21, 0x84):
+        for i in range(0x21, 0x28):
             cmd = bytes.fromhex("2290%02x" % (i))
             Fields.append({'cmd': cmd, 'canrx': 0x18daf1db, 'cantx': 0x18dadbf1,
-                           'fields': ({'format': '3x'},
+                           'fields': ({'padding': 3},
                                       {'name': 'cellVolt%02d' % (idx),
-                                       'width': 1, 'scale': .001})
+                                       'width': 2, 'scale': .001})
                            })
             idx += 1
 
@@ -117,9 +117,9 @@ class ZoeZe50(Car):
         for i in range(0x31, 0x3d):
             cmd = bytes.fromhex("2291%02x" % (i))
             Fields.append({'cmd': cmd, 'canrx': 0x18daf1db, 'cantx': 0x18dadbf1,
-                           'fields': ({'format': '3x'},
+                           'fields': ({'padding': 3},
                                       {'name': 'cellTemp%02d' % (idx),
-                                       'width': 1, 'scale': .1, 'offset': -60})
+                                       'width': 2, 'scale': .1, 'offset': -60})
                            })
             idx += 1
 
@@ -138,3 +138,11 @@ class ZoeZe50(Car):
             "NORMAL_SPEED": 22.0,
             "FAST_SPEED": 50.0
         }
+
+    @staticmethod
+    def get_abrp_model():
+        return ''
+
+    @staticmethod
+    def get_evn_model():
+        return 'ZOE_ZE50'
