@@ -28,7 +28,9 @@ EXTENDED_FIELDS = {         # value is decimal places
 ARMED = 0
 SENT = 1
 FAILED = -1
-
+SOC_NONE = 0
+SOC_THRES = 1
+SOC_FULL = 2
 
 class EVNotify:
     """ Interface to EVNotify. """
@@ -184,15 +186,32 @@ class EVNotify:
                 charging_start_soc = 0
                 abort_notification = ARMED
 
-            # SoC threshold notification
-            if ((is_charging and 0 < last_charging_soc < soc_threshold <= current_soc)
-                    or (not is_charging and last_charging_soc >= 99)
-                    or soc_notification is FAILED):
+            # SoC threshold notification:
+            # Trigger notification when SoC passes the SoC threshold or when
+            # the battery is fully charged. Since passing of the threshold can
+            # only happen once while charging we can immediately rearm.
+            # The full/charge end notification needs an explicit rearm.
+            # Full is not done with >=99 to account for charge limiting in the car
+
+            if soc_notification is SENT and current_soc < last_charging_soc:
+                soc_notification = ARMED
+
+            if is_charging and 0 < last_charging_soc < soc_threshold <= current_soc:
+                soc_trigger = SOC_THRES
+            elif not is_charging and last_charging_soc > soc_threshold:
+                soc_trigger = SOC_FULL
+            else:
+                soc_trigger = SOC_NONE
+
+            if (soc_notification is FAILED or
+                    (soc_notification is ARMED and
+                     soc_trigger is SOC_THRES or soc_trigger is SOC_FULL)):
+
                 log.info("Notification threshold(%i) reached: %i",
                          soc_threshold, current_soc)
                 try:
                     evn.sendNotification()
-                    soc_notification = ARMED
+                    soc_notification = SENT if soc_trigger is SOC_FULL else ARMED
                 except EVNotifyAPI.CommunicationError as err:
                     log.info("Communication Error: %s", err)
                     soc_notification = FAILED
