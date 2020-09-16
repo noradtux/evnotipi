@@ -186,7 +186,6 @@ class EVNotify:
 
             # SoC threshold notification
             if ((is_charging and 0 < last_charging_soc < soc_threshold <= current_soc)
-                    or (not is_charging and last_charging_soc >= 99)
                     or soc_notification is FAILED):
                 log.info("Notification threshold(%i) reached: %i",
                          soc_threshold, current_soc)
