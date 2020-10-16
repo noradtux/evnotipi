@@ -13,31 +13,35 @@ b22b002 = bytes.fromhex('22b002')
 Fields = (
     {'cmd': b2101, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
-         {'padding': 6},
-         {'name': 'SOC_BMS', 'width': 1, 'scale': .5},
-         {'name': 'availableChargePower', 'width': 2, 'scale': .01},
-         {'name': 'availableDischargePower', 'width': 2, 'scale': .01},
-         {'name': 'charging_bits', 'width': 1},
-         {'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},
-         {'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
-         {'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
-         {'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
-         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True},
-         {'padding': 1},
-         {'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
-         {'padding': 4},
-         {'name': 'fanStatus', 'width': 1},
-         {'name': 'fanFeedback', 'width': 1, 'scale': 100},
-         {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
-         {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
-         {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
-         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},
-         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},
-         {'name': 'operatingTime', 'width': 4},  # seconds
-         {'padding': 3},
-         {'name': 'driveMotorSpeed', 'width': 2, 'signed': True,
-          'offset': 0, 'scale': 1},
-         {'padding': 4},
+         {'padding': 6},                                                            # _,_,a,b,c,d
+         {'name': 'SOC_BMS', 'width': 1, 'scale': .5},                              # e
+         {'name': 'availableChargePower', 'width': 2, 'scale': .01},                # f,g
+         {'name': 'availableDischargePower', 'width': 2, 'scale': .01},             # h,i
+         {'name': 'bmsBits1', 'width': 1},                                          # j
+         {'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},     # k,l
+         {'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},                     # m,n
+         {'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},             # o
+         {'name': 'batteryMinTemperature', 'width': 1, 'signed': True},             # p
+         {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True},  # q,r,s,t,u
+         {'padding': 1},                                                            # v
+         {'name': 'batteryInletTemperature', 'width': 1, 'signed': True},           # w
+         {'name': 'maxCellVoltage', 'width': 1, 'scale': 0.02},                     # x
+         {'name': 'maxCellVoltageNumber', 'width': 1},                              # y
+         {'name': 'minCellVoltage', 'width': 1, 'scale': 0.02},                     # z
+         {'name': 'minCellVoltageNumber', 'width': 1},                              # aa
+         {'name': 'fanStatus', 'width': 1},                                         # ab
+         {'name': 'fanFeedback', 'width': 1, 'scale': 100},                         # ac
+         {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},                    # ad
+         {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},              # ae,af,ag,ah
+         {'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},           # ai,aj,ak,al
+         {'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},              # am,an,ao,ap
+         {'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},           # aq,ar,as,at
+         {'name': 'operatingSeconds', 'width': 4},                                  # au,av,aw,ax
+         {'name': 'bmsBits2', 'width': 1},                                          # ay
+         {'name': 'inverterCapacitorVoltage', 'width': 2},                          # az,ba
+         {'name': 'driveMotorSpeed1', 'width': 2, 'signed': True},                  # bb,bc
+         {'name': 'driveMotorSpeed2', 'width': 2, 'signed': True},                  # bd,be
+         {'name': 'isolationResistance', 'width': 2},                               # bf,bg
          # Len: 56
      )
      },
@@ -64,29 +68,36 @@ Fields = (
      },
     {'cmd': b2105, 'canrx': 0x7ec, 'cantx': 0x7e4,
      'fields': (
-         {'padding': 11},
-         {'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},
-         {'padding': 9},
-         {'name': 'soh', 'width': 2, 'scale': .1},
-         {'padding': 4},
-         {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
-         {'padding': 11},
+         {'padding': 11},                                               # _,_,a,b,c,d,e,f,g,h,i
+         {'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},  # j,k,l,m,n,o,p
+         {'padding': 4},                                                        # q,r,s,t
+         {'name': 'cellVoltageDeviation', 'width': 1, 'scale': 0.02},           # u
+         {'padding': 1},                                                        # v
+         {'name': 'airbagWireDuty', 'width': 1},                                # w
+         {'name': 'batteryHeater1Temperature', 'width': 1, 'signed': True},     # x
+         {'name': 'batteryHeater2Temperature', 'width': 1, 'signed': True},     # y
+         {'name': 'soh', 'width': 2, 'scale': .1},                              # z,aa
+         {'name': 'maxCellDeteriorationNo', 'width': 1},                        # ab
+         {'name': 'minCellDeterioration', 'width': 2, 'scale': 0.1},            # ac,ad
+         {'name': 'minCellDeteriorationNo', 'width': 1},                        # ae
+         {'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},                      # af
+         {'padding': 11},                                       # ag,ah,ai,aj,ak,al,am,an,ao,ap,aq
          # Len: 45
      )
      },
     {'cmd': b2180, 'canrx': 0x7ee, 'cantx': 0x7e6,
      'fields': (
          {'padding': 14},
-         {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},   # m
          {'padding': 10},
          # Len: 25
      )
      },
     {'cmd': b22b002, 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True,
      'fields': (
-         {'padding': 9},
-         {'name': 'odo', 'width': 3},
-         {'padding': 3},
+         {'padding': 9},                # _,_,a,b,c,d,e,f
+         {'name': 'odo', 'width': 3},   # g,h,i
+         {'padding': 3},                # j,k,l
          # Len: 15
      )
      },
@@ -95,11 +106,11 @@ Fields = (
          {'name': 'dcBatteryPower',
           'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
          {'name': 'charging',
-          'lambda': lambda d: int(d['charging_bits'] & 0x80 != 0)},
+          'lambda': lambda d: int(d['bmsBits1'] & 0x80 != 0)},
          {'name': 'normalChargePort',
-          'lambda': lambda d: int(d['charging_bits'] & 0x20 != 0)},
+          'lambda': lambda d: int(d['bmsBits1'] & 0x20 != 0)},
          {'name': 'rapidChargePort',
-          'lambda': lambda d: int(d['charging_bits'] & 0x40 != 0)},
+          'lambda': lambda d: int(d['bmsBits1'] & 0x40 != 0)},
      )
      },
 )
