@@ -205,7 +205,7 @@ class SocketCan:
                 sock.bind((self._config['port'],))
                 sock.settimeout(0.2)
 
-                sock.setFiltersEx([{
+                sock.set_filters_ex([{
                     'id':   canrx,
                     'mask': 0x1fffffff if self._is_extended else 0x7ff
                     }])
@@ -235,7 +235,6 @@ class SocketCan:
 
                         data_len = msg_data[0] & 0x0f
                         data = bytes(msg_data[1:data_len+1])
-                        break
 
                     elif frame_type == 0x10:
                         if self._log.isEnabledFor(logging.DEBUG):
@@ -247,7 +246,7 @@ class SocketCan:
                         if self._log.isEnabledFor(logging.DEBUG):
                             self._log.debug("Send flow control message")
 
-                        flow_msg = CANFMT.pack(cantx, 8, b'\x00\x00\x00\x00\x00\x00\x00')
+                        flow_msg = CANFMT.pack(cantx, 8, b'\x30\x00\x00\x00\x00\x00\x00\x00')
 
                         sock.send(flow_msg)
 
