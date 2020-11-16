@@ -42,7 +42,7 @@ Fields = (
          {'name': 'driveMotorSpeed1', 'width': 2, 'signed': True},                  # bb,bc
          {'name': 'driveMotorSpeed2', 'width': 2, 'signed': True},                  # bd,be
          {'name': 'isolationResistance', 'width': 2},                               # bf,bg
-         # Len: 56
+         # Len: 61
      )
      },
     {'cmd': b2102, 'canrx': 0x7ec, 'cantx': 0x7e4,
