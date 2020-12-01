@@ -7,7 +7,7 @@ from socket import (socket, timeout as sock_timeout,
 from struct import Struct, pack
 import logging
 import sys
-from pyroute2 import IPRoute
+from pyroute2 import NBD
 from . import NoData, CanError
 
 if sys.version_info[0:2] < (3, 7):
@@ -105,17 +105,13 @@ class SocketCan:
 
     def init_dongle(self):
         """ Set up the network interface and initialize socket """
-        ip_route = IPRoute()
-        ifidx = ip_route.link_lookup(ifname=self._config['port'])[0]
-        link = ip_route.link('get', index=ifidx)
-        if 'state' in link[0] and link[0]['state'] == 'up':
-            ip_route.link('set', index=ifidx, state='down')
-            sleep(1)
-
-        ip_route.link('set', index=ifidx, type='can',
-                      txqlen=4000, bitrate=self._config['speed'])
-        ip_route.link('set', index=ifidx, state='up')
-        ip_route.close()
+        with NBD(log='on') as nbd:
+            with nbd.interfaces[self._config['port']] as can_if:
+                (can_if
+                 .set('type', 'can')
+                 .set('txqlen', 4000)
+                 .set('bitrate', self._config['speed'])
+                 .set('state', 'up'))
 
         # test if kernel supports CAN_ISOTP
         try:
