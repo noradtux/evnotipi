@@ -7,7 +7,7 @@ from socket import (socket, timeout as sock_timeout,
 from struct import Struct, pack
 import logging
 import sys
-from pyroute2 import NDB
+from pyroute2 import NBD
 from . import NoData, CanError
 
 if sys.version_info[0:2] < (3, 7):
@@ -105,8 +105,8 @@ class SocketCan:
 
     def init_dongle(self):
         """ Set up the network interface and initialize socket """
-        with NDB(log='on') as ndb:
-            with ndb.interfaces[self._config['port']] as can_if:
+        with NBD(log='on') as nbd:
+            with nbd.interfaces[self._config['port']] as can_if:
                 (can_if
                  .set('type', 'can')
                  .set('txqlen', 4000)
