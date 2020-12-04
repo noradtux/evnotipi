@@ -158,7 +158,7 @@ def send_command_ex(port, cmd, cantx, canrx, canrx_mask=None, is_extended=False)
 
                     LOG.debug("Send flow control message")
 
-                    flow_msg = CANFMT.pack(cantx, 8, b'\x30\x00\x00\x00\x00\x00\x00\x00')
+                    flow_msg = CANFMT.pack(can_id ^ 8, 8, b'\x30\x00\x00\x00\x00\x00\x00\x00')
 
                     sock.send(flow_msg)
 
