@@ -146,7 +146,7 @@ class SocketCan:
             Implemented using kernel level iso-tp. """
         if self._log.isEnabledFor(logging.DEBUG):
             self._log.debug("sendCommandEx_ISOTP cmd(%s) cantx(%x) canrx(%x)",
-                            cmd.hex(' '), canrx, cantx)
+                            cmd.hex(' '), cantx, canrx)
 
         if self._is_extended:
             cantx |= CAN_EFF_FLAG
@@ -184,7 +184,7 @@ class SocketCan:
             return response from can rx id. """
         if self._log.isEnabledFor(logging.DEBUG):
             self._log.debug("sendCommandEx_CANRAW cmd(%s) cantx(%x) canrx(%x)",
-                            cmd.hex(' '), canrx, cantx)
+                            cmd.hex(' '), cantx, canrx)
 
         if self._is_extended:
             cantx |= CAN_EFF_FLAG
