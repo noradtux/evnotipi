@@ -9,7 +9,7 @@ import datetime
 import pyrfc3339
 import influxdb
 
-net_re = re.compile(r"(?P<ifname>[a-z0-9\.]+):" +
+net_re = re.compile(r"wwan0:" +
                     r"\s+(?P<bytes_rx>\d+)" +
                     r"\s+(?P<packets_rx>\d+)" +
                     r"\s+(?P<errs_rx>\d+)" +
@@ -64,13 +64,13 @@ if __name__ == "__main__":
 
             with open('/proc/net/dev', 'r') as netdev:
                 for line in netdev:
-                    m = net_re.match(line)
-                    if m['ifname'] == 'wwan0':
+                    m = net_re.search(line)
+                    if m is not None:
                         for key in ['bytes_rx', 'packets_rx', 'errs_rx', 'drop_rx',
                                     'fifo_rx', 'frame_rx', 'multicast_rx',
                                     'bytes_tx', 'packets_tx', 'errs_tx', 'drop_tx',
                                     'fifo_tx', 'colls_tx', 'carrier_tx']:
-                            data[key] = m[key]
+                            data[key] = int(m[key])
 
                         break
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
                     datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
                 })
 
-            if now - last_transmit > 10:
+            if now - last_transmit > 60:
                 last_transmit = now
                 try:
                     Influx.write_points(data_queue)
