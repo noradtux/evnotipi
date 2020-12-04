@@ -10,7 +10,7 @@ class CanDebug:
         self.session = requests.Session()
         self.url = config['debug']['url']
         self.user = config['debug'].get('user')
-        self.pwd  = config['debug'].get('pass')
+        self.pwd = config['debug'].get('pass')
         self.cartype = cartype
         self.akey = akey
         self.data_queue = []
