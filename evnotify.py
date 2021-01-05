@@ -12,17 +12,17 @@ EXTENDED_FIELDS = {         # value is decimal places
     'batteryInletTemperature': 1,
     'batteryMaxTemperature': 1,
     'batteryMinTemperature': 1,
+    'charging': 0,
     'cumulativeEnergyCharged': 0,
     'cumulativeEnergyDischarged': 0,
-    'charging': 0,
-    'normalChargePort': 0,
-    'rapidChargePort': 0,
     'dcBatteryCurrent': 2,
     'dcBatteryPower': 2,
     'dcBatteryVoltage': 2,
-    'soh': 0,
     'externalTemperature': 1,
-    'odo': 0
+    'normalChargePort': 0,
+    'odo': 0,
+    'rapidChargePort': 0,
+    'soh': 0
 }
 
 ARMED = 0
