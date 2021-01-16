@@ -69,6 +69,13 @@ Fields = (
          {'padding': 3},
      )
      },
+    {'cmd': b220100, 'canrx': 0x7bb, 'cantx': 0x7b3, 'autopad': True,
+     'fields': (
+         {'padding': 7},
+         {'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+     )
+     },
     {'computed': True,
      'fields': (
          {'name': 'dcBatteryPower',
