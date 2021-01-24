@@ -6,18 +6,23 @@ import logging
 import requests
 
 PID_MAP = {
-    "dcBatteryCurrent": ["current", 2],
-    "dcBatteryVoltage": ["voltage", 2],
-    "dcBatteryPower":   ["power", 2],
-    "SOC_DISPLAY":      ["soc", 1],
-    "soh":              ["soh", 0],
-    "charging":         ["is_charging", 0],
-    "speed":            ["speed", 0],
-    "altitude":         ["elevation", 1],
-    "longitude":        ["lon", 9],
-    "latitude":         ["lat", 9],
-    "externalTemperature":   ["ext_temp", 1],
-    "batteryAvgTemperature": ["batt_temp", 1],
+    'SOC_DISPLAY':      ['soc', 1],
+    'dcBatteryPower':   ['power', 2],
+    'speed':            ['speed', 1],
+    'latitude':         ['lat', 9],
+    'longitude':        ['lon', 9],
+    'charging':         ['is_charging', 0],
+    # 'capacity'
+    'rapidChargePort':  ['is_dcfc', 0],
+    'cumulativeEnergyCharged': ['kwh_charged', 2],
+    'soh':              ['soh', 0],
+    # 'heading'
+    'altitude':         ['elevation', 1],
+    'externalTemperature':   ['ext_temp', 1],
+    'batteryAvgTemperature': ['batt_temp', 1],
+    'dcBatteryVoltage': ['voltage', 2],
+    'dcBatteryCurrent': ['current', 2],
+    'odo':              ['odometer', 2],
 }
 
 API_URL = "https://api.iternio.com/1/tlm"
