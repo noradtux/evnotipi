@@ -27,7 +27,7 @@ EXTENDED_FIELDS = {         # value is decimal places
 
 ARMED = 0
 SENT = 1
-FAILED = -1
+PENDING = -1
 
 
 class EVNotify:
@@ -102,7 +102,7 @@ class EVNotify:
                 # Detect aborted charge
                 if ((now - last_charging > ABORT_NOTIFICATION_INTERVAL and
                      charging_start_soc > 0 and 0 < last_charging_soc < soc_threshold and
-                     abort_notification is ARMED) or abort_notification is FAILED):
+                     abort_notification is ARMED) or abort_notification is PENDING):
                     log.info("Aborted charge detected, send abort notification now-last_charging(%i) charging_start_soc(%i) last_charging_soc(%i) soc_threshold(%i) abort_notification(%i)",
                              now - last_charging, charging_start_soc, last_charging_soc,
                              soc_threshold, abort_notification)
@@ -111,7 +111,7 @@ class EVNotify:
                         abort_notification = SENT
                     except EVNotifyAPI.CommunicationError as err:
                         log.error("Communication Error: %s", err)
-                        abort_notification = FAILED
+                        abort_notification = PENDING
 
                 if len(self._data) == 0:
                     continue
@@ -190,7 +190,7 @@ class EVNotify:
 
                 # SoC threshold notification
                 if ((is_charging and 0 < last_charging_soc < soc_threshold <= current_soc)
-                        or soc_notification is FAILED):
+                        or soc_notification is PENDING):
                     log.info("Notification threshold(%i) reached: %i",
                              soc_threshold, current_soc)
                     try:
@@ -198,7 +198,7 @@ class EVNotify:
                         soc_notification = ARMED
                     except EVNotifyAPI.CommunicationError as err:
                         log.info("Communication Error: %s", err)
-                        soc_notification = FAILED
+                        soc_notification = PENDING
 
             except EVNotifyAPI.CommunicationError as err:
                 log.info("Communication Error: %s", err)
