@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from time import time, sleep
 from threading import Thread, Condition
 import logging
-import influxdb
+from influxdb_client import InfluxDBClient, WriteOptions
 import pyrfc3339
 
 INT_FIELD_LIST = ('gps_device', 'charging', 'fanFeedback', 'fanStatus', 'fix_mode',
@@ -24,102 +24,53 @@ class InfluxTelemetry:
         self._cartype = car.get_evn_model()
         self._gps = gps
         self._poll_interval = config['interval']
-        self._running = False
-        self._thread = None
-
-        self._data_q_lock = Condition()
-        self._data_queue = []
+        self._influx = None
+        self._iwrite = None
 
     def start(self):
         """ Start the submission thread """
         self._running = True
-        self._thread = Thread(target=self.submit_data, name="EVNotiPi/InfluxDB")
-        self._thread.start()
+        self._influx = InfluxDBClient(url=self._config['url'],
+                                      org=self._config['org'],
+                                      token=self._config['token'],
+                                      enable_gzip=True)
+        opts = WriteOptions(batch_size=1000,
+                            flush_interval=self._poll_interval * 1000,
+                            jitter_interval=2000)
+        self._iwrite = self._influx.write_api(write_options=opts)
         self._car.register_data(self.data_callback)
 
     def stop(self):
         """ Stop the submission thread """
         self._car.unregister_data(self.data_callback)
         self._running = False
-        with self._data_q_lock:
-            self._data_q_lock.notify()
-        self._thread.join()
+        self._iwrite.__del__()
+        self._influx.__del__()
+        self._influx = None
+        self._iwrite = None
 
     def data_callback(self, data):
         """ Callback to receive data from "car" """
         self._log.debug("Enqeue...")
-        with self._data_q_lock:
-            tags = {
-                "cartype": self._cartype,
-                "akey": self._evn_akey,
-                }
-            fields = {k: v if k in INT_FIELD_LIST else float(v)
-                      for k, v in data.items() if v is not None}
+        p = {"measurement": "telemetry",
+             "tags": {
+                 "cartype": self._cartype,
+                 "akey": self._evn_akey,
+                 }
+             }
+        fields = {k: v if k in INT_FIELD_LIST else float(v)
+                  for k, v in data.items() if v is not None}
 
-            if 'gps_device' in data:
-                tags['gps_device'] = data['gps_device']
+        if 'gps_device' in data:
+            p['tags']['gps_device'] = data['gps_device']
 
-            self._data_queue.append({
-                "measurement": "telemetry",
-                "time": pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc)),
-                "tags": tags,
-                "fields": fields
-                })
+        p["time"] = pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc))
+        p["fields"] = fields
 
-            self._data_q_lock.notify()
-
-    def submit_data(self):
-        """ The submission thread """
-        influx = None
-        while self._running and influx is None:
-            try:
-                influx = influxdb.InfluxDBClient(self._config['host'], self._config['port'],
-                                                 self._config['user'], self._config['pass'],
-                                                 self._config['dbname'], retries=1, timeout=30,
-                                                 ssl=self._config.get('ssl', False),
-                                                 verify_ssl=True, gzip=True)
-
-            except influxdb.exceptions.InfluxDBClientError as err:
-                self._log.error(err)
-                influx = None
-                sleep(3)
-            except influxdb.exceptions.InfluxDBServerError as err:
-                self._log.error(err)
-                influx = None
-                sleep(3)
-
-        send_queue = []
-        while self._running:
-            now = time()
-            did_transfer = False
-            with self._data_q_lock:
-                if len(self._data_queue) == 0:
-                    self._log.debug("Waiting...")
-                    self._data_q_lock.wait()
-                else:
-                    self._log.debug("Transmit...")
-
-                    send_queue += self._data_queue
-                    self._data_queue.clear()
-
-            try:
-                influx.write_points(send_queue)
-                send_queue.clear()
-                did_transfer = True         # sleep outside of the lock
-            except influxdb.exceptions.InfluxDBClientError as err:
-                self._log.error("InfluxDBClientError qlen(%i): code(%i) content(%s)",
-                                len(send_queue), err.code, err.content)
-                if err.code == 400:
-                    send_queue.clear()
-            #except Exception as err:
-            #    self._log.error("InfluxTelemetry len(%i): %s", len(send_queue), err)
-
-            # Prime next loop iteration
-            if self._running and did_transfer:
-                runtime = time() - now
-                interval = self._poll_interval - (runtime if runtime > self._poll_interval else 0)
-                sleep(max(0, interval))
+        self._iwrite.write(bucket=self._config['bucket'],
+                           org=self._config['org'],
+                           record=[p])
 
     def check_thread(self):
         """ Return the status of the thread """
-        return self._thread.is_alive()
+        return self._running
