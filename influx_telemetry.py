@@ -22,7 +22,8 @@ class InfluxTelemetry:
         self._car = car
         self._cartype = car.get_evn_model()
         self._gps = gps
-        self._poll_interval = config['interval']
+        self._poll_interval = config.get('interval', 60)
+        self._batch_size = config.get('batch_size', 10000)
         self._influx = None
         self._iwrite = None
 
@@ -33,9 +34,9 @@ class InfluxTelemetry:
                                       org=self._config['org'],
                                       token=self._config['token'],
                                       enable_gzip=True)
-        opts = WriteOptions(batch_size=1000,
+        opts = WriteOptions(batch_size=self._batch_size,
                             flush_interval=self._poll_interval * 1000,
-                            jitter_interval=2000)
+                            jitter_interval=5000)
         self._iwrite = self._influx.write_api(write_options=opts)
         self._car.register_data(self.data_callback)
 
