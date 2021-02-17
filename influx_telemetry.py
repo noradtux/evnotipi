@@ -1,7 +1,6 @@
 """ Influx Telemetry """
 from datetime import datetime, timezone
 from time import time, sleep
-from threading import Thread, Condition
 import logging
 from influxdb_client import InfluxDBClient, WriteOptions
 import pyrfc3339
