@@ -7,7 +7,7 @@ from serial import Serial
 import time
 import datetime
 import pyrfc3339
-import influxdb
+from influxdb_client import InfluxDBClient, WriteOptions
 
 net_re = re.compile(r"wwan0:" +
                     r"\s+(?P<bytes_rx>\d+)" +
@@ -41,18 +41,20 @@ elif os.path.exists('config.yaml'):
 else:
     raise Exception('No config found')
 
-Influx = influxdb.InfluxDBClient(C['influxdb']['host'], C['influxdb']['port'],
-                                 C['influxdb']['user'], C['influxdb']['pass'],
-                                 C['influxdb']['dbname'], retries=1, timeout=10,
-                                 ssl=C['influxdb'].get('ssl', False),
-                                 verify_ssl=True, gzip=True)
+Influx = InfluxDBClient(url=C['influxdb']['url'],
+                        org=C['influxdb']['org'],
+                        token=C['influxdb']['token'],
+                        enable_gzip=True)
+
+opts = WriteOptions(batch_size=10000,
+                    flush_interval=60000,
+                    jitter_interval=5000)
+write_api = Influx.write_api(write_options=opts)
 
 ##############################################################################
 
 if __name__ == "__main__":
     ser = Serial("/dev/ttyUSB0")
-    data_queue = []
-    last_transmit = 0
     while True:
         line = ser.readline()
         if line[:6] == b'^RSSI:':
@@ -74,20 +76,14 @@ if __name__ == "__main__":
 
                         break
 
-            data_queue.append({
-                'measurement': 'mobile_net',
-                'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
-                'fields': data,
-                'time': pyrfc3339.generate(
-                    datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
-                })
-
-            if now - last_transmit > 60:
-                last_transmit = now
-                try:
-                    Influx.write_points(data_queue)
-                    data_queue.clear()
-                except Exception as e:
-                    print("Exception", e)
+            write_api.write(bucket=C['influxdb']['bucket'],
+                            org=C['influxdb']['org'],
+                            record=[{
+                                'measurement': 'mobile_net',
+                                'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
+                                'fields': data,
+                                'time': pyrfc3339.generate(
+                                    datetime.datetime.fromtimestamp(now, datetime.timezone.utc)),
+                                }])
 
 #########################
