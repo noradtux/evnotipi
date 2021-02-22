@@ -65,6 +65,9 @@ class GpsPoller:
                                     'altitude':  fix.get('alt'),
                                     'time':      fix_time,
                                 })
+                                if (self._last_fix['speed'] is not None and
+                                        0 < self._last_fix['speed'] < 1):
+                                    self._last_fix['speed'] = 0
                             elif fix['class'] == 'SKY':
                                 self._last_fix.update({
                                     'xdop': fix.get('xdop', None),
