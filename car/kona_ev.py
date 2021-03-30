@@ -69,11 +69,12 @@ Fields = (
          {'padding': 3},
      )
      },
-    {'cmd': b220100, 'canrx': 0x7bb, 'cantx': 0x7b3, 'autopad': True,
+    {'cmd': b220100, 'canrx': 0x7bb, 'cantx': 0x7b3,
      'fields': (
-         {'padding': 7},
+         {'padding': 8},
          {'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
          {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'padding': 28},
      )
      },
     {'computed': True,
