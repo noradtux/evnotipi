@@ -9,6 +9,7 @@ b2104 = bytes.fromhex('2104')
 b2105 = bytes.fromhex('2105')
 b2180 = bytes.fromhex('2180')
 b22b002 = bytes.fromhex('22b002')
+b22c00b = bytes.fromhex('22c00b')
 
 Fields = (
     {'cmd': b2101, 'canrx': 0x7ec, 'cantx': 0x7e4,
@@ -99,6 +100,22 @@ Fields = (
          {'name': 'odo', 'width': 3},   # g,h,i
          {'padding': 3},                # j,k,l
          # Len: 15
+     )
+     },
+    {'cmd': b22c00b, 'canrx': 0x7a8, 'cantx': 0x7a0, 'optional': True, 'autopad': True,
+     'fields': (
+         {'padding': 6},                # _,_,a,b,c,d
+         {'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'name': 'tire_fl_temp', 'width': 1, 'offset': -55},
+         {'padding': 2},
+         {'name': 'tire_fr_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'name': 'tire_fr_temp', 'width': 1, 'offset': -55},
+         {'padding': 2},
+         {'name': 'tire_rr_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'name': 'tire_rr_temp', 'width': 1, 'offset': -55},
+         {'padding': 2},
+         {'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'name': 'tire_rl_temp', 'width': 1, 'offset': -55},
      )
      },
     {'computed': True,
