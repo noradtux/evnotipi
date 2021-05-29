@@ -104,7 +104,7 @@ Fields = (
      },
     {'cmd': b22c00b, 'canrx': 0x7a8, 'cantx': 0x7a0, 'optional': True,
      'fields': (
-         {'padding': 6},                # _,_,a,b,c,d
+         {'padding': 7},                # _,_,a,b,c,d
          {'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},
          {'name': 'tire_fl_temp', 'width': 1, 'offset': -55},
          {'padding': 2},
@@ -116,7 +116,7 @@ Fields = (
          {'padding': 2},
          {'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504},
          {'name': 'tire_rl_temp', 'width': 1, 'offset': -55},
-         {'padding': 3},
+         {'padding': 2},
      )
      },
     {'computed': True,
