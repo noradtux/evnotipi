@@ -37,8 +37,22 @@ class IsoTpDecoder:
             # make sure 'computed' is set so we don't need to check for it
             # in the decoder. Checking is slow.
             cmd_data['computed'] = cmd_data.get('computed', False)
+            cmd_data['simple'] = cmd_data.get('simple', False)
 
-            if not cmd_data['computed']:
+            if cmd_data.get['simple']:
+                # simple mode is for platforms like MEB or Zoe ZE50 which return
+                # one value per command. Padding and width will be auto-set
+                assert len(cmd_data['fields']) == 1
+
+                field = cmd_data['fields'][0]
+                fmt += str(len(cmd_data['cmd'])) + 'x'
+                field['simple'] = True
+                field['scale'] = field.get('scale', 1)
+                field['offset'] = field.get('offset', 0)
+                field['fmt_idx'] = 0
+                cmd_data['struct'] = struct.Struct(fmt)
+
+            elif not cmd_data['computed']:
                 # Build a new array instead of inserting into the existing one.
                 # Should be quicker.
                 new_fields = []
@@ -132,10 +146,18 @@ class IsoTpDecoder:
                             fmt = cmd_data['struct'].format
                             fmt += str(pad) + 'x'
                             cmd_data['struct'] = struct.Struct(fmt)
-                            self._log.info("canid(0x%x) cmd(%s) len(%i) pad(%i)", 
+                            self._log.info("canid(0x%x) cmd(%s) len(%i) pad(%i)",
                                            cmd_data['cantx'], cmd_data['cmd'].hex(),
                                            len(raw), pad)
                         cmd_data['autopad'] = False
+
+                    elif cmd_data['simple']:
+                        width = len(raw) - cmd_data['struct'].size
+                        assert 0 < width <= 8
+                        fmt = cmd_data['struct'].format
+                        fmt += FormatMap[width]
+                        cmd_data['struct'] = struct.Struct(fmt)
+                        cmd_data['simple'] = False
 
                     raw_fields = cmd_data['struct'].unpack(raw)
 
