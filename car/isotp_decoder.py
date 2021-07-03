@@ -39,7 +39,7 @@ class IsoTpDecoder:
             cmd_data['computed'] = cmd_data.get('computed', False)
             cmd_data['simple'] = cmd_data.get('simple', False)
 
-            if cmd_data.get['simple']:
+            if cmd_data.get('simple'):
                 # simple mode is for platforms like MEB or Zoe ZE50 which return
                 # one value per command. Padding and width will be auto-set
                 assert len(cmd_data['fields']) == 1
