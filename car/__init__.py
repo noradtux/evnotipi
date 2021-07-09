@@ -2,6 +2,8 @@
 from importlib import import_module
 
 Modules = {
+    'EV6': {'f': 'ev6', 'c': 'Ev6'},
+    'IONIQ5': {'f': 'ioniq5', 'c': 'Ioniq5'},
     'IONIQ_BEV': {'f': 'ioniq_bev', 'c': 'IoniqBev'},
     'IONIQ_FL_EV': {'f': 'ioniq_fl_ev', 'c': 'IoniqFlEv'},
     'KONA_EV': {'f': 'kona_ev', 'c': 'KonaEv'},
