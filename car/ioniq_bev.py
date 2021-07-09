@@ -104,7 +104,7 @@ Fields = (
      },
     {'cmd': b22c00b, 'canrx': 0x7a8, 'cantx': 0x7a0, 'optional': True,
      'fields': (
-         {'padding': 7},                # _,_,a,b,c,d
+         {'padding': 7},                # _,_,a,b,c,d,e
          {'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},
          {'name': 'tire_fl_temp', 'width': 1, 'offset': -55},
          {'padding': 2},
@@ -119,6 +119,14 @@ Fields = (
          {'padding': 2},
      )
      },
+    {'cmd': b2101, 'canrx': 0x7ca, 'cantx': 0x7e2, 'autopad': True,
+     'fields': (
+         {'padding': 7},
+         {'name': 'gearBits', 'width': 1},    # f
+         {'name': 'brakeBits', 'width': 1},   # g
+         {'padding': 5},
+         {'name': 'vmcu_accel', 'width': 1},    # l
+         )},
     {'computed': True,
      'fields': (
          {'name': 'dcBatteryPower',
@@ -129,6 +137,20 @@ Fields = (
           'lambda': lambda d: int(d['bmsBits1'] & 0x20 != 0)},
          {'name': 'rapidChargePort',
           'lambda': lambda d: int(d['bmsBits1'] & 0x40 != 0)},
+         {'name': 'isParked',
+          'lambda': lambda d: int(d['gearBits'] & 0b0001 != 0)},
+         {'name': 'vmcu_gear_p',
+          'lambda': lambda d: int(d['gearBits'] & 0b0001 != 0)},
+         {'name': 'vmcu_gear_r',
+          'lambda': lambda d: int(d['gearBits'] & 0b0010 != 0)},
+         {'name': 'vmcu_gear_n',
+          'lambda': lambda d: int(d['gearBits'] & 0b0100 != 0)},
+         {'name': 'vmcu_gear_d',
+          'lambda': lambda d: int(d['gearBits'] & 0b1000 != 0)},
+         {'name': 'vmcu_brake_lamp',
+          'lambda': lambda d: int(d['brakeBits'] & 0b01 != 0)},
+         {'name': 'vmcu_brake_on',
+          'lambda': lambda d: int(d['brakeBits'] & 0b10 != 0)},
      )
      },
 )
