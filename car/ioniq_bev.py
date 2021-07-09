@@ -119,13 +119,14 @@ Fields = (
          {'padding': 2},
      )
      },
-    {'cmd': b2101, 'canrx': 0x7ea, 'cantx': 0x7e2, 'autopad': True,
+    {'cmd': b2101, 'canrx': 0x7ea, 'cantx': 0x7e2,
      'fields': (
          {'padding': 7},
          {'name': 'gearBits', 'width': 1},    # f
          {'name': 'brakeBits', 'width': 1},   # g
          {'padding': 5},
-         {'name': 'vmcu_accel', 'width': 1},    # l
+         {'name': 'vmcu_accel', 'width': 1},  # l
+         {'padding': 7},
          )},
     {'computed': True,
      'fields': (
