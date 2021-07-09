@@ -119,7 +119,7 @@ Fields = (
          {'padding': 2},
      )
      },
-    {'cmd': b2101, 'canrx': 0x7ca, 'cantx': 0x7e2, 'autopad': True,
+    {'cmd': b2101, 'canrx': 0x7ea, 'cantx': 0x7e2, 'autopad': True,
      'fields': (
          {'padding': 7},
          {'name': 'gearBits', 'width': 1},    # f
