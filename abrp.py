@@ -14,6 +14,7 @@ PID_MAP = {
     'charging':         ['is_charging', 0],
     # 'capacity'
     'rapidChargePort':  ['is_dcfc', 0],
+    'isParked':         ['is_parked', 0],
     'cumulativeEnergyCharged': ['kwh_charged', 2],
     'soh':              ['soh', 0],
     # 'heading'
