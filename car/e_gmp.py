@@ -23,7 +23,7 @@ Fields = (
          {'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
          {'name': 'cellTemp%02d', 'idx': 1, 'cnt': 4, 'width': 1, 'signed': True},
          {'padding': 2},
-         {'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
+         {'name': 'batteryInletTemperatureX', 'width': 1, 'signed': True},
          {'padding': 6},
          {'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
          {'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
@@ -74,7 +74,7 @@ Fields = (
          {'padding': 8},
          {'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
          {'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
-         {'padding': 28},
+         {'padding': 29}
      )
      },
     {'computed': True,
@@ -114,4 +114,4 @@ class E_GMP(Car):
         }
 
     def get_evn_model(self):
-        return 'KONA_EV'
+        return 'E-GMP'

@@ -13,5 +13,8 @@ class Ioniq5(E_GMP):
                 "FAST_SPEED": 220.0
                 }
 
+    def get_evn_model(self):
+        return 'IONIQ5'
+    
     def get_abrp_model(self):
         return 'hyundai:ioniq5:22:%d' % self.get_base_data()['CAPACITY']
