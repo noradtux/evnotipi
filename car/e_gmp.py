@@ -81,12 +81,12 @@ Fields = (
      'fields': (
          {'name': 'dcBatteryPower',
           'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
-         {'name': 'charging',
-          'lambda': lambda d: int(d['charging_bits2'] & 0xc == 0x8)},
-         {'name': 'normalChargePort',
-          'lambda': lambda d: int((d['charging_bits2'] & 0x80) != 0 and d['charging_bits1'] == 3)},
-         {'name': 'rapidChargePort',
-          'lambda': lambda d: int((d['charging_bits2'] & 0x80) != 0 and d['charging_bits1'] != 3)},
+         #{'name': 'charging',
+         # 'lambda': lambda d: int(d['charging_bits2'] & 0xc == 0x8)},
+         #{'name': 'normalChargePort',
+         # 'lambda': lambda d: int((d['charging_bits2'] & 0x80) != 0 and d['charging_bits1'] == 3)},
+         #{'name': 'rapidChargePort',
+         # 'lambda': lambda d: int((d['charging_bits2'] & 0x80) != 0 and d['charging_bits1'] != 3)},
      )
      },
 )
