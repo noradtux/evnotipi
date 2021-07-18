@@ -29,6 +29,19 @@ class DataError(ValueError):
     """ Problem with data occured """
 
 
+class RollingAverage:
+    def __init__(self, length=10):
+        self._buf = [0] * length
+        self._idx = 0
+
+    def push(self, value):
+        self._buf[self._idx] = value
+        self._idx = (self._idx + 1) % len(self._buf)
+
+    def get(self):
+        return sum(self._buf) / len(self._buf)
+
+
 class Car:
     """ Abstract class implementing the car polling loop.
         Subclasses need to implement read_dongle """
@@ -63,6 +76,7 @@ class Car:
 
     def poll_data(self):
         """ The poller thread. """
+        avg_speed = RollingAverage(20)
         while self._running:
             now = time()
 
@@ -111,6 +125,10 @@ class Car:
                     sleep(1)
 
             fix = self._gps.fix()
+            if data['charging'] is None:
+                avg_speed.push(fix['speed'] if fix and fix['mode'] > 1 else 0)
+                data['charging'] = 1 if data['dcBatteryPower'] < -1.3 and avg_speed.get() < 5 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
+
             if fix and fix['mode'] > 1:
                 if data['charging'] or data['normalChargePort'] or data['rapidChargePort']:
                     speed = 0.0
