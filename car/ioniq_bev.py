@@ -173,6 +173,13 @@ class IoniqBev(Car):
         data.update(self.get_base_data())
         data.update(self._isotp.get_data())
 
+        temp = 0
+        for i in range(1, 13):
+            temp += data['cellTemp%02d' % i]
+
+        temp /= 12
+        data['batteryAvgTemperature'] = temp
+
     def get_base_data(self):
         return {
             "CAPACITY": 28,
