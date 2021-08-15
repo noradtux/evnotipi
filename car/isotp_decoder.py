@@ -34,6 +34,12 @@ class IsoTpDecoder:
             fmt = ">"
             fmt_idx = 0
 
+            if 'cmd' in cmd_data:
+                if isinstance(cmd_data['cmd'], str):
+                    cmd_data['cmd'] = bytes.fromhex(cmd_data['cmd'])
+                elif not isinstance(cmd_data['cmd'], bytes):
+                    raise ValueError('Expected bytes or str as cmd')
+
             # make sure 'computed' is set so we don't need to check for it
             # in the decoder. Checking is slow.
             cmd_data['computed'] = cmd_data.get('computed', False)
