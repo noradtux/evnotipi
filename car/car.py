@@ -127,7 +127,7 @@ class Car:
             fix = self._gps.fix()
             if data['charging'] is None:
                 avg_speed.push(fix['speed'] if fix and fix['mode'] > 1 else 0)
-                data['charging'] = 1 if data['dcBatteryPower'] < -1.3 and avg_speed.get() < 5 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
+                data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and avg_speed.get() < 5 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
 
             if fix and fix['mode'] > 1:
                 if data['charging'] or data['normalChargePort'] or data['rapidChargePort']:
