@@ -161,7 +161,10 @@ class IsoTpDecoder:
                         width = len(raw) - cmd_data['struct'].size
                         assert 0 < width <= 8
                         fmt = cmd_data['struct'].format
-                        fmt += FormatMap[width]
+                        if cmd_data['fields'][0].get('signed', False):
+                            fmt += FormatMap[width]['f'].lower()
+                        else:
+                            fmt += FormatMap[width]['f'].upper()
                         cmd_data['struct'] = struct.Struct(fmt)
                         cmd_data['simple'] = False
 
