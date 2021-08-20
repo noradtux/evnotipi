@@ -34,6 +34,12 @@ class IsoTpDecoder:
             fmt = ">"
             fmt_idx = 0
 
+            if 'cmd' in cmd_data:
+                if isinstance(cmd_data['cmd'], str):
+                    cmd_data['cmd'] = bytes.fromhex(cmd_data['cmd'])
+                elif not isinstance(cmd_data['cmd'], bytes):
+                    raise ValueError('Expected bytes or str as cmd')
+
             # make sure 'computed' is set so we don't need to check for it
             # in the decoder. Checking is slow.
             cmd_data['computed'] = cmd_data.get('computed', False)
@@ -155,7 +161,10 @@ class IsoTpDecoder:
                         width = len(raw) - cmd_data['struct'].size
                         assert 0 < width <= 8
                         fmt = cmd_data['struct'].format
-                        fmt += FormatMap[width]
+                        if cmd_data['fields'][0].get('signed', False):
+                            fmt += FormatMap[width]['f'].lower()
+                        else:
+                            fmt += FormatMap[width]['f'].upper()
                         cmd_data['struct'] = struct.Struct(fmt)
                         cmd_data['simple'] = False
 
