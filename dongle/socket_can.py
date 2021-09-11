@@ -113,8 +113,8 @@ class SocketCan:
             sleep(1)
 
         ip_route.link('set', index=ifidx, type='can',
-                      txqlen=4000, bitrate=self._config['speed'])
-        ip_route.link('set', index=ifidx, state='up')
+                      txqlen=4000, bitrate=self._config['speed'],
+                      state='up')
         ip_route.close()
 
         # test if kernel supports CAN_ISOTP
