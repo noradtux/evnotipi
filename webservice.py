@@ -1,4 +1,4 @@
-""" Simple weeb service """
+""" Simple web service """
 import logging
 import json
 from geventwebsocket.handler import WebSocketHandler
@@ -54,8 +54,8 @@ class WebService(Bottle):
 
     def start(self):
         self.running = True
-        self.server = WSGIServer(
-            ('0.0.0.0', 8080), self, handler_class=WebSocketHandler)
+        self.server = WSGIServer(('::', 8080), self,
+                                 handler_class=WebSocketHandler)
         self.thread = Thread(target=self.server.serve_forever)
         self.thread.start()
         self.car.register_data(self.data_callback)
