@@ -160,7 +160,7 @@ class EVNotify:
                     log.debug(extended_data)
                     evn.setExtended(extended_data)
 
-                if data['fix_mode'] > 1:
+                if data['fix_mode'] > 1 and not is_charging and not is_connected:
                     location = {a: data[a]
                                 for a in ('latitude', 'longitude', 'speed')}
                     evn.setLocation({'location': location})
