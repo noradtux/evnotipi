@@ -89,6 +89,10 @@ class IsoTpDecoder:
                 else:
                     fields = cmd_data['fields']
 
+                if 'pos' in fields[0] and not absolute_mode:
+                    absolute_mode = True
+                    cmd_data['autopad'] = True
+
                 new_fields = []
                 for field in fields:
                     self._log.debug(field)
