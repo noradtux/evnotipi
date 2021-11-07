@@ -42,7 +42,6 @@ class ABRP:
         self._car = car
         self._car_model = car.get_abrp_model()
         self._config = config
-        self._session = requests.Session()
         self._api_key = config['api_key']
         self._token = config['token']
         self._poll_interval = config['interval']
@@ -76,6 +75,8 @@ class ABRP:
 
     def submit_data(self):
         """ Data submission thread """
+
+        session = requests.Session()
         while self._running:
             now = time()
 
@@ -127,10 +128,10 @@ class ABRP:
 
             try:
                 payload_str = json.dumps(payload)
-                ret = self._session.post(API_URL + "/send",
-                                         data={'api_key': self._api_key,
-                                               'token': self._token,
-                                               'tlm': payload_str})
+                ret = session.post(API_URL + "/send",
+                                   data={'api_key': self._api_key,
+                                         'token': self._token,
+                                         'tlm': payload_str})
                 self._log.debug("Post result: %i %s",
                                 ret.status_code, ret.text)
 
@@ -139,23 +140,14 @@ class ABRP:
                                     payload_str, str(ret), ret.text)
 
             except requests.exceptions.ConnectionError as err:
-                self._log.error(err)
+                self._log.error("ConnectionError: %s", err)
             except SubmitError as err:
-                self._log.error(err)
+                self._log.error("SubmitError: %s", err)
 
             # Prime next loop iteration
             if self._running:
                 interval = self._poll_interval - (time() - now)
                 sleep(max(0, interval))
-
-    def get_next_charge(self):
-        """ Get the next charge stop """
-        ret = self._session.get(
-            "{1}/get_next_charge?api_key={0._api_key}&token={0._token}".format(self, API_URL))
-        if ret.status_code == requests.codes.ok and ret.json()['status'] == "ok":
-            return ret.json()['next_charge']
-        else:
-            raise SubmitError(str(ret), ret.text)
 
     def check_thread(self):
         """ Return the status of the thread """
