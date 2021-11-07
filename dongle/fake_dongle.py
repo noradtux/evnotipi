@@ -1,5 +1,7 @@
 """ Dongle for testing """
 
+B = bytes.fromhex
+
 B2101 = bytes.fromhex('2101')
 B2102 = bytes.fromhex('2102')
 B2103 = bytes.fromhex('2103')
@@ -12,7 +14,12 @@ B220102 = bytes.fromhex('220102')
 B220103 = bytes.fromhex('220103')
 B220104 = bytes.fromhex('220104')
 B220105 = bytes.fromhex('220105')
+B22010a = bytes.fromhex('22010a')
+B22010b = bytes.fromhex('22010b')
+B22010c = bytes.fromhex('22010c')
 B22b002 = bytes.fromhex('22b002')
+B22c00b = bytes.fromhex('22c00b')
+
 
 data = {
     'IONIQ_BEV': {
@@ -107,7 +114,24 @@ data = {
                                     00000000000000""")[:0x00f],
             },
         },
-
+    'EV6': {
+        0x7a0: {
+            B22c00b: B('62 c0 0b ff ff ff 80 b5 3f 00 04 00 b6 41 00 04 00 b5 40 00 04 00 b8 41 00 04 00 3d 99 b0 9b b0 9a b0 9b b0')},
+        0x7b3: {
+            B220100: B('62 01 00 7f d4 07 c8 ff 71 69 52 00 df 56 00 e4 56 ff 1c ff 96 ff ff ff ff ff ff ff 37 1b 75 73 00 ff ff 01')},
+        0x7c6: {
+            B22b002: B('62 b0 02 e0 00 00 00 ff b5 00 03 9a 00 00 00')},
+        0x7e4: {
+            B220101: B('62 01 01 ef fb e7 ef 9f 00 00 00 00 00 00 08 1d b6 10 0f 0f 10 0f 0f 0f 00 35 c6 26 c5 33 00 00 8d 00 00 0e e3 00 00 0d c9 00 00 0b 0e 00 00 09 d3 00 12 21 a4 00 02 f7 00 00 00 00 0b b8'),
+            B220102: B('62 01 02 ff ff ff ff c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6'),
+            B220103: B('62 01 03 ff ff ff ff c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c5 c6 c6 c5 c5 c6 c6 c6 c6 c6 c6 c6 c6 c6'),
+            B220104: B('62 01 04 ff ff ff ff c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c5 c6 c6 c6 c6 c6'),
+            B220105: B('62 01 05 ff fb 74 0f 01 2c 01 01 2c 0f 0f 0f 0f 0f 0f 10 54 3e 6c 34 00 00 50 0f 00 03 e8 1a 71 e2 00 a2 00 00 00 00 00 00 00 0f 0f 0f 10'),
+            B22010a: B('62 01 0a ff ff ff ff c6 c6 c6 c6 c6 c6 c6 c5 c6 c6 c6 c6 c5 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6'),
+            B22010b: B('62 01 0b ff ff ff ff c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6'),
+            B22010c: B('62 01 0c ff ff ff ff c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c6 c5'),
+            }
+        }
     }
 
 class FakeDongle:

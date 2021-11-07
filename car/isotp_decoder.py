@@ -18,6 +18,19 @@ def is_power_of_two(number):
     return (number & (number-1) == 0) and number != 0
 
 
+TqBase = ord('a') - 1
+
+def tq(pos: str) -> int:
+    """ Convert Torque style address (a - zz) to an int """
+    pos = pos.lower()
+    if len(pos) == 1:
+        return ord(pos) - TqBase + 3
+    if len(pos) == 2:
+        return (ord(pos[0]) - TqBase) * 25 + \
+               (ord(pos[1]) - TqBase) + 4
+    raise ValueError()
+
+
 class IsoTpDecoder:
     """ Generic decoder for ISO-TP based cars """
 
@@ -29,10 +42,12 @@ class IsoTpDecoder:
         self.preprocess_fields()
 
     def preprocess_fields(self):
-        """ Preprocess field structure, creating format strings for unpack etc.,"""
+        """ Preprocess field structure, 
+            creating format strings for unpack etc.,"""
         for cmd_data in self._fields:
             fmt = ">"
             fmt_idx = 0
+            fmt_last_pos = 0
 
             if 'cmd' in cmd_data:
                 if isinstance(cmd_data['cmd'], str):
@@ -44,6 +59,9 @@ class IsoTpDecoder:
             # in the decoder. Checking is slow.
             cmd_data['computed'] = cmd_data.get('computed', False)
             cmd_data['simple'] = cmd_data.get('simple', False)
+            absolute_mode = cmd_data.get('absolute', False)
+            if absolute_mode:
+                cmd_data['autopad'] = True
 
             if cmd_data.get('simple'):
                 # simple mode is for platforms like MEB or Zoe ZE50 which return
@@ -61,8 +79,22 @@ class IsoTpDecoder:
             elif not cmd_data['computed']:
                 # Build a new array instead of inserting into the existing one.
                 # Should be quicker.
+                if absolute_mode:
+                    for field in cmd_data['fields']:
+                        if isinstance(field['pos'], str):
+                            field['pos'] = tq(field['pos'])
+
+                    fields = sorted(cmd_data['fields'],
+                                    key=lambda field: field['pos'])
+                else:
+                    fields = cmd_data['fields']
+
+                if 'pos' in fields[0] and not absolute_mode:
+                    absolute_mode = True
+                    cmd_data['autopad'] = True
+
                 new_fields = []
-                for field in cmd_data['fields']:
+                for field in fields:
                     self._log.debug(field)
                     # Non power of two types are hard as is. For now those can
                     # not be used in patterned fields.
@@ -73,10 +105,23 @@ class IsoTpDecoder:
                         raise ValueError('Unsupported field length')
 
                     if field.get('padding', 0) > 0:
+                        if absolute_mode:
+                            raise ValueError('padding not supported when using absolute mode')
                         field_fmt = str(field.get('padding')) + 'x'
                         self._log.debug("field_fmt(%s)", field_fmt)
                         fmt += field_fmt
                     elif not field.get('computed', False):
+                        if absolute_mode:
+                            pad = field['pos'] - fmt_last_pos - 1
+                            if pad > 0:
+                                if pad > 1:
+                                    fmt += str(pad)
+                                fmt += 'x'
+                            elif pad < 0:
+                                raise ValueError('negative padding encountered!!')
+                            
+                            fmt_last_pos = field['pos'] + field.get('cnt', 1) * field['width'] - 1
+
                         # For patterned fields (i.e. cellVolts%02d) use multiplyer
                         # in format string.
                         field_fmt = str(field.get('cnt', ''))
@@ -85,11 +130,11 @@ class IsoTpDecoder:
                         else:
                             field_fmt += FormatMap[field['width']]['f'].upper()
 
-                        self._log.debug("field_fmt(%s)", field_fmt)
+                        self._log.debug(f"fmt({fmt} {field_fmt})")
                         fmt += field_fmt
 
                         if not is_power_of_two(field['width']):
-                            if 'lanbda' in field:
+                            if 'lambda' in field:
                                 self._log.warning('defining lambda on non power ow two length fields may give unexpected results!')
                             else:
                                 field['lambda'] = FormatMap[field['width']]['l']
