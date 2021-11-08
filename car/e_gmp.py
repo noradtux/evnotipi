@@ -40,6 +40,7 @@ Fields = (
     {'cmd': '220105', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
          {'pos': 'j', 'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},     # j..p
+         {'pos': 'x', 'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
          {'pos': 'z', 'name': 'soh', 'width': 2, 'scale': .1},                                     # z,aa
          {'pos': 'af', 'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},                             # af
          {'pos': 'an', 'name': 'cellTemp%02d', 'idx': 13, 'cnt': 4, 'width': 1, 'signed': True},     # an..aq
