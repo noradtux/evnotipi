@@ -8,6 +8,7 @@ Fields = (
      'fields': [
          {'pos': 'f', 'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
          {'pos': 'g', 'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'pos': 'ad', 'name': 'realVehicleSpeed', 'width': 1},
          ]},
     {'cmd': '220101', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
