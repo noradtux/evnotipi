@@ -1,4 +1,4 @@
-""" Module for the PSA platform """
+""" Module for the Stellantis CMP platform """
 from .car import Car
 from .isotp_decoder import IsoTpDecoder
 
@@ -34,8 +34,8 @@ Fields = [
     ]
 
 
-class Psa(Car):
-    """ Class for PSA """
+class Cmp(Car):
+    """ Class for CMP """
 
     def __init__(self, config, dongle, watchdog, gps):
         Car.__init__(self, config, dongle, watchdog, gps)
@@ -63,4 +63,4 @@ class Psa(Car):
 
     @staticmethod
     def get_evn_model():
-        return 'PSA'
+        return 'CMP'
