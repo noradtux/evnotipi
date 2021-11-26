@@ -12,7 +12,7 @@ Fields = [
             'fields': ({'name': 'dcBatteryVoltage', 'scale': 1/16, 'offset': -1200})},
         {'cmd': '22d816', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
             'fields': ({'name': 'dcBatteryCurrent', 'scale': 1/512})},
-        {'cmd': '22d86f', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
+        {'cmd': '22d8ef', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
             'fields': ({'name': 'batteryMaxTemperature', 'signed': True})},
         {'cmd': '22d410', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
             'fields': ({'name': 'SOC_DISPLAY', 'scale': 1/512})},
