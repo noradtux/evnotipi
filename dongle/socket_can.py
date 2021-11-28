@@ -152,6 +152,7 @@ class SocketCan:
             cantx |= CAN_EFF_FLAG
             canrx |= CAN_EFF_FLAG
 
+        data = b''
         try:
             with CanSocket(AF_CAN, SOCK_DGRAM, CAN_ISOTP) as sock:
                 sock.setsockopt(SOL_CAN_ISOTP, CAN_ISOTP_OPTS,
@@ -172,7 +173,7 @@ class SocketCan:
         except sock_timeout as err:
             raise NoData("Command timed out %s: %s" % (cmd.hex(' '), err))
         except OSError as err:
-            raise CanError("Failed Command %s: %s" % (cmd.hex(' '), err))
+            raise CanError("Failed Command %s: %s (%s)" % (cmd.hex(' '), err, data.hex(' ')))
 
         if not data or len(data) == 0:
             raise NoData('NO DATA')
