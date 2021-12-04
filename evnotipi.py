@@ -166,22 +166,19 @@ try:
                 if usercnt == 0:
                     log.info('Not charging and car off => Shutdown')
                     check_call(['/bin/systemctl', 'poweroff'])
-                    sleep(5)
+                    main_running = False
                 elif not log_flags & LOG_USER:
                     log.info('Not charging and car off; Not shutting down, users connected')
                     log_flags |= LOG_USER
             elif log_flags & LOG_USER:
                 log_flags &= ~LOG_USER
 
-        if wifi and config['wifi']['shutdown_delay'] is not None:
+        if wifi and config['wifi'].get('shutdown_delay') is not None:
             if (now - car.last_data > config['wifi']['shutdown_delay'] and
                     not watchdog.is_car_available()):
                 wifi.disable()
             else:
                 wifi.enable()
-
-        # Ensure messages get printed to the console.
-        sys.stdout.flush()
 
         if main_running:
             loop_delay = 1 - (time()-now)
