@@ -67,9 +67,12 @@ class InfluxTelemetry:
         p["time"] = pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc))
         p["fields"] = fields
 
-        self._iwrite.write(bucket=self._config['bucket'],
-                           org=self._config['org'],
-                           record=[p])
+        try:
+            self._iwrite.write(bucket=self._config['bucket'],
+                               org=self._config['org'],
+                               record=[p])
+        except Exception as e:
+            self._log.warning(str(e))
 
     def check_thread(self):
         """ Return the status of the thread """
