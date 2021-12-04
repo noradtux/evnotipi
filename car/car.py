@@ -77,6 +77,7 @@ class Car:
     def poll_data(self):
         """ The poller thread. """
         avg_speed = RollingAverage(20)
+        can_retries = self._config.get('can_retries', 3)
         while self._running:
             now = time()
 
@@ -112,17 +113,20 @@ class Car:
                 if self._skip_polling:
                     self._log.info("Resume polling.")
                     self._skip_polling = False
-                try:
-                    self.read_dongle(data)  # readDongle updates data inplace
-                    self.last_data = now
-                except CanError as err:
-                    self._log.warning(err)
-                except NoData:
-                    self._log.info("NO DATA")
-                    if not self._watchdog.is_car_available():
-                        self._log.info("Car off detected. Stop polling until car on.")
-                        self._skip_polling = True
-                    sleep(1)
+                for retry in range(0, can_retries):
+                    try:
+                        self.read_dongle(data)  # readDongle updates data inplace
+                        self.last_data = now
+                        break
+                    except CanError as err:
+                        self._log.warning(err)
+                    except NoData:
+                        self._log.info("NO DATA")
+                        if not self._watchdog.is_car_available():
+                            self._log.info("Car off detected. Stop polling until car on.")
+                            self._skip_polling = True
+                            break
+                        sleep(1)
 
             fix = self._gps.fix()
             if data['charging'] is None:
