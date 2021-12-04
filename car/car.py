@@ -56,7 +56,7 @@ class Car:
         self._thread = None
         self._skip_polling = False
         self._running = False
-        self.last_data = 0
+        self.last_data = time()
         self._data_callbacks = []
 
     def read_dongle(self, data):
