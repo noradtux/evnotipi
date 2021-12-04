@@ -166,7 +166,7 @@ class SocketCan:
                     self._log.debug("canrx(%s) cantx(%s) cmd(%s)",
                                     hex(canrx), hex(cantx), cmd.hex(' '))
                 sock.send(cmd)
-                data = sock.recv(4096)
+                data = sock.recv(512)
                 if self._log.isEnabledFor(logging.DEBUG):
                     self._log.debug(data.hex(' '))
         except sock_timeout as err:
