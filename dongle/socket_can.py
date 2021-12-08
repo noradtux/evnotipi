@@ -152,7 +152,6 @@ class SocketCan:
             cantx |= CAN_EFF_FLAG
             canrx |= CAN_EFF_FLAG
 
-        data = b''
         try:
             with CanSocket(AF_CAN, SOCK_DGRAM, CAN_ISOTP) as sock:
                 sock.setsockopt(SOL_CAN_ISOTP, CAN_ISOTP_OPTS,
@@ -167,13 +166,13 @@ class SocketCan:
                     self._log.debug("canrx(%s) cantx(%s) cmd(%s)",
                                     hex(canrx), hex(cantx), cmd.hex(' '))
                 sock.send(cmd)
-                data = sock.recv(4096)
+                data = sock.recv(512)
                 if self._log.isEnabledFor(logging.DEBUG):
                     self._log.debug(data.hex(' '))
         except sock_timeout as err:
             raise NoData("Command timed out %s: %s" % (cmd.hex(' '), err))
         except OSError as err:
-            raise CanError("Failed Command %s: %s (%s)" % (cmd.hex(' '), err, data.hex(' ')))
+            raise CanError("Failed Command %s: %s" % (cmd.hex(' '), err))
 
         if not data or len(data) == 0:
             raise NoData('NO DATA')
