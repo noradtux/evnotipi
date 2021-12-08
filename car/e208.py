@@ -1,8 +1,8 @@
 """ Module for Peugeot e208 """
-from .cmp import Cmp
+from .psa import Psa
 
 
-class E208(Cmp):
+class E208(Psa):
     """ Class for E208 """
 
     def get_base_data(self):

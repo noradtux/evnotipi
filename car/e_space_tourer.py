@@ -1,9 +1,9 @@
 """ Module for Citroën ë-SpaceTourer """
-from .cmp import Cmp
+from .psa import Psa
 
 
-class ESpaceTourer(Cmp):
-    """ Class for E208 """
+class ESpaceTourer(Psa):
+    """ Class for ë-SpaceTourer """
 
     def get_base_data(self):
         return {
