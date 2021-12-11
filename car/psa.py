@@ -6,12 +6,24 @@ BMS_RX = 0x6b4
 BMS_TX = 0x694
 XXX_RX = 0x6a2  # don't know what device that is. Provides ext_temp, though
 XXX_TX = 0x682
+#22D815 ---> Battery voltage
+#22D816 ---> Battery current
+#22D86F ---> Battery minimum voltage
+#22D870 ---> Battery maximum voltage
+#22D410 ---> SOC calibrated
+#22D865 ---> kWh available
+#22D860 ---> SOH
+#22D810 ---> SOC
 
 Fields = [
         {'cmd': '22d815', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
             'fields': ({'name': 'dcBatteryVoltage', 'scale': 1/16, 'offset': -1200})},
         {'cmd': '22d816', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
             'fields': ({'name': 'dcBatteryCurrent', 'scale': 1/512})},
+        {'cmd': '22d86f', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
+            'fields': ({'name': 'cellMinVoltage', 'scale': .001})},
+        {'cmd': '22d870', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
+            'fields': ({'name': 'cellMaxVoltage', 'scale': .001})},
         {'cmd': '22d8ef', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
             'fields': ({'name': 'batteryMaxTemperature', 'signed': True})},
         {'cmd': '22d410', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
