@@ -80,7 +80,7 @@ Fields = (
          {'name': 'normalChargePort',
           'lambda': lambda d: int(d['charging_bits1'] & 0x10 != 0)},
          {'name': 'rapidChargePort',
-          'lambda': lambda d: int(d['charging_bits1'] & 0x20 != 0)},
+          'lambda': lambda d: int(d['charging_bits1'] & (0x10 | 0x20) != 0)},
          {'name': 'charging',
           'lambda': lambda d: d['normalChargePort'] or d['rapidChargePort']},
      )
