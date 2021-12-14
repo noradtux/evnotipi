@@ -15,3 +15,6 @@ class ESpaceTourer(Cmp):
 
     def get_abrp_model(self):
         return 'peugeot:etraveler:21:%d:citroen' % self.get_base_data()['CAPACITY']
+
+    def get_evn_model(self):
+        return 'ESPACETOURER'
