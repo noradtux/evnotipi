@@ -171,6 +171,13 @@ class Car:
                     'emergencyThreshold':       thresholds['emergency'],
                 })
 
+            env_data = self._watchdog.get_env_sensor()
+            if env_data:
+                data.update({
+                    'envPressure': env_data['pressure'],
+                    'envTemperature': env_data['temperature'],
+                    })
+
             for call_back in self._data_callbacks:
                 call_back(data)
 

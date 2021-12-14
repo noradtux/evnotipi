@@ -13,6 +13,11 @@ class I2C:
         self.i2c_bus_id = config['i2c_bus'] if 'i2c_bus' in config else 0
         self.i2c_bus = SMBus(self.i2c_bus_id)
         self.i2c_lock = Lock()
+        if 'i2c_ms5611_address' in config:
+            from MS5611 import MS5611
+            self._ms5611 = MS5611(bus=self.i2c_bus_id, i2c=config['i2c_ms5611_address'])
+        else:
+            self._ms5611 = None
 
         if 'thresholds' in config:
             startup = config['thresholds'].get('startup')
@@ -90,3 +95,12 @@ class I2C:
                                          int(emergency/self.i2c_voltage_multiplier))
 
         self._bus_close()
+
+    def get_env_sensor(self):
+        if self._ms5611:
+            m = self._ms5611
+            m.read()
+            return {'pressure': m.getPressureAdj(),
+                    'temperature': m.getTempC()}
+        else:
+            return None
