@@ -52,7 +52,7 @@ class GpsPoller:
                             if 'class' not in fix:
                                 continue
 
-                            if fix['class'] == 'TPV':
+                            if fix['class'] == 'TPV' and 'time' in fix:
                                 fix_time = mktime(strptime(fix['time'][:23],
                                                            "%Y-%m-%dT%H:%M:%S.%f"))
 
