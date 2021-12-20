@@ -19,6 +19,7 @@ Fields = (
          {'pos': 'o', 'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
          {'pos': 'p', 'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
          {'pos': 'q', 'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True},
+         {'pos': 'ad', 'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
          {'pos': 'ae', 'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
          {'pos': 'ai', 'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
          {'pos': 'am', 'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},
