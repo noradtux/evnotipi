@@ -18,6 +18,8 @@ Fields = [
             'fields': ({'name': 'SOC_DISPLAY', 'scale': 1/512})},
         {'cmd': '22d860', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
             'fields': ({'name': 'soh', 'scale': 1/16})},
+        {'cmd': '22d865', 'canrx': BMS_RX, 'cantx': BMS_TX, 'simple': True,
+            'fields': ({'name': 'batteryCapacityAvailable'})},
         {'cmd': '22d434', 'canrx': XXX_RX, 'cantx': XXX_TX, 'simple': True,
             'fields': ({'name': 'externalTemperature', 'signed': True})},
         {'computed': True,
