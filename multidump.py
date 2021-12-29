@@ -18,11 +18,11 @@ while True:
     can_id, length, msg_data = CANFMT.unpack(msg)
     can_id &= CAN_EFF_MASK
 
-    if len(msg_data == 0:
+    if len(msg_data) == 0:
             continue
 
     if can_id not in filehandles:
-        filehandles[can_id] = open('can0_%03x.can', 'a')
+        filehandles[can_id] = open('can0_%03x.can' % can_id, 'a')
     
     tstr = strftime('%Y-%m-%d %H:%M:%S', localtime(time()))
     filehandles[can_id].write("%s %03x [%i] %s\n" % (
