@@ -37,6 +37,7 @@ class ESpaceTourer(Car):
         self._reader_thread = Thread(name="CAN-Reader-Thread", target=self.reader_thread)
         self._reader_running = False
         self._running = False
+        self._last_data = time()
 
     def start(self):
         Car.start(self)
@@ -53,7 +54,7 @@ class ESpaceTourer(Car):
         while self._reader_running:
             try:
                 data = self._dongle.read_raw_frame(1)
-                self.last_data = time()
+                self._last_data = time()
 
                 with self._data_lock:
                     can_id = data['can_id']
@@ -67,7 +68,7 @@ class ESpaceTourer(Car):
                 self._log.debug('NoData')
 
     def read_dongle(self, data):
-        if time() - self.last_data > 5:
+        if time() - self._last_data > 5:
             raise NoData
 
         with self._data_lock:
