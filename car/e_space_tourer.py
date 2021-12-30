@@ -34,7 +34,7 @@ class ESpaceTourer(Car):
         self._data = self.get_base_data()
         self._data = {}
         self._data_lock = Lock()
-        self._reader_thread = Thread(name="CAN-Reader-Thread", target=self._reader_thread)
+        self._reader_thread = Thread(name="CAN-Reader-Thread", target=self.reader_thread)
         self._reader_running = False
         self._running = False
 
