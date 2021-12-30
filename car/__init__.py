@@ -11,7 +11,6 @@ Modules = {
     'ZOE_Q210': {'f': 'zoe_q210', 'c': 'ZoeQ210'},
     'ZOE_ZE50': {'f': 'zoe_ze50', 'c': 'ZoeZe50'},
     'E208': {'f': 'e208', 'c': 'E208'},
-    'ESPACETOURER': {'f': 'e_space_tourer', 'c': 'ESpaceTourer'},
 }
 
 
