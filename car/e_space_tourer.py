@@ -67,6 +67,9 @@ class ESpaceTourer(Car):
                 self._log.debug('NoData')
 
     def read_dongle(self, data):
+        if time() - self.last_data > 5:
+            raise NoData
+
         with self._data_lock:
             data.update(self._data)
 
