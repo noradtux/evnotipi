@@ -120,7 +120,7 @@ class ABRP:
             if 'speed' in payload and 'lon' in payload and 'lat' in payload:
                 payload['speed'] *= 3.6      # convert from m/s to km/h
             else:
-                # Skip interation, ABRP does not accept payload without location fields
+                # Skip iteration, ABRP does not accept payload without location fields
                 self._log.debug("location missing, skip... %s", payload)
                 continue
 
