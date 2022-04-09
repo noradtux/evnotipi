@@ -106,8 +106,11 @@ class GpsPoller:
     def start(self):
         """ Start the poller thread. """
         if self._store:
-            with open(self._store, encoding='utf-8') as store_file:
-                self._last_fix = json.load(store_file)
+            try:
+                with open(self._store, encoding='utf-8') as store_file:
+                    self._last_fix = json.load(store_file)
+            except FileNotFoundError:
+                self._log.warn('File not found (%s)', self._store)
 
         self._running = True
         self._thread = Thread(target=self.run, name="EVNotiPi/GPS")
