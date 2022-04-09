@@ -29,11 +29,14 @@ def empty_fix():
 class GpsPoller:
     """ Thread that continously reads data from gpsd. """
 
-    def __init__(self):
+    def __init__(self, store=None):
+        """ store: json file to store last valid fix on shutdown """
+
         self._log = logging.getLogger("EVNotiPi/GPSPoller")
         self._thread = None
         self._gpsd = ('localhost', 2947)
         self._last_fix = empty_fix()
+        self._store = store
         self._running = False
 
     def run(self):
@@ -52,7 +55,7 @@ class GpsPoller:
                             if 'class' not in fix:
                                 continue
 
-                            if fix['class'] == 'TPV':
+                            if fix['class'] == 'TPV' and fix['mode'] > 1:
                                 fix_time = mktime(strptime(fix['time'][:23],
                                                            "%Y-%m-%dT%H:%M:%S.%f"))
 
@@ -102,6 +105,10 @@ class GpsPoller:
 
     def start(self):
         """ Start the poller thread. """
+        if self._store:
+            with open(self._store, encoding='utf-8') as store_file:
+                self._last_fix = json.load(store_file)
+
         self._running = True
         self._thread = Thread(target=self.run, name="EVNotiPi/GPS")
         self._thread.start()
@@ -110,6 +117,10 @@ class GpsPoller:
         """ Stop the poller thread. """
         self._running = False
         self._thread.join()
+        if self._store:
+            self._last_fix['speed'] = 0
+            with open(self._store, 'w', encoding='utf-8') as store_file:
+                json.dump(self._last_fix, store_file)
 
     def check_thread(self):
         """ Return running state if the poller thread. """

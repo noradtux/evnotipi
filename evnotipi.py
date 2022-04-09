@@ -36,7 +36,7 @@ if os.path.exists(args.config):
     if args.config[-5:] == '.json':
         import json
         with open(args.config, encoding='utf-8') as config_file:
-            config = json.loads(config_file.read())
+            config = json.load(config_file)
     elif args.config[-5:] == '.yaml':
         import yaml
         with open(args.config, encoding='utf-8') as config_file:
@@ -86,7 +86,7 @@ watchdog = WATCHDOG(config['watchdog'])
 dongle = DONGLE(config['dongle'])
 
 # Init GPS interface
-gps = GpsPoller()
+gps = GpsPoller(store='/var/cache/evnotipi/gps.json')
 Threads.append(gps)
 
 # Init car
