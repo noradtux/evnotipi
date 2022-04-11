@@ -65,7 +65,8 @@ class GpsPoller:
                                     'latitude':  fix.get('lat'),
                                     'longitude': fix.get('lon'),
                                     'speed':     fix.get('speed'),
-                                    'altitude':  fix.get('alt'),
+                                    'altitude':  fix.get('altMSL'),
+                                    'heading':   fix.get('track'),
                                     'time':      fix_time,
                                 })
                                 if (self._last_fix['speed'] is not None and
