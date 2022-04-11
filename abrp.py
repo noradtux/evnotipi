@@ -109,6 +109,8 @@ class ABRP:
             payload = {
                 'car_model': self._car_model,
                 'utc':       data['timestamp'],
+                'power':     0,
+                'current':   0,
             }
             payload.update({v[0]: round(data[k], v[1]) for k, v in PID_MAP.items()
                             if k in data and data[k] is not None})
