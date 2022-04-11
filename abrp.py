@@ -6,24 +6,23 @@ import logging
 import requests
 
 PID_MAP = {
-    'SOC_DISPLAY':      ['soc', 1],
-    'dcBatteryPower':   ['power', 2],
-    'speed':            ['speed', 1],
-    'latitude':         ['lat', 9],
-    'longitude':        ['lon', 9],
-    'charging':         ['is_charging', 0],
-    # 'capacity'
-    'rapidChargePort':  ['is_dcfc', 0],
-    'isParked':         ['is_parked', 0],
-    'cumulativeEnergyCharged': ['kwh_charged', 2],
-    'soh':              ['soh', 0],
-    # 'heading'
-    'altitude':         ['elevation', 1],
-    'externalTemperature':   ['ext_temp', 1],
-    'batteryAvgTemperature': ['batt_temp', 1],
-    'dcBatteryVoltage': ['voltage', 2],
-    'dcBatteryCurrent': ['current', 2],
-    'odo':              ['odometer', 2],
+    'SOC_DISPLAY':      ['soc', 1],                 # %
+    'dcBatteryPower':   ['power', 2],               # kW
+    'speed':            ['speed', 1],               # km/h
+    'latitude':         ['lat', 9],                 # °
+    'longitude':        ['lon', 9],                 # °
+    'charging':         ['is_charging', 0],         # bool 1/0
+    'rapidChargePort':  ['is_dcfc', 0],             # bool 1/0
+    'isParked':         ['is_parked', 0],           # bool 1/0
+    'cumulativeEnergyCharged': ['kwh_charged', 2],  # kWh
+    'soh':              ['soh', 1],                 # %
+    'heading':          ['heading', 2],             # °
+    'altitude':         ['elevation', 1],           # m
+    'externalTemperature':   ['ext_temp', 1],       # °C
+    'batteryAvgTemperature': ['batt_temp', 1],      # °C
+    'dcBatteryVoltage': ['voltage', 2],             # V
+    'dcBatteryCurrent': ['current', 2],             # A
+    'odo':              ['odometer', 2],            # km
 }
 
 API_URL = "https://api.iternio.com/1/tlm"
@@ -87,6 +86,7 @@ class ABRP:
                 'speed': [],
                 'latitude': [],
                 'longitude': [],
+                'heading': [],
                 'altitude': [],
             }
 
