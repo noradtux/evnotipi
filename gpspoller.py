@@ -122,7 +122,8 @@ class GpsPoller:
         self._running = False
         self._thread.join()
         if self._store:
-            self._last_fix['speed'] = 0
+            if 'speed' in self._last_fix:
+                self._last_fix['speed'] = 0
             with open(self._store, 'w', encoding='utf-8') as store_file:
                 json.dump(self._last_fix, store_file)
 
