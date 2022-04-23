@@ -126,7 +126,9 @@ Fields = (
          {'name': 'brakeBits', 'width': 1},   # g
          {'padding': 5},
          {'name': 'vmcu_accel', 'width': 1},  # l
-         {'padding': 7},
+         {'padding': 1},
+         {'name': 'realSpeed', 'width': 2, 'scale': .01 * 1.609344},  # o,n convert mph to kph
+         {'padding': 4},
          )},
     {'computed': True,
      'fields': (
@@ -152,6 +154,8 @@ Fields = (
           'lambda': lambda d: int(d['brakeBits'] & 0b01 != 0)},
          {'name': 'vmcu_brake_on',
           'lambda': lambda d: int(d['brakeBits'] & 0b10 != 0)},
+         {'name': 'wheelSpeed',
+          'lambda': lambda d: d['driveMotorSpeed1'] / 810},  # 255/3.6 -> m/s
      )
      },
 )
