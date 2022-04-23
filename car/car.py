@@ -129,21 +129,11 @@ class Car:
                         sleep(1)
 
             fix = self._gps.fix()
-            if data['charging'] is None:
-                avg_speed.push(fix['speed'] if fix and fix['mode'] > 1 else 0)
-                data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and avg_speed.get() < 5 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
-
             if fix and fix['mode'] > 1:
-                if data['charging'] or data['normalChargePort'] or data['rapidChargePort']:
-                    speed = 0.0
-                else:
-                    speed = fix['speed']
-
                 data.update({
                     'fix_mode':     fix['mode'],
                     'latitude':     fix['latitude'],
                     'longitude':    fix['longitude'],
-                    'speed':        speed,
                     'gdop':         fix['gdop'],
                     'pdop':         fix['pdop'],
                     'hdop':         fix['hdop'],
@@ -152,6 +142,18 @@ class Car:
                     'altitude':     fix['altitude'],
                     'gps_device':   fix['device'],
                 })
+
+            if fix and fix['mode'] > 1 and 'hdop' in fix and fix['hdop'] < 1:
+                data['speed'] = fix['speed']
+            elif 'wheelSpeed' in data:
+                data['speed'] = data['wheelSpeed']
+
+            if data['charging'] is None:
+                avg_speed.push(data.get('speed', 0))
+                data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and avg_speed.get() < 5 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
+
+            if data['charging'] or data['normalChargePort'] or data['rapidChargePort']:
+                data['speed'] = 0.0
 
             if hasattr(self._dongle, 'get_obd_voltage'):
                 data.update({
