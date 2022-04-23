@@ -155,7 +155,7 @@ Fields = (
          {'name': 'vmcu_brake_on',
           'lambda': lambda d: int(d['brakeBits'] & 0b10 != 0)},
          {'name': 'wheelSpeed',
-          'lambda': lambda d: d['driveMotorSpeed1'] / 810},  # 255/3.6 -> m/s
+          'lambda': lambda d: d['driveMotorSpeed1'] / 255},  # 255 -> m/s
      )
      },
 )
