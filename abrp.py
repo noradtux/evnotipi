@@ -117,7 +117,7 @@ class ABRP:
             payload.update({PID_MAP[k][0]: round(
                 sum(v)/len(v), PID_MAP[k][1]) for k, v in avgs.items() if len(v) > 0})
 
-            if 'speed' in payload and 'lon' in payload and 'lat' in payload:
+            if 'speed' in payload:
                 payload['speed'] *= 3.6      # convert from m/s to km/h
             else:
                 # Skip iteration, ABRP does not accept payload without location fields
