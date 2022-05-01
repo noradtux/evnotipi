@@ -15,6 +15,7 @@ def empty_fix():
         'longitude': None,
         'speed': None,
         'altitude': None,
+        'heading':  None,
         'time': None,
         'xdop': None,
         'ydop': None,

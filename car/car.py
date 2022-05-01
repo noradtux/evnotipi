@@ -141,6 +141,7 @@ class Car:
                     'tdop':         fix['tdop'],
                     'altitude':     fix['altitude'],
                     'gps_device':   fix['device'],
+                    'heading':      fix['heading'],
                 })
 
             if fix and fix['mode'] > 1 and 'hdop' in fix and fix['hdop'] < 1:
