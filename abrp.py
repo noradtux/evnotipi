@@ -122,8 +122,8 @@ class ABRP:
             if 'speed' in payload:
                 payload['speed'] *= 3.6      # convert from m/s to km/h
             else:
-                # Skip iteration, ABRP does not accept payload without location fields
-                self._log.debug("location missing, skip... %s", payload)
+                # Skip iteration, ABRP does not accept payload without speed field
+                self._log.debug("speed missing, skip... %s", payload)
                 continue
 
             self._log.debug("Transmit...")
@@ -134,12 +134,13 @@ class ABRP:
                                    data={'api_key': self._api_key,
                                          'token': self._token,
                                          'tlm': payload_str})
-                self._log.debug("Post result: %i %s",
-                                ret.status_code, ret.text)
-
                 if ret.status_code != requests.codes.ok or ret.json()['status'] != "ok":
                     self._log.error("Submit error: %s %s %s",
                                     payload_str, str(ret), ret.text)
+                else:
+                    self._log.debug("Post result: %i %s",
+                                    ret.status_code, ret.text)
+
 
             except requests.exceptions.ConnectionError as err:
                 self._log.error("ConnectionError: %s", err)
