@@ -106,9 +106,12 @@ class ABRP:
 
             data = new_data[-1]
 
+            if not 'timestamp' in data or data['timestamp'] is None:
+                continue
+
             payload = {
                 'car_model': self._car_model,
-                'utc':       data['timestamp'],
+                'utc':       int(data['timestamp']),
                 'power':     0,
                 'current':   0,
             }
