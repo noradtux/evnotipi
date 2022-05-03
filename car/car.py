@@ -1,6 +1,5 @@
 """ The car polling loop and associated infrastructure """
-from time import monotonic, sleep
-from datetime import datetime
+from time import time, monotonic, sleep
 from threading import Thread
 import logging
 from dongle import NoData, CanError
@@ -84,7 +83,7 @@ class Car:
 
             # initialize data with required fields; saves all those checks later
             data = {
-                'timestamp':    datetime.utcnow().timestamp(),
+                'timestamp':    time(),
                 # Base:
                 'SOC_BMS':      None,
                 'SOC_DISPLAY':  None,
