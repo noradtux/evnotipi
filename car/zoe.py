@@ -1,5 +1,5 @@
 """ Module for the Renault Zoe Z.E.40 """
-from time import time
+from time import monotonic
 from threading import Thread, Lock
 import logging
 from .car import Car, ifbu, ifbs
@@ -51,7 +51,7 @@ class Zoe(Car):
         while self._reader_running:
             try:
                 data = self._dongle.read_raw_frame(1)
-                self._last_data = time()
+                self._last_data = monotonic()
 
                 with self._data_lock:
                     can_id = data['can_id']

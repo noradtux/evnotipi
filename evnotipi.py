@@ -2,7 +2,7 @@
 """ EVNotiPi main module """
 
 from gevent.monkey import patch_all; patch_all()
-from time import sleep, time
+from time import monotonic, sleep
 from subprocess import check_call, check_output
 from argparse import ArgumentParser
 import sys
@@ -147,7 +147,7 @@ log_flags = 0
 main_running = True
 try:
     while main_running:
-        now = time()
+        now = monotonic()
         threads_ok = True
         for t in Threads:
             status = t.check_thread()
@@ -181,7 +181,7 @@ try:
                 wifi.enable()
 
         if main_running:
-            loop_delay = 1 - (time()-now)
+            loop_delay = 1 - (monotonic()-now)
             sleep(max(0, loop_delay))
 
 except (KeyboardInterrupt, SystemExit):  # when you press ctrl+c

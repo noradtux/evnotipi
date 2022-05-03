@@ -1,5 +1,5 @@
 """ Transmit data to EVNotify and handle notifications """
-from time import time, sleep
+from time import monotonic, sleep
 from threading import Thread, Condition
 import logging
 import EVNotifyAPI
@@ -76,7 +76,7 @@ class EVNotify:
 
         abort_notification = ARMED
         charging_start_soc = 0
-        last_charging = time()
+        last_charging = monotonic()
         last_charging_soc = 0
         last_evn_settings_poll = 0
         is_charging = 0
@@ -97,7 +97,7 @@ class EVNotify:
             with self._data_lock:
                 log.debug('Waiting...')
                 self._data_lock.wait(max(10, self._poll_interval))
-                now = time()
+                now = monotonic()
 
                 # Detect aborted charge
                 if ((now - last_charging > ABORT_NOTIFICATION_INTERVAL and
@@ -205,7 +205,7 @@ class EVNotify:
 
             # Prime next loop iteration
             if self._running:
-                interval = self._poll_interval - (time() - now)
+                interval = self._poll_interval - (monotonic() - now)
                 sleep(max(0, interval))
 
     def check_thread(self):

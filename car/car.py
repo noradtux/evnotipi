@@ -1,5 +1,6 @@
 """ The car polling loop and associated infrastructure """
-from time import time, sleep
+from time import monotonic, sleep
+from datetime import datetime
 from threading import Thread
 import logging
 from dongle import NoData, CanError
@@ -56,7 +57,7 @@ class Car:
         self._thread = None
         self._skip_polling = False
         self._running = False
-        self.last_data = time()
+        self.last_data = monotonic()
         self._data_callbacks = []
 
     def read_dongle(self, data):
@@ -79,11 +80,11 @@ class Car:
         avg_speed = RollingAverage(20)
         can_retries = self._config.get('can_retries', 3)
         while self._running:
-            now = time()
+            now = monotonic()
 
             # initialize data with required fields; saves all those checks later
             data = {
-                'timestamp':    now,
+                'timestamp':    datetime.utcnow().timestamp(),
                 # Base:
                 'SOC_BMS':      None,
                 'SOC_DISPLAY':  None,
@@ -179,7 +180,7 @@ class Car:
 
             if self._running:
                 if self._poll_interval > 0:
-                    interval = self._poll_interval - (time() - now)
+                    interval = self._poll_interval - (monotonic() - now)
                     sleep(max(0, interval))
 
                 elif self._skip_polling:
