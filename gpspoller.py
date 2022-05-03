@@ -110,7 +110,10 @@ class GpsPoller:
         if self._store:
             try:
                 with open(self._store, encoding='utf-8') as store_file:
-                    self._last_fix = json.load(store_file)
+                    new_fix = json.load(store_file)
+                self._last_fix['latitude'] = new_fix['latitude']
+                self._last_fix['longitude'] = new_fix['longitude']
+                self._last_fix['altitude'] = new_fix['altitude']
             except FileNotFoundError:
                 self._log.warn('File not found (%s)', self._store)
 
@@ -123,8 +126,6 @@ class GpsPoller:
         self._running = False
         self._thread.join()
         if self._store:
-            if 'speed' in self._last_fix:
-                self._last_fix['speed'] = 0
             with open(self._store, 'w', encoding='utf-8') as store_file:
                 json.dump(self._last_fix, store_file)
 
