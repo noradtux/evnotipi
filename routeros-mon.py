@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import yaml
-from time import sleep, time
-from datetime import datetime, timezone
+from time import sleep
+from datetime import datetime
 import re
 import pyrfc3339
 import routeros_api
@@ -58,7 +58,7 @@ while True:
                         'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
                         'fields': fields,
                         'time': pyrfc3339.generate(
-                            datetime.fromtimestamp(time(), timezone.utc)),
+                            datetime.utcnow()),
                         }]
                     )
 
