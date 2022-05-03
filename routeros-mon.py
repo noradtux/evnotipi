@@ -58,7 +58,7 @@ while True:
                         'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
                         'fields': fields,
                         'time': pyrfc3339.generate(
-                            datetime.fromtimestamp(datetime.utcnow().timestamp(), timezone.utc)),
+                            datetime.now(timezone.utc)),
                         }]
                     )
 
