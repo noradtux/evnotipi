@@ -145,7 +145,7 @@ class Car:
                     'heading':      fix['heading'],
                 })
 
-            if fix and fix['mode'] > 1 and 'hdop' in fix and fix['hdop'] < 1:
+            if fix and fix['mode'] > 1 and not fix['hdop'] is None and 0 < fix['hdop'] < 1:
                 data['speed'] = fix['speed']
             elif 'wheelSpeed' in data:
                 data['speed'] = data['wheelSpeed']
