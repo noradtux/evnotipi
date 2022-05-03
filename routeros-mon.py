@@ -2,7 +2,7 @@
 
 import yaml
 from time import sleep
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 import pyrfc3339
 import routeros_api
@@ -58,7 +58,7 @@ while True:
                         'tags': {'akey': C['evnotify']['akey'], 'car': C['car']['type']},
                         'fields': fields,
                         'time': pyrfc3339.generate(
-                            datetime.utcnow()),
+                            datetime.fromtimestamp(datetime.utcnow().timestamp(), timezone.utc)),
                         }]
                     )
 
