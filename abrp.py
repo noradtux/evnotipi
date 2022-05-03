@@ -129,6 +129,7 @@ class ABRP:
             self._log.debug("Transmit...")
 
             try:
+                self._log.debug("Send payload %s", payload)
                 payload_str = json.dumps(payload)
                 ret = session.post(API_URL + "/send",
                                    data={'api_key': self._api_key,
