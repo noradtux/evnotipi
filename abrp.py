@@ -1,5 +1,5 @@
 """ Direct submission of data to ABRP. """
-from time import time, sleep
+from time import monotonic, sleep
 from threading import Thread, Condition
 import json
 import logging
@@ -77,7 +77,7 @@ class ABRP:
 
         session = requests.Session()
         while self._running:
-            now = time()
+            now = monotonic()
 
             avgs = {
                 'dcBatteryCurrent': [],
@@ -149,7 +149,7 @@ class ABRP:
 
             # Prime next loop iteration
             if self._running:
-                interval = self._poll_interval - (time() - now)
+                interval = self._poll_interval - (monotonic() - now)
                 sleep(max(0, interval))
 
     def check_thread(self):
