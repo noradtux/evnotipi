@@ -83,7 +83,7 @@ class Car:
 
             # initialize data with required fields; saves all those checks later
             data = {
-                'timestamp':    time(),
+                'timestamp':    int(time()),
                 # Base:
                 'SOC_BMS':      None,
                 'SOC_DISPLAY':  None,
