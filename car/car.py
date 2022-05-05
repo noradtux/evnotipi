@@ -147,10 +147,10 @@ class Car:
                     'heading':      fix['heading'],
                 })
 
-            if fix and fix['mode'] > 1 and not fix['hdop'] is None and 0 < fix['hdop'] < 1:
+            if 'realSpeed' in data:
+                data['speed'] = data['realSpeed']
+            elif fix and fix['mode'] > 1 and not fix['hdop'] is None and 0 < fix['hdop'] < 1:
                 data['speed'] = fix['speed']
-            elif 'wheelSpeed' in data:
-                data['speed'] = data['wheelSpeed']
 
             if data['charging'] is None:
                 avg_speed.push(data.get('speed', 0))
