@@ -33,13 +33,16 @@ class RollingAverage:
     def __init__(self, length=10):
         self._buf = [0] * length
         self._idx = 0
+        self._len = 0
 
     def push(self, value):
         self._buf[self._idx] = value
         self._idx = (self._idx + 1) % len(self._buf)
+        if self._len < len(self._buf):
+            self._len += 1
 
     def get(self):
-        return sum(self._buf) / len(self._buf)
+        return sum(self._buf) / self._len
 
 
 class Car:
