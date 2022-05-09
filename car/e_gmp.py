@@ -19,6 +19,10 @@ Fields = (
          {'pos': 'o', 'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
          {'pos': 'p', 'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
          {'pos': 'q', 'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True},
+         {'pos': 'x', 'name': 'maxCellVoltage', 'width': 1, 'scale': .02},
+         {'pos': 'y', 'name': 'maxCellVoltNo', 'width': 1},
+         {'pos': 'z', 'name': 'minCellVoltage', 'width': 1, 'scale': .02},
+         {'pos': 'aa', 'name': 'minCellVoltNo', 'width': 1},
          {'pos': 'ad', 'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
          {'pos': 'ae', 'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
          {'pos': 'ai', 'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
@@ -41,11 +45,14 @@ Fields = (
          ]},
     {'cmd': '220105', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
-         {'pos': 'j', 'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},     # j..p
+         {'pos': 'j', 'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},
          {'pos': 'x', 'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
-         {'pos': 'z', 'name': 'soh', 'width': 2, 'scale': .1},                                     # z,aa
-         {'pos': 'af', 'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},                             # af
-         {'pos': 'an', 'name': 'cellTemp%02d', 'idx': 13, 'cnt': 4, 'width': 1, 'signed': True},     # an..aq
+         {'pos': 'z', 'name': 'soh', 'width': 2, 'scale': .1},
+         {'pos': 'ab', 'name': 'maxCellDetNo', 'width': 1},
+         {'pos': 'ac', 'name': 'minDeterioration', 'width': 2, 'scale': .1},
+         {'pos': 'ae', 'name': 'minCellDetNo', 'width': 1},
+         {'pos': 'af', 'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
+         {'pos': 'an', 'name': 'cellTemp%02d', 'idx': 13, 'cnt': 4, 'width': 1, 'signed': True},
          ]},
     {'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
@@ -65,14 +72,14 @@ Fields = (
          ]},
     {'cmd': '22c00b', 'canrx': 0x7a8, 'cantx': 0x7a0, 'optional': True, 'absolute': True,
      'fields': [
-         {'pos': 'e', 'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},  # e
-         {'pos': 'f', 'name': 'tire_fl_temp', 'width': 1, 'offset': -50},        # f
-         {'pos': 'j', 'name': 'tire_fr_pres', 'width': 1, 'scale': 0.2/14.504},  # j
-         {'pos': 'k', 'name': 'tire_fr_temp', 'width': 1, 'offset': -50},        # k
-         {'pos': 'o', 'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504},  # o
-         {'pos': 'p', 'name': 'tire_rl_temp', 'width': 1, 'offset': -50},        # p
-         {'pos': 't', 'name': 'tire_rr_pres', 'width': 1, 'scale': 0.2/14.504},  # t
-         {'pos': 'u', 'name': 'tire_rr_temp', 'width': 1, 'offset': -50},        # u
+         {'pos': 'e', 'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'pos': 'f', 'name': 'tire_fl_temp', 'width': 1, 'offset': -50},
+         {'pos': 'j', 'name': 'tire_fr_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'pos': 'k', 'name': 'tire_fr_temp', 'width': 1, 'offset': -50},
+         {'pos': 'o', 'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'pos': 'p', 'name': 'tire_rl_temp', 'width': 1, 'offset': -50},
+         {'pos': 't', 'name': 'tire_rr_pres', 'width': 1, 'scale': 0.2/14.504},
+         {'pos': 'u', 'name': 'tire_rr_temp', 'width': 1, 'offset': -50},
          ]},
     {'computed': True,
      'fields': (
