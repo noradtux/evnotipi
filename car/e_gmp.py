@@ -1,14 +1,14 @@
 """ Module for the Hyundai E-GMP platform """
 # Based on https://www.dropbox.com/s/92oghj8s7dmgsia/TorqueIONIQ5AWD74kWh.csv?raw=1
-from .car import Car
+from .car import Car, RollingAverage
 from .isotp_decoder import IsoTpDecoder
 
 Fields = (
-    {'cmd': '220100', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True,
+    {'cmd': '220100', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'optional': True,
      'fields': [
          {'pos': 'f', 'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
          {'pos': 'g', 'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
-         {'pos': 'ad', 'name': 'realVehicleSpeed', 'width': 1},
+         {'pos': 'ad', 'name': 'realVehicleSpeed', 'width': 1, 'scale': 1/3.6},     # km/h => m/s
          ]},
     {'cmd': '220101', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
@@ -103,6 +103,9 @@ class E_GMP(Car):
         Car.__init__(self, config, dongle, watchdog, gps)
         self._dongle.set_protocol('CAN_11_500')
         self._isotp = IsoTpDecoder(self._dongle, Fields)
+        self._avg_wheel_speed = RollingAverage(int(600/max(1, self._poll_interval)))
+        self._avg_gps_speed = RollingAverage(int(600/max(1, self._poll_interval)))
+        self._speed_factor = 1.0275
 
     def read_dongle(self, data):
         """ Read and parse data from dongle """
@@ -120,6 +123,21 @@ class E_GMP(Car):
                 break
 
         data['batteryAvgTemperature'] = temp_sum / temp_cnt
+        data['realVehicleSpeed'] *= self._speed_factor
+
+        fix = self._gps.fix()
+        if (fix and fix['mode'] > 1 and fix['hdop'] < 1 and 'speed' in fix and 
+            speed - 10 < fix['speed'] < speed + 10):
+            self._avg_gps_speed.push(fix['speed'])
+            self._avg_wheel_speed.push(speed)
+       
+        gps_avg = self._avg_gps_speed.get()
+        wheel_avg = self._avg_wheel_speed.get()
+        if gps_avg and wheel_avg:
+            #self._speed_factor *= gps_avg / wheel_avg
+            data['_speed_factor'] = gps_avg / wheel_avg
+
+        data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and data['realVehicleSpeed'] < 1 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
 
     def get_base_data(self):
         return {

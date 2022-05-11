@@ -13,5 +13,8 @@ class Ev6(E_GMP):
                 "FAST_SPEED": 220.0
                 }
 
+    def get_evn_model(self):
+        return 'EV6'
+
     def get_abrp_model(self):
         return 'kia:ev6:22:%d' % self.get_base_data()['CAPACITY']
