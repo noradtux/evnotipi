@@ -39,7 +39,6 @@ class ABRP:
         self._log.info("Initializing ABRP")
 
         self._car = car
-        self._car_model = car.get_abrp_model()
         self._config = config
         self._api_key = config['api_key']
         self._token = config['token']
@@ -110,7 +109,6 @@ class ABRP:
                 continue
 
             payload = {
-                'car_model': self._car_model,
                 'utc':       int(data['timestamp']),
                 'power':     0,
                 'current':   0,
