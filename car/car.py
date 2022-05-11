@@ -79,7 +79,6 @@ class Car:
 
     def poll_data(self):
         """ The poller thread. """
-        avg_speed = RollingAverage(20)
         can_retries = self._config.get('can_retries', 3)
         while self._running:
             now = monotonic()
@@ -145,16 +144,13 @@ class Car:
                     'altitude':     fix['altitude'],
                     'gps_device':   fix['device'],
                     'heading':      fix['heading'],
+                    'gps_speed':    fix['speed'],
                 })
 
-            if 'realSpeed' in data:
-                data['speed'] = data['realSpeed']
-            elif fix and fix['mode'] > 1 and not fix['hdop'] is None and 0 < fix['hdop'] < 1:
+            if 'realVehicleSpeed' in data:
+                data['speed'] = data['realVehicleSpeed']
+            elif fix and fix['mode'] > 1:
                 data['speed'] = fix['speed']
-
-            if data['charging'] is None:
-                avg_speed.push(data.get('speed', 0))
-                data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and avg_speed.get() < 5 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
 
             if data['charging'] or data['normalChargePort'] or data['rapidChargePort']:
                 data['speed'] = 0.0
