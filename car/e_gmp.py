@@ -125,21 +125,23 @@ class E_GMP(Car):
                 break
 
         data['batteryAvgTemperature'] = temp_sum / temp_cnt
-        data['realVehicleSpeed'] *= self._speed_factor
+        data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and data['driveMotorSpeed1'] < 1 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
 
-        fix = self._gps.fix()
-        if (fix and fix['mode'] > 1 and fix['hdop'] < 1 and 'speed' in fix and 
-            speed - 10 < fix['speed'] < speed + 10):
-            self._avg_gps_speed.push(fix['speed'])
-            self._avg_wheel_speed.push(speed)
-       
-        gps_avg = self._avg_gps_speed.get()
-        wheel_avg = self._avg_wheel_speed.get()
-        if gps_avg and wheel_avg:
-            #self._speed_factor *= gps_avg / wheel_avg
-            data['_speed_factor'] = gps_avg / wheel_avg
+        if 'realVehicleSpeed' in data:
+            speed = data['realVehicleSpeed'] * self._speed_factor
 
-        data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and data['realVehicleSpeed'] < 1 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
+            fix = self._gps.fix()
+            if (fix and fix['mode'] > 1 and fix['hdop'] < 1 and 'speed' in fix and 
+                speed - 10 < fix['speed'] < speed + 10):
+                self._avg_gps_speed.push(fix['speed'])
+                self._avg_wheel_speed.push(speed)
+
+            gps_avg = self._avg_gps_speed.get()
+            wheel_avg = self._avg_wheel_speed.get()
+            if gps_avg and wheel_avg:
+                #self._speed_factor *= gps_avg / wheel_avg
+                data['_speed_factor'] = gps_avg / wheel_avg
+
 
     def get_base_data(self):
         return {
@@ -150,4 +152,4 @@ class E_GMP(Car):
         }
 
     def get_evn_model(self):
-        return 'E-GMP'
+        raise NotImplementedError()
