@@ -42,7 +42,7 @@ class RollingAverage:
             self._len += 1
 
     def get(self):
-        return sum(self._buf) / self._len
+        return sum(self._buf) / self._len if self._len else None
 
 
 class Car:
