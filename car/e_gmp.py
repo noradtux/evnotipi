@@ -30,6 +30,8 @@ Fields = (
          {'pos': 'aq', 'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},
          {'pos': 'au', 'name': 'operatingTime', 'width': 4},  # seconds
          {'pos': 'ay', 'name': 'charging_bits2', 'width': 1},
+         {'pos': 'bb', 'name': 'driveMotorSpeed1', 'width': 2, 'signed': True},
+         {'pos': 'bd', 'name': 'driveMotorSpeed2', 'width': 2, 'signed': True},
          ]},
     {'cmd': '220102', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
