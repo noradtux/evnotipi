@@ -140,7 +140,7 @@ class SocketCan:
         self._can_raw_sock = CanSocket(PF_CAN, SOCK_RAW, CAN_RAW)
         self._can_raw_sock.bind((self._config['port'],))
 
-    def send_command_ex_isotp(self, cmd, cantx, canrx):
+    def send_command_ex_isotp(self, cmd, cantx, canrx, fc_opts=None):
         """ Send a command using specified can tx id and
             return response from can rx id.
             Implemented using kernel level iso-tp. """
@@ -157,7 +157,7 @@ class SocketCan:
                 sock.setsockopt(SOL_CAN_ISOTP, CAN_ISOTP_OPTS,
                                 self._sock_opt_isotp_opt)
                 sock.setsockopt(SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC,
-                                self._sock_opt_isotp_fc)
+                                fc_opts or self._sock_opt_isotp_fc)
 
                 sock.bind((self._config['port'], canrx, cantx))
                 sock.settimeout(0.2)
@@ -179,7 +179,7 @@ class SocketCan:
 
         return data
 
-    def send_command_ex_canraw(self, cmd, cantx, canrx):
+    def send_command_ex_canraw(self, cmd, cantx, canrx, fc_opts=None):
         """ Send a command using specified can tx id and
             return response from can rx id. """
         if self._log.isEnabledFor(logging.DEBUG):

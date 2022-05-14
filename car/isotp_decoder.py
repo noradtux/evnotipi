@@ -89,6 +89,13 @@ class IsoTpDecoder:
                 else:
                     fields = cmd_data['fields']
 
+                if 'fc_opts' in cmd_data:
+                    fo = cmd_data['fc_opts']
+                    # bs, stmin, wftmax
+                    cmd_data['fc_opts'] = struct.pack("=BBB", fo[0], fo[1], fo[2])
+                else:
+                    cmd_data['fc_opts'] = None
+
                 if 'pos' in fields[0] and not absolute_mode:
                     absolute_mode = True
                     cmd_data['autopad'] = True
@@ -189,7 +196,8 @@ class IsoTpDecoder:
                     # and a lambda function is executed if provided
                     raw = self._dongle.send_command_ex(cmd_data['cmd'],
                                                        canrx=cmd_data['canrx'],
-                                                       cantx=cmd_data['cantx'])
+                                                       cantx=cmd_data['cantx'],
+                                                       fc_opts=cmd_data['fc_opts'])
                     # Learn how much to pad a block on first encounter if autopadding is active
                     if cmd_data['autopad']:
                         pad = len(raw) - cmd_data['struct'].size
