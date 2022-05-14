@@ -79,7 +79,7 @@ class Car:
 
     def poll_data(self):
         """ The poller thread. """
-        can_retries = self._config.get('can_retries', 3)
+        can_tries = self._config.get('can_retries', 3)
         while self._running:
             now = monotonic()
 
@@ -115,7 +115,7 @@ class Car:
                 if self._skip_polling:
                     self._log.info("Resume polling.")
                     self._skip_polling = False
-                for retry in range(0, can_retries):
+                for retry in range(0, can_tries):
                     try:
                         self.read_dongle(data)  # readDongle updates data inplace
                         self.last_data = now
