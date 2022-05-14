@@ -4,7 +4,7 @@ from .car import Car, RollingAverage
 from .isotp_decoder import IsoTpDecoder
 
 Fields = (
-    {'cmd': '220100', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'optional': True,
+    {'cmd': '220100', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'optional': True, 'fc_opts': (0, 2, 0),
      'fields': [
          {'pos': 'f', 'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
          {'pos': 'g', 'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
@@ -125,13 +125,16 @@ class E_GMP(Car):
                 break
 
         data['batteryAvgTemperature'] = temp_sum / temp_cnt
-        data['charging'] = 1 if (data['dcBatteryPower'] is not None and data['dcBatteryPower'] < -1.3) and data['driveMotorSpeed1'] < 1 else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
+        data['charging'] = 1 if (data['dcBatteryPower'] is not None and
+                data['dcBatteryPower'] < -1.3 and 
+                data['realVehicleSpeed'] == 0) else 0  # 1.3kW is lowest possible charging rate (6A single phase at 230V)
 
         if 'realVehicleSpeed' in data:
             speed = data['realVehicleSpeed'] * self._speed_factor
 
             fix = self._gps.fix()
-            if (fix and fix['mode'] > 1 and fix['hdop'] < 1 and 'speed' in fix and 
+            if (fix and fix['mode'] > 1 and fix['hdop'] is not None and
+                    fix['hdop'] < 1 and 'speed' in fix and 
                 speed - 10 < fix['speed'] < speed + 10):
                 self._avg_gps_speed.push(fix['speed'])
                 self._avg_wheel_speed.push(speed)
@@ -139,9 +142,8 @@ class E_GMP(Car):
             gps_avg = self._avg_gps_speed.get()
             wheel_avg = self._avg_wheel_speed.get()
             if gps_avg and wheel_avg:
-                #self._speed_factor *= gps_avg / wheel_avg
-                data['_speed_factor'] = gps_avg / wheel_avg
-
+                self._speed_factor *= gps_avg / wheel_avg
+                data['_speed_factor'] = self._speed_factor
 
     def get_base_data(self):
         return {
