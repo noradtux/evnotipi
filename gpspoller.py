@@ -1,6 +1,7 @@
 """ Interface to gpsd """
 from threading import Thread
-from time import sleep, strptime, mktime
+from time import sleep, strptime
+from calendar import timegm
 import json
 import logging
 import socket
@@ -57,8 +58,8 @@ class GpsPoller:
                                 continue
 
                             if fix['class'] == 'TPV' and fix['mode'] > 1:
-                                fix_time = mktime(strptime(fix['time'][:23],
-                                                           "%Y-%m-%dT%H:%M:%S.%f"))
+                                fix_time = timegm(strptime(fix['time'],
+                                                           "%Y-%m-%dT%H:%M:%S.%fZ"))
 
                                 self._last_fix.update({
                                     'device':    fix['device'],
