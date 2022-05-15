@@ -161,7 +161,7 @@ try:
 
         if 'system' in config and 'shutdown_delay' in config['system']:
             if (now - car.last_data > config['system']['shutdown_delay'] and
-                    not watchdog.is_car_available()):
+                    not car.is_available()):
                 usercnt = int(check_output(['who', '-q']).split(b'\n')[1].split(b'=')[1])
                 if usercnt == 0:
                     log.info('Not charging and car off => Shutdown')
@@ -175,7 +175,7 @@ try:
 
         if wifi and config['wifi'].get('shutdown_delay') is not None:
             if (now - car.last_data > config['wifi']['shutdown_delay'] and
-                    not watchdog.is_car_available()):
+                    not car.is_available()):
                 wifi.disable()
             else:
                 wifi.enable()

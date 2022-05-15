@@ -61,6 +61,7 @@ class Car:
         self._running = False
         self.last_data = monotonic()
         self._data_callbacks = []
+        self.is_available = watchdog.is_car_available
 
     def read_dongle(self, data):
         """ Get data from CAN bus and put it into "data" dictionary """
