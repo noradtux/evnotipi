@@ -112,7 +112,7 @@ class E_GMP(Car):
     def read_dongle(self, data):
         """ Read and parse data from dongle """
         data.update(self.get_base_data())
-        data.update(self._isotp.get_data())
+        data.update(self._isotp.get_data(self._can_tries))
 
         temp_sum = 0
         temp_cnt = 0

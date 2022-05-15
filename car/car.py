@@ -56,12 +56,14 @@ class Car:
         self._watchdog = watchdog
         self._gps = gps
         self._poll_interval = config['interval']
+        self._charge_interval = config['charge_interval'] or config['interval']
         self._thread = None
         self._skip_polling = False
         self._running = False
         self.last_data = monotonic()
         self._data_callbacks = []
         self.is_available = watchdog.is_car_available
+        self._can_tries = max(1, self._config.get('can_tries', 3))
 
     def read_dongle(self, data):
         """ Get data from CAN bus and put it into "data" dictionary """
@@ -80,7 +82,7 @@ class Car:
 
     def poll_data(self):
         """ The poller thread. """
-        can_tries = self._config.get('can_retries', 3)
+
         while self._running:
             now = monotonic()
 
@@ -112,24 +114,24 @@ class Car:
                 'speed':        None,
                 'fix_mode':     0,
             }
-            if not self._skip_polling or self._watchdog.is_car_available():
+            if not self._skip_polling or self.is_available():
                 if self._skip_polling:
                     self._log.info("Resume polling.")
                     self._skip_polling = False
-                for retry in range(0, can_tries):
-                    try:
-                        self.read_dongle(data)  # readDongle updates data inplace
-                        self.last_data = now
+
+                try:
+                    self.read_dongle(data)  # readDongle updates data inplace
+                    self.last_data = now
+                except CanError as err:
+                    self._log.warning(err)
+                    break
+                except NoData:
+                    self._log.info("NO DATA")
+                    if not self.is_available():
+                        self._log.info("Car off detected. Stop polling until car on.")
+                        self._skip_polling = True
                         break
-                    except CanError as err:
-                        self._log.warning(err)
-                    except NoData:
-                        self._log.info("NO DATA")
-                        if not self._watchdog.is_car_available():
-                            self._log.info("Car off detected. Stop polling until car on.")
-                            self._skip_polling = True
-                            break
-                        sleep(1)
+                    sleep(1)
 
             fix = self._gps.fix()
             if fix and fix['mode'] > 1:
@@ -147,6 +149,10 @@ class Car:
                     'heading':      fix['heading'],
                     'gps_speed':    fix['speed'],
                 })
+
+            if fix and 'time' in fix and fix['time'] and \
+                    abs(data['timestamp'] - fix['time']) > 10:
+                data['timestamp'] = fix['time']
 
             if 'realVehicleSpeed' in data:
                 data['speed'] = data['realVehicleSpeed']
@@ -178,7 +184,11 @@ class Car:
                 call_back(data)
 
             if self._running:
-                if self._poll_interval > 0:
+                if data['charging']:
+                    interval = self._charge_interval - (monotonic() - now)
+                    sleep(max(1, interval))
+
+                elif self._poll_interval > 0:
                     interval = self._poll_interval - (monotonic() - now)
                     sleep(max(0, interval))
 

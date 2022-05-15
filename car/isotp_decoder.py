@@ -176,7 +176,7 @@ class IsoTpDecoder:
                 cmd_data['struct'] = struct.Struct(fmt)
                 cmd_data['fields'] = new_fields
 
-    def get_data(self):
+    def get_data(self, can_tries=1):
         """ Takes a structure which describes adresses,
             commands and how to decode the return """
         data = {}
@@ -194,10 +194,18 @@ class IsoTpDecoder:
                     # bytearray using unpack. The format for unpack was generated
                     # in the preprocessor. Extracted values are scaled, shifted
                     # and a lambda function is executed if provided
-                    raw = self._dongle.send_command_ex(cmd_data['cmd'],
-                                                       canrx=cmd_data['canrx'],
-                                                       cantx=cmd_data['cantx'],
-                                                       fc_opts=cmd_data['fc_opts'])
+                    can_try = 0
+                    while True:
+                        can_try += 1
+                        try:
+                            raw = self._dongle.send_command_ex(cmd_data['cmd'],
+                                                               canrx=cmd_data['canrx'],
+                                                               cantx=cmd_data['cantx'],
+                                                               fc_opts=cmd_data['fc_opts'])
+                            break
+                        except NoData:
+                            if can_try > can_tries:
+                                raise
                     # Learn how much to pad a block on first encounter if autopadding is active
                     if cmd_data['autopad']:
                         pad = len(raw) - cmd_data['struct'].size
