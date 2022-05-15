@@ -2,6 +2,7 @@
 from time import time, monotonic, sleep
 from threading import Thread
 import logging
+from numpy import percentile, mean
 from dongle import NoData, CanError
 
 
@@ -42,7 +43,13 @@ class RollingAverage:
             self._len += 1
 
     def get(self):
-        return sum(self._buf) / self._len if self._len else None
+        return mean(self._buf[:self._len]) if self._len else None
+
+    def get_perc(self, perc):
+        data = self._buf[:self._len]
+        cut = percentile(data, [100-perc, perc])
+        return mean(data, where=list(
+            map(lambda a: cut[0] <= a <= cut[1], data)))
 
 
 class Car:
