@@ -134,12 +134,11 @@ class E_GMP(Car):
 
             fix = self._gps.fix()
             if (fix and fix['mode'] > 1 and fix['hdop'] is not None and
-                    fix['hdop'] < 1 and 'speed' in fix and 
-                speed - 10 < fix['speed'] < speed + 10):
+                    fix['hdop'] < 1 and 'speed' in fix):
                 self._avg_gps_speed.push(fix['speed'])
                 self._avg_wheel_speed.push(speed)
 
-            gps_avg = self._avg_gps_speed.get()
+            gps_avg = self._avg_gps_speed.get_perc(95)
             wheel_avg = self._avg_wheel_speed.get()
             if gps_avg and wheel_avg:
                 self._speed_factor *= gps_avg / wheel_avg
