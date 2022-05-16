@@ -163,7 +163,7 @@ class Car:
 
             if fix and 'time' in fix and fix['time'] and \
                     abs(data['timestamp'] - fix['time']) > 10:
-                data['timestamp'] = fix['time']
+                data['timestamp'] = float(fix['time'])
 
             if 'realVehicleSpeed' in data:
                 data['speed'] = data['realVehicleSpeed']
