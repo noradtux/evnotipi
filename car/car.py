@@ -133,13 +133,15 @@ class Car:
                     self.last_data = now
                 except CanError as err:
                     log.warning(err)
-                    break
+                    sleep(1)
+                    continue
                 except NoData:
                     log.info("NO DATA")
                     if not self.is_available():
                         log.info("Car off detected. Stop polling until car on.")
                         self._skip_polling = True
-                        break
+                        sleep(1)
+                        continue
                     sleep(1)
 
             fix = self._gps.fix()
