@@ -90,6 +90,8 @@ class Car:
     def poll_data(self):
         """ The poller thread. """
 
+        log = self._log
+
         while self._running:
             now = monotonic()
 
@@ -123,19 +125,19 @@ class Car:
             }
             if not self._skip_polling or self.is_available():
                 if self._skip_polling:
-                    self._log.info("Resume polling.")
+                    log.info("Resume polling.")
                     self._skip_polling = False
 
                 try:
                     self.read_dongle(data)  # readDongle updates data inplace
                     self.last_data = now
                 except CanError as err:
-                    self._log.warning(err)
+                    log.warning(err)
                     break
                 except NoData:
-                    self._log.info("NO DATA")
+                    log.info("NO DATA")
                     if not self.is_available():
-                        self._log.info("Car off detected. Stop polling until car on.")
+                        log.info("Car off detected. Stop polling until car on.")
                         self._skip_polling = True
                         break
                     sleep(1)
