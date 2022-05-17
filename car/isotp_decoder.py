@@ -26,8 +26,8 @@ def tq(pos: str) -> int:
     if len(pos) == 1:
         return ord(pos) - TqBase + 3
     if len(pos) == 2:
-        return (ord(pos[0]) - TqBase) * 25 + \
-               (ord(pos[1]) - TqBase) + 4
+        return ((ord(pos[0]) - TqBase) * 26 +
+                ord(pos[1]) - TqBase) + 3
     raise ValueError()
 
 
