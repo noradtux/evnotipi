@@ -90,6 +90,8 @@ class Car:
     def poll_data(self):
         """ The poller thread. """
 
+        log = self._log
+
         while self._running:
             now = monotonic()
 
@@ -123,21 +125,23 @@ class Car:
             }
             if not self._skip_polling or self.is_available():
                 if self._skip_polling:
-                    self._log.info("Resume polling.")
+                    log.info("Resume polling.")
                     self._skip_polling = False
 
                 try:
                     self.read_dongle(data)  # readDongle updates data inplace
                     self.last_data = now
                 except CanError as err:
-                    self._log.warning(err)
-                    break
+                    log.warning(err)
+                    sleep(1)
+                    continue
                 except NoData:
-                    self._log.info("NO DATA")
+                    log.info("NO DATA")
                     if not self.is_available():
-                        self._log.info("Car off detected. Stop polling until car on.")
+                        log.info("Car off detected. Stop polling until car on.")
                         self._skip_polling = True
-                        break
+                        sleep(1)
+                        continue
                     sleep(1)
 
             fix = self._gps.fix()
@@ -159,7 +163,7 @@ class Car:
 
             if fix and 'time' in fix and fix['time'] and \
                     abs(data['timestamp'] - fix['time']) > 10:
-                data['timestamp'] = fix['time']
+                data['timestamp'] = float(fix['time'])
 
             if 'realVehicleSpeed' in data:
                 data['speed'] = data['realVehicleSpeed']
