@@ -4,7 +4,7 @@ from .car import Car, RollingAverage
 from .isotp_decoder import IsoTpDecoder
 
 Fields = (
-    {'cmd': '220100', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'optional': True, 'fc_opts': (0, 2, 0),
+    {'cmd': '220100', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'fc_opts': (0, 2, 0),
      'fields': [
          {'pos': 'f', 'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
          {'pos': 'g', 'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
@@ -134,11 +134,12 @@ class E_GMP(Car):
 
             fix = self._gps.fix()
             if (fix and fix['mode'] > 1 and fix['hdop'] is not None and
-                    fix['hdop'] < 1 and 'speed' in fix):
+                    fix['hdop'] < 1 and 'speed' in fix and
+                    speed - 10 < fix['speed'] < speed + 10):
                 self._avg_gps_speed.push(fix['speed'])
                 self._avg_wheel_speed.push(speed)
 
-            gps_avg = self._avg_gps_speed.get_perc(95)
+            gps_avg = self._avg_gps_speed.get()
             wheel_avg = self._avg_wheel_speed.get()
             if gps_avg and wheel_avg:
                 self._speed_factor *= gps_avg / wheel_avg
