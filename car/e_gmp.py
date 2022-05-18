@@ -13,8 +13,6 @@ Fields = (
     {'cmd': '220101', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
          {'pos': 'e', 'name': 'SOC_BMS', 'width': 1, 'scale': .5},
-         {'pos': 'f', 'name': 'availableChargePower', 'width': 2, 'scale': .01},
-         {'pos': 'h', 'name': 'availableDischargePower', 'width': 2, 'scale': .01},
          {'pos': 'j', 'name': 'charging_bits1', 'width': 1},
          {'pos': 'k', 'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},
          {'pos': 'm', 'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
