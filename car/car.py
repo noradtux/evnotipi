@@ -42,8 +42,9 @@ class RollingAverage:
         if self._len < len(self._buf):
             self._len += 1
 
-    def get(self):
-        return mean(self._buf[:self._len]) if self._len else None
+    def get(self, min_len_perc=0min_len_perc=0):
+        assert 0 <= min_len_perc <= 1
+        return mean(self._buf[:self._len]) if self._len >= max(1, len(self._buf) * min_len_perc) else None
 
     def get_perc(self, perc):
         data = self._buf[:self._len]
