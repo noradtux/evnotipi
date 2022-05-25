@@ -138,8 +138,8 @@ class E_GMP(Car):
             self._avg_gps_speed.push(fix['speed'])
             self._avg_wheel_speed.push(speed)
 
-        gps_avg = self._avg_gps_speed.get()
-        wheel_avg = self._avg_wheel_speed.get()
+        gps_avg = self._avg_gps_speed.get(1)
+        wheel_avg = self._avg_wheel_speed.get(1)
         if gps_avg and wheel_avg:
             data['_speed_factor'] = gps_avg / wheel_avg
 
