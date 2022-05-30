@@ -123,7 +123,7 @@ class E_GMP(Car):
             else:
                 break
 
-        speed = abs(data['driveMotorSpeed1']) / 277
+        speed = abs(data['driveMotorSpeed1']) / 276
 
         data['batteryAvgTemperature'] = temp_sum / temp_cnt
         data['charging'] = 1 if (data['dcBatteryPower'] is not None and
