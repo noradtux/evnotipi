@@ -6,8 +6,8 @@ from .isotp_decoder import IsoTpDecoder
 Fields = (
     {'cmd': '220100', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'fc_opts': (0, 2, 0),
      'fields': [
-         {'pos': 'f', 'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
-         {'pos': 'g', 'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'pos': 'f', 'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40, 'interval': 60},
+         {'pos': 'g', 'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40, 'interval': 60},
          {'pos': 'ad', 'name': 'vehicleSpeed', 'width': 1, 'scale': 1/3.6},     # km/h => m/s
          ]},
     {'cmd': '220101', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
@@ -16,72 +16,72 @@ Fields = (
          {'pos': 'j', 'name': 'charging_bits1', 'width': 1},
          {'pos': 'k', 'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},
          {'pos': 'm', 'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
-         {'pos': 'o', 'name': 'batteryMaxTemperature', 'width': 1, 'signed': True},
-         {'pos': 'p', 'name': 'batteryMinTemperature', 'width': 1, 'signed': True},
-         {'pos': 'q', 'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True},
-         {'pos': 'x', 'name': 'maxCellVoltage', 'width': 1, 'scale': .02},
-         {'pos': 'y', 'name': 'maxCellVoltNo', 'width': 1},
-         {'pos': 'z', 'name': 'minCellVoltage', 'width': 1, 'scale': .02},
-         {'pos': 'aa', 'name': 'minCellVoltNo', 'width': 1},
-         {'pos': 'ad', 'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1},
-         {'pos': 'ae', 'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1},
-         {'pos': 'ai', 'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1},
-         {'pos': 'am', 'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1},
-         {'pos': 'aq', 'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1},
+         {'pos': 'o', 'name': 'batteryMaxTemperature', 'width': 1, 'signed': True, 'interval': 10},
+         {'pos': 'p', 'name': 'batteryMinTemperature', 'width': 1, 'signed': True, 'interval': 10},
+         {'pos': 'q', 'name': 'cellTemp%02d', 'idx': 1, 'cnt': 5, 'width': 1, 'signed': True, 'interval': 60},
+         {'pos': 'x', 'name': 'maxCellVoltage', 'width': 1, 'scale': .02, 'interval': 10},
+         {'pos': 'y', 'name': 'maxCellVoltNo', 'width': 1, 'interval': 10},
+         {'pos': 'z', 'name': 'minCellVoltage', 'width': 1, 'scale': .02, 'interval': 10},
+         {'pos': 'aa', 'name': 'minCellVoltNo', 'width': 1, 'interval': 10},
+         {'pos': 'ad', 'name': 'auxBatteryVoltage', 'width': 1, 'scale': .1, 'interval': 10},
+         {'pos': 'ae', 'name': 'cumulativeChargeCurrent', 'width': 4, 'scale': .1, 'interval': 10},
+         {'pos': 'ai', 'name': 'cumulativeDischargeCurrent', 'width': 4, 'scale': .1, 'interval': 10},
+         {'pos': 'am', 'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1, 'interval': 10},
+         {'pos': 'aq', 'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1, 'interval': 10},
          {'pos': 'au', 'name': 'operatingTime', 'width': 4},  # seconds
          {'pos': 'ay', 'name': 'charging_bits2', 'width': 1},
          {'pos': 'bb', 'name': 'driveMotorSpeed1', 'width': 2, 'signed': True},
          {'pos': 'bd', 'name': 'driveMotorSpeed2', 'width': 2, 'signed': True},
          ]},
-    {'cmd': '220102', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
-     'fields': [
-         {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 1, 'cnt': 32, 'width': 1, 'scale': .02},
-         ]},
-    {'cmd': '220103', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
-     'fields': [
-         {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 33, 'cnt': 32, 'width': 1, 'scale': .02},
-         ]},
-    {'cmd': '220104', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
-     'fields': [
-         {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 65, 'cnt': 32, 'width': 1, 'scale': .02},
-         ]},
+    #{'cmd': '220102', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+    #'fields': [
+    #    {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 1, 'cnt': 32, 'width': 1, 'scale': .02},
+    #    ]},
+    #{'cmd': '220103', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+    #'fields': [
+    #    {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 33, 'cnt': 32, 'width': 1, 'scale': .02},
+    #    ]},
+    #{'cmd': '220104', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+    #'fields': [
+    #    {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 65, 'cnt': 32, 'width': 1, 'scale': .02},
+    #    ]},
     {'cmd': '220105', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
-         {'pos': 'j', 'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True},
-         {'pos': 'x', 'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
-         {'pos': 'z', 'name': 'soh', 'width': 2, 'scale': .1},
-         {'pos': 'ab', 'name': 'maxCellDetNo', 'width': 1},
-         {'pos': 'ac', 'name': 'minDeterioration', 'width': 2, 'scale': .1},
-         {'pos': 'ae', 'name': 'minCellDetNo', 'width': 1},
+         {'pos': 'j', 'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True, 'interval': 60},
+         {'pos': 'x', 'name': 'batteryInletTemperature', 'width': 1, 'signed': True, 'interval': 10},
+         {'pos': 'z', 'name': 'soh', 'width': 2, 'scale': .1, 'interval': 60},
+         {'pos': 'ab', 'name': 'maxCellDetNo', 'width': 1, 'interval': 60},
+         {'pos': 'ac', 'name': 'minDeterioration', 'width': 2, 'scale': .1, 'interval': 60},
+         {'pos': 'ae', 'name': 'minCellDetNo', 'width': 1, 'interval': 60},
          {'pos': 'af', 'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
-         {'pos': 'an', 'name': 'cellTemp%02d', 'idx': 13, 'cnt': 4, 'width': 1, 'signed': True},
+         {'pos': 'an', 'name': 'cellTemp%02d', 'idx': 13, 'cnt': 4, 'width': 1, 'signed': True, 'interval': 60},
          ]},
-    {'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
-     'fields': [
-         {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 97, 'cnt': 32, 'width': 1, 'scale': .02},
-         ]},
-    {'cmd': '22010b', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
-     'fields': [
-         {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 129, 'cnt': 32, 'width': 1, 'scale': .02},
-         ]},
-    {'cmd': '22010c', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
-     'fields': [
-         {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 161, 'cnt': 32, 'width': 1, 'scale': .02},
-         ]},
+    #{'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+    #'fields': [
+    #    {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 97, 'cnt': 32, 'width': 1, 'scale': .02},
+    #    ]},
+    #{'cmd': '22010b', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+    # 'fields': [
+    #     {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 129, 'cnt': 32, 'width': 1, 'scale': .02},
+    #     ]},
+    #{'cmd': '22010c', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+    # 'fields': [
+    #     {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 161, 'cnt': 32, 'width': 1, 'scale': .02},
+    #     ]},
     {'cmd': '22b002', 'canrx': 0x7ce, 'cantx': 0x7c6, 'optional': True, 'absolute': True,
      'fields': [
-         {'pos': 'g', 'name': 'odo', 'width': 3},
+         {'pos': 'g', 'name': 'odo', 'width': 3, 'interval': 10},
          ]},
     {'cmd': '22c00b', 'canrx': 0x7a8, 'cantx': 0x7a0, 'optional': True, 'absolute': True,
      'fields': [
-         {'pos': 'e', 'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'f', 'name': 'tire_fl_temp', 'width': 1, 'offset': -50},
-         {'pos': 'j', 'name': 'tire_fr_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'k', 'name': 'tire_fr_temp', 'width': 1, 'offset': -50},
-         {'pos': 'o', 'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'p', 'name': 'tire_rl_temp', 'width': 1, 'offset': -50},
-         {'pos': 't', 'name': 'tire_rr_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'u', 'name': 'tire_rr_temp', 'width': 1, 'offset': -50},
+         {'pos': 'e', 'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504, 'interval': 60},
+         {'pos': 'f', 'name': 'tire_fl_temp', 'width': 1, 'offset': -50, 'interval': 60},
+         {'pos': 'j', 'name': 'tire_fr_pres', 'width': 1, 'scale': 0.2/14.504, 'interval': 60},
+         {'pos': 'k', 'name': 'tire_fr_temp', 'width': 1, 'offset': -50, 'interval': 60},
+         {'pos': 'o', 'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504, 'interval': 60},
+         {'pos': 'p', 'name': 'tire_rl_temp', 'width': 1, 'offset': -50, 'interval': 60},
+         {'pos': 't', 'name': 'tire_rr_pres', 'width': 1, 'scale': 0.2/14.504, 'interval': 60},
+         {'pos': 'u', 'name': 'tire_rr_temp', 'width': 1, 'offset': -50, 'interval': 60},
          ]},
     {'computed': True,
      'fields': (
@@ -107,6 +107,7 @@ class E_GMP(Car):
         self._isotp = IsoTpDecoder(self._dongle, Fields)
         self._avg_wheel_speed = RollingAverage(int(600/max(1, self._poll_interval)))
         self._avg_gps_speed = RollingAverage(int(600/max(1, self._poll_interval)))
+        self.fields = Fields
 
     def read_dongle(self, data):
         """ Read and parse data from dongle """

@@ -1,6 +1,6 @@
 """ Influx Telemetry """
 from datetime import datetime, timezone
-from time import time, sleep
+from time import time, monotonic, sleep
 import logging
 from influxdb_client import InfluxDBClient, WriteOptions
 import pyrfc3339
@@ -8,7 +8,6 @@ import pyrfc3339
 INT_FIELD_LIST = ('gps_device', 'charging', 'fanFeedback', 'fanStatus', 'fix_mode',
                   'normalChargePort', 'rapidChargePort', 'submit_queue_len',
                   'timestamp')
-
 
 class InfluxTelemetry:
     """ Submit all available data to anm influxdb """
@@ -26,6 +25,22 @@ class InfluxTelemetry:
         self._batch_size = config.get('batch_size', 10000)
         self._influx = None
         self._iwrite = None
+
+        self._interval_defs = {}
+        self._intervals = {}
+        for cmd in car.fields:
+            for field in cmd['fields']:
+                if 'interval' in field:
+                    if 'cnt' in field:
+                        start = field.get('idx', 0)
+                        count = field.get('cnt', 1)
+                        for i in range(start, start + count):
+                            self._interval_defs[field['name'] % i] = field['interval']
+                            self._intervals[field['name'] % i] = 0
+                    else:
+                        self._interval_defs[field['name']] = field['interval']
+                        self._intervals[field['name']] = 0
+
 
     def start(self):
         """ Start the submission thread """
@@ -51,6 +66,10 @@ class InfluxTelemetry:
 
     def data_callback(self, data):
         """ Callback to receive data from "car" """
+        now = monotonic()
+        intervals = self._intervals
+        interval_defs = self._interval_defs
+
         self._log.debug("Enqeue...")
         p = {"measurement": "telemetry",
              "tags": {
@@ -58,8 +77,19 @@ class InfluxTelemetry:
                  "akey": self._evn_akey,
                  }
              }
-        fields = {k: v if k in INT_FIELD_LIST else float(v)
-                  for k, v in data.items() if v is not None}
+
+        fields = {}
+        for key, value in data.items():
+            if value is None:
+                continue
+
+            if key in intervals:
+                if intervals[key] >= now:
+                    fields[key] = int(value) if key in INT_FIELD_LIST else float(value)
+                    intervals[key] = now + interval_defs[key]
+
+            else:
+                fields[key] = int(value) if key in INT_FIELD_LIST else float(value)
 
         if 'gps_device' in data:
             p['tags']['gps_device'] = data['gps_device']
