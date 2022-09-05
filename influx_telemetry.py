@@ -31,15 +31,8 @@ class InfluxTelemetry:
         for cmd in car.fields:
             for field in cmd['fields']:
                 if 'interval' in field:
-                    if 'cnt' in field:
-                        start = field.get('idx', 0)
-                        count = field.get('cnt', 1)
-                        for i in range(start, start + count):
-                            self._interval_defs[field['name'] % i] = field['interval']
-                            self._intervals[field['name'] % i] = 0
-                    else:
-                        self._interval_defs[field['name']] = field['interval']
-                        self._intervals[field['name']] = 0
+                    self._interval_defs[field['name']] = field['interval']
+                    self._intervals[field['name']] = 0
 
 
     def start(self):
@@ -82,14 +75,14 @@ class InfluxTelemetry:
         for key, value in data.items():
             if value is None:
                 continue
-
+            
             if key in intervals:
-                if intervals[key] >= now:
-                    fields[key] = int(value) if key in INT_FIELD_LIST else float(value)
+                if now >= intervals[key]:
+                    fields[key] = value if key in INT_FIELD_LIST else float(value)
                     intervals[key] = now + interval_defs[key]
 
             else:
-                fields[key] = int(value) if key in INT_FIELD_LIST else float(value)
+                fields[key] = value if key in INT_FIELD_LIST else float(value)
 
         if 'gps_device' in data:
             p['tags']['gps_device'] = data['gps_device']
