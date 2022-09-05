@@ -128,9 +128,9 @@ class E_GMP(Car):
 
         data['batteryAvgTemperature'] = temp_sum / temp_cnt
         data['charging'] = 1 if (data['dcBatteryPower'] is not None and
-                                 data['dcBatteryPower'] < -1.3 and
+                                 data['dcBatteryPower'] < -0.8 and
                                  speed == 0) else 0
-        # 1.3kW is lowest possible charging rate (6A single phase at 230V)
+        # 1.3kW is lowest possible charging rate (6A single phase at 230V); after losses gives 0.8kW
 
         fix = self._gps.fix()
         if (fix and fix['mode'] > 1 and fix['hdop'] is not None and
