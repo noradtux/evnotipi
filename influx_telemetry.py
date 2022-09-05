@@ -22,7 +22,7 @@ class InfluxTelemetry:
         self._cartype = car.get_evn_model()
         self._gps = gps
         self._poll_interval = config.get('interval', 60)
-        self._batch_size = config.get('batch_size', 10000)
+        self._batch_size = config.get('batch_size', 1048576)
         self._influx = None
         self._iwrite = None
 
