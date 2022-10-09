@@ -25,15 +25,7 @@ class InfluxTelemetry:
         self._batch_size = config.get('batch_size', 1048576)
         self._influx = None
         self._iwrite = None
-
-        self._interval_defs = {}
-        self._intervals = {}
-        for cmd in car.fields:
-            for field in cmd['fields']:
-                if 'interval' in field:
-                    self._interval_defs[field['name']] = field['interval']
-                    self._intervals[field['name']] = 0
-
+        self._field_states = {}
 
     def start(self):
         """ Start the submission thread """
@@ -60,8 +52,7 @@ class InfluxTelemetry:
     def data_callback(self, data):
         """ Callback to receive data from "car" """
         now = monotonic()
-        intervals = self._intervals
-        interval_defs = self._interval_defs
+        states = self._field_states
 
         self._log.debug("Enqeue...")
         p = {"measurement": "telemetry",
@@ -75,13 +66,16 @@ class InfluxTelemetry:
         for key, value in data.items():
             if value is None:
                 continue
-            
-            if key in intervals:
-                if now >= intervals[key]:
-                    fields[key] = value if key in INT_FIELD_LIST else float(value)
-                    intervals[key] = now + interval_defs[key]
 
-            else:
+            if key not in states:
+                states[key] = {'next_interval': 0, 'last_value': None}
+
+            if value != states[key]['last_value'] or \
+                    now >= states[key]['next_interval']:
+
+                states[key]['last_value'] = value
+                states[key]['next_interval'] = now + 60
+
                 fields[key] = value if key in INT_FIELD_LIST else float(value)
 
         if 'gps_device' in data:
