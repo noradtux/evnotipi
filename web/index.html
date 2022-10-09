@@ -82,6 +82,44 @@ div.widget {
    align-content: center;
    width: 3.2em;
 }
+#loadstorewidget {
+   cursor: default;
+   display: inline-block;
+   border-radius: 0.5em;
+   border: none;
+   font-size: 200%;
+   padding: 0 0 0.2em 0;
+   flex-grow: 0;
+   text-align: center;
+   align-content: center;
+   width: 3.2em;
+}
+#loadwidget {
+   cursor: default;
+   background-color: grey;
+   display: inline-block;
+   border-radius: 0.5em;
+   border: none;
+   font-size: 100%;
+   padding: 0 0 0.2em 0;
+   flex-grow: 0;
+   text-align: center;
+   align-content: center;
+   width: 3.2em;
+}
+#storewidget {
+   cursor: default;
+   background-color: grey;
+   display: inline-block;
+   border-radius: 0.5em;
+   border: none;
+   font-size: 100%;
+   padding: 0 0 0.2em 0;
+   flex-grow: 0;
+   text-align: center;
+   align-content: center;
+   width: 3.2em;
+}
 div.widget .description {
    font-size: 50%;
    color: lightgray;
@@ -158,6 +196,8 @@ var WidgetList = {
 function createWidgets() {
    var widgetcontainer = document.getElementById('widget-container');
 
+   widgetcontainer.innerHTML = '';
+
    if ('widgetList' in localStorage) {
       WidgetList = JSON.parse(localStorage.widgetList);
    }
@@ -165,6 +205,7 @@ function createWidgets() {
    for (var key in WidgetList) {
       createWidget(key, WidgetList[key].order);
    }
+   
    var widget = document.getElementById('newwidget');
    if (widget == null) {
       widget = document.createElement('div');
@@ -172,6 +213,28 @@ function createWidgets() {
       widget.style.order = 10000;
       widget.innerText = '+';
       widget.onclick = showAddMenu;
+      widgetcontainer.appendChild(widget);
+   }
+
+   widget = document.getElementById('loadstorewidget');
+   if (widget == null) {
+      widget = document.createElement('div');
+      widget.id = 'loadstorewidget';
+      widget.style.order = 10001;
+      
+      var loadwidget = document.createElement('div');
+      loadwidget.id = 'loadwidget';
+      loadwidget.innerText = 'load';
+      loadwidget.onclick = loadLayout;
+
+      var storewidget = document.createElement('div');
+      storewidget.id = 'storewidget';
+      storewidget.innerText = 'store';
+      storewidget.onclick = storeLayout;
+
+      widget.appendChild(loadwidget);
+      widget.appendChild(storewidget);
+
       widgetcontainer.appendChild(widget);
    }
 }
@@ -419,6 +482,31 @@ function storeWidgetList() {
       list[idx] = {order: WidgetList[idx].order};
    }
    localStorage.widgetList = JSON.stringify(list);
+};
+
+function loadLayout() {
+   var ajax = new XMLHttpRequest();
+   ajax.open('GET', 'layout/load', true);
+   ajax.setRequestHeader('Content-Type', 'application/json');
+   ajax.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+         localStorage.widgetList = JSON.parse(this.responseText);
+         createWidgets();
+      }
+   }
+   ajax.send();
+};
+
+function storeLayout() {
+   var list = {};
+   // Filter data to be saved
+   for (var idx in WidgetList) {
+      list[idx] = {order: WidgetList[idx].order};
+   }
+   var ajax = new XMLHttpRequest();
+   ajax.open('POST', 'layout/store', true);
+   ajax.setRequestHeader('Content-Type', 'application/json');
+   ajax.send(JSON.stringify(list));
 };
 
 if ('serviceWorker' in navigator) {
