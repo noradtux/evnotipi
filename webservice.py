@@ -22,11 +22,14 @@ class WebService(Bottle):
         self.running = False
         self.server = None
         self.thread = None
+        self._safe_path = config.get('safe_path', '/var/cache/evnotiarch')
 
         self.route('/data/live/ws', callback=self.handle_websocket)
         self.route('/data', callback=self.handle_data)
         self.route('/', callback=self.handle_index)
         self.route('/static/<filename>', callback=self.handle_static)
+        self.route('/layout/load', callback=self.handle_layout_load)
+        self.route('/layout/store', callback=self.handle_layout_store, method='POST')
 
     def handle_websocket(self):
         wsock = request.environ.get('wsgi.websocket')
@@ -51,6 +54,14 @@ class WebService(Bottle):
 
     def handle_data(self):
         return json.dumps(self.data)
+
+    def handle_layout_load(self):
+        return static_file(self._safe_path + '/layout.json')
+
+    def handle_layout_store(self):
+        with open(self._safe_path + '/layout.json', 'wb') as file:
+            file.write(request.body.read())
+        return "Layout stored"
 
     def start(self):
         self.running = True
