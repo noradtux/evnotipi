@@ -22,7 +22,7 @@ class WebService(Bottle):
         self.running = False
         self.server = None
         self.thread = None
-        self._safe_path = config.get('safe_path', '/var/cache/evnotiarch')
+        self._safe_path = config.get('safe_path', '/var/cache/evnotipi')
 
         self.route('/data/live/ws', callback=self.handle_websocket)
         self.route('/data', callback=self.handle_data)
@@ -56,7 +56,8 @@ class WebService(Bottle):
         return json.dumps(self.data)
 
     def handle_layout_load(self):
-        return static_file(self._safe_path + '/layout.json')
+        with open(self._safe_path + '/layout.json', 'rb') as file:
+            return file.read()
 
     def handle_layout_store(self):
         with open(self._safe_path + '/layout.json', 'wb') as file:
