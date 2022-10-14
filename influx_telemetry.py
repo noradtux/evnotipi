@@ -5,9 +5,10 @@ import logging
 from influxdb_client import InfluxDBClient, WriteOptions
 import pyrfc3339
 
-INT_FIELD_LIST = ('gps_device', 'charging', 'fanFeedback', 'fanStatus', 'fix_mode',
+INT_FIELD_LIST = ('charging', 'fanFeedback', 'fanStatus', 'fix_mode',
                   'normalChargePort', 'rapidChargePort', 'submit_queue_len',
                   'timestamp')
+STR_FIELD_LIST = ('gps_device')
 
 class InfluxTelemetry:
     """ Submit all available data to anm influxdb """
@@ -64,7 +65,7 @@ class InfluxTelemetry:
 
         fields = {}
         for key, value in data.items():
-            if value is None:
+            if value is None or key in STR_FIELD_LIST:
                 continue
 
             if key not in states:
