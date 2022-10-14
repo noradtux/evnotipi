@@ -76,7 +76,7 @@ class InfluxTelemetry:
                 states[key]['last_value'] = value
                 states[key]['next_interval'] = now + 60
 
-                fields[key] = value if key in INT_FIELD_LIST else float(value)
+                fields[key] = int(value) if key in INT_FIELD_LIST else float(value)
 
         if 'gps_device' in data:
             p['tags']['gps_device'] = data['gps_device']
