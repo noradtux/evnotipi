@@ -6,8 +6,7 @@ from influxdb_client import InfluxDBClient, WriteOptions
 import pyrfc3339
 
 INT_FIELD_LIST = ('charging', 'fanFeedback', 'fanStatus', 'fix_mode',
-                  'normalChargePort', 'rapidChargePort', 'submit_queue_len',
-                  'timestamp')
+                  'normalChargePort', 'rapidChargePort', 'submit_queue_len')
 STR_FIELD_LIST = ('gps_device')
 
 class InfluxTelemetry:
@@ -65,25 +64,25 @@ class InfluxTelemetry:
 
         fields = {}
         for key, value in data.items():
-            if value is None or key in STR_FIELD_LIST:
+            if value is None:
                 continue
 
-            if key not in states:
-                states[key] = {'next_interval': 0, 'last_value': None}
+            if key in STR_FIELD_LIST:
+                p['tags'][key] = value
+            else:
+                if key not in states:
+                    states[key] = {'next_interval': 0, 'last_value': None}
 
-            if value != states[key]['last_value'] or \
-                    now >= states[key]['next_interval']:
+                if value != states[key]['last_value'] or \
+                        now >= states[key]['next_interval']:
 
-                states[key]['last_value'] = value
-                states[key]['next_interval'] = now + 60
+                    states[key]['last_value'] = value
+                    states[key]['next_interval'] = now + 60
 
-                fields[key] = int(value) if key in INT_FIELD_LIST else float(value)
+                    fields[key] = int(value) if key in INT_FIELD_LIST else float(value)
 
-        if 'gps_device' in data:
-            p['tags']['gps_device'] = data['gps_device']
-
-        p["time"] = pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc))
-        p["fields"] = fields
+        p['time'] = pyrfc3339.generate(datetime.fromtimestamp(data['timestamp'], timezone.utc))
+        p['fields'] = fields
 
         try:
             self._iwrite.write(bucket=self._config['bucket'],
