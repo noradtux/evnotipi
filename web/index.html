@@ -150,15 +150,18 @@ var AvailableFields = {
    'batteryInletTemperature':{precision: 1, unit: '°C', descr: 'BattInlet'},
    'internalTemperature':  {precision: 1, unit: '°C', descr: 'Inside'},
    'externalTemperature':  {precision: 1, unit: '°C', descr: 'Outside'},
+   'evaporatorTemperature': {precision: 1, unit: '°C', descr: 'Evap'},
+   'coolant1Temperature': {precision: 1, unit: '°C', descr: 'Coolant1'},
+   'coolant2Temperature': {precision: 1, unit: '°C', descr: 'Coolant2'},
    'dcBatteryCurrent':     {precision: 0, unit: 'A',  descr: 'Current'},
    'dcBatteryPower':       {precision: 1, unit: 'kW', descr: 'Power'},
    'dcBatteryVoltage':     {precision: 0, unit: 'V',  descr: 'Voltage'},
    'cumulativeEnergyCharged': {precision: 0, unit: 'kWh',  descr: 'CEC'},
    'cumulativeEnergyDischarg':{precision: 0, unit: 'kWh',  descr: 'CED'},
-   'odo':                     {precision: 0, unit: 'km',   descr: 'ODO'},
    'cumulativeChargeCurrent': {precision: 0, unit: 'Ah',   descr: 'CCC'},
    'cumulativeDischargeCurrent': {precision: 0, unit: 'Ah', descr: 'CDC'},
    'driveMotorSpeed1':   {precision: 0, unit: 'RPM', descr: 'Motor'},
+   'odo':                     {precision: 0, unit: 'km',   descr: 'ODO'},
    'fanStatus':         {precision: 0, unit: '', descr: 'Fan Status'},
    'fanFeedback':       {precision: 0, unit: '', descr: 'Fan RPM'},
    'availableChargePower':    {precision: 0, unit: 'kW', descr: 'Chg Pwr'},
@@ -182,6 +185,7 @@ var AvailableFields = {
    'longitude':   {unit: '°',  descr: 'Longitude'},
    'altitude':    {precision: 0, unit: 'm', descr: 'Altitude'},
    'fix_mode':    {precision: 0, unit: '', descr: 'GPS Fix'},
+   'absAirPressure':    {precision: 0, unit: 'mbar', descr: 'Abs Air'}
 };
 
 var WidgetList = {
