@@ -8,7 +8,14 @@ Fields = (
      'fields': [
          {'pos': 'f', 'name': 'internalTemperature', 'width': 1, 'scale': .5, 'offset': -40, 'interval': 60},
          {'pos': 'g', 'name': 'externalTemperature', 'width': 1, 'scale': .5, 'offset': -40, 'interval': 60},
+         {'pos': 'h', 'name': 'evaporatorTemperature', 'width': 1, 'scale': .5, 'offset': -40, 'interval': 60},
          {'pos': 'ad', 'name': 'vehicleSpeed', 'width': 1, 'scale': 1/3.6},     # km/h => m/s
+         ]},
+    {'cmd': '220102', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'fc_opts': (0, 2, 0),
+     'fields': [
+         {'pos': 'e', 'name': 'coolant1Temperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'pos': 'f', 'name': 'coolant2Temperature', 'width': 1, 'scale': .5, 'offset': -40},
+         #{'pos': 'm', 'name': 'absAirPressure', 'width': 1, 'scale': .2*0.9807},
          ]},
     {'cmd': '220101', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
