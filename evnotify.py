@@ -89,6 +89,9 @@ class EVNotify:
         while self._running and settings is None:
             try:
                 settings = evn.getSettings()
+            except EVNotifyAPI.RateLimit as err:
+                log.error("Rate Limited, sleeping 60s %s", err)
+                sleep(60)
             except EVNotifyAPI.CommunicationError as err:
                 log.info("Waiting for network connectivity (%s)", err)
                 sleep(3)
@@ -109,6 +112,9 @@ class EVNotify:
                     try:
                         evn.sendNotification(True)
                         abort_notification = SENT
+                    except EVNotifyAPI.RateLimit as err:
+                        log.error("Rate Limited, sleeping 60s %s", err)
+                        sleep(60)
                     except EVNotifyAPI.CommunicationError as err:
                         log.error("Communication Error: %s", err)
                         abort_notification = PENDING
@@ -178,6 +184,9 @@ class EVNotify:
                                 log.info("New notification threshold: %i",
                                          soc_threshold)
 
+                    except EVNotifyAPI.RateLimit as err:
+                        log.error("Rate Limited, sleeping 60s %s", err)
+                        sleep(60)
                     except EVNotifyAPI.CommunicationError as err:
                         log.error("Communication error occured %s", err)
 
@@ -196,10 +205,16 @@ class EVNotify:
                     try:
                         evn.sendNotification()
                         soc_notification = ARMED
+                    except EVNotifyAPI.RateLimit as err:
+                        log.error("Rate Limited, sleeping 60s %s", err)
+                        sleep(60)
                     except EVNotifyAPI.CommunicationError as err:
                         log.info("Communication Error: %s", err)
                         soc_notification = PENDING
 
+            except EVNotifyAPI.RateLimit as err:
+                log.error("Rate Limited, sleeping 60s %s", err)
+                sleep(60)
             except EVNotifyAPI.CommunicationError as err:
                 log.info("Communication Error: %s", err)
 

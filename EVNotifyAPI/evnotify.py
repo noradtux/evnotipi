@@ -2,7 +2,13 @@
 
 import requests
 
-class CommunicationError(Exception): pass
+class CommunicationError(Exception):
+    pass
+
+
+class RateLimit(Exception):
+    pass
+
 
 class EVNotify:
 
@@ -30,9 +36,10 @@ class EVNotify:
                 result = getattr(self._session, method)(self._rest_url + fnc,
                                                         json=params,
                                                         timeout=self._timeout)
-            if result.status_code >= 400:
-                raise CommunicationError("code({}) text({})"
-                                         .format(result.status_code, result.text))
+            if result.status_code == 429:
+                raise RateLimit(f'code({result.status_code}) test({result.text})')
+            elif result.status_code >= 400:
+                raise CommunicationError(f'code({result.status_code}) text({result.text})')
 
             return result.json()
 
