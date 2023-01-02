@@ -68,7 +68,7 @@ Fields = (
     {'cmd': '220106', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
          {'pos': 'd', 'name': 'coolant2Temperature', 'width': 1, 'signed': True},
-         {'pos': 'o', 'name': '_battBits', 'wdith': 1},
+         {'pos': 'o', 'name': '_battBits', 'width': 1},
          # bit 0-3
          # LTR		3	0011
          # COOL		4	0100
