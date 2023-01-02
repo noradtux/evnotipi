@@ -13,14 +13,14 @@ Fields = (
          ]},
     {'cmd': '220102', 'canrx': 0x7bb, 'cantx': 0x7b3, 'absolute': True, 'fc_opts': (0, 2, 0),
      'fields': [
-         {'pos': 'e', 'name': 'coolant1Temperature', 'width': 1, 'scale': .5, 'offset': -40},
-         {'pos': 'f', 'name': 'coolant2Temperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'pos': 'e', 'name': 'ACUcoolant1Temperature', 'width': 1, 'scale': .5, 'offset': -40},
+         {'pos': 'f', 'name': 'ACUcoolant2Temperature', 'width': 1, 'scale': .5, 'offset': -40},
          #{'pos': 'm', 'name': 'absAirPressure', 'width': 1, 'scale': .2*0.9807},
          ]},
     {'cmd': '220101', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
          {'pos': 'e', 'name': 'SOC_BMS', 'width': 1, 'scale': .5},
-         {'pos': 'j', 'name': 'charging_bits1', 'width': 1},
+         {'pos': 'j', 'name': '_charging_bits1', 'width': 1},
          {'pos': 'k', 'name': 'dcBatteryCurrent', 'width': 2, 'signed': True, 'scale': .1},
          {'pos': 'm', 'name': 'dcBatteryVoltage', 'width': 2, 'scale': .1},
          {'pos': 'o', 'name': 'batteryMaxTemperature', 'width': 1, 'signed': True, 'interval': 10},
@@ -36,7 +36,7 @@ Fields = (
          {'pos': 'am', 'name': 'cumulativeEnergyCharged', 'width': 4, 'scale': .1, 'interval': 10},
          {'pos': 'aq', 'name': 'cumulativeEnergyDischarged', 'width': 4, 'scale': .1, 'interval': 10},
          {'pos': 'au', 'name': 'operatingTime', 'width': 4},  # seconds
-         {'pos': 'ay', 'name': 'charging_bits2', 'width': 1},
+         {'pos': 'ay', 'name': '_charging_bits2', 'width': 1},
          {'pos': 'bb', 'name': 'driveMotorSpeed1', 'width': 2, 'signed': True},
          {'pos': 'bd', 'name': 'driveMotorSpeed2', 'width': 2, 'signed': True},
          ]},
@@ -55,6 +55,8 @@ Fields = (
     {'cmd': '220105', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
          {'pos': 'j', 'name': 'cellTemp%02d', 'idx': 6, 'cnt': 7, 'width': 1, 'signed': True, 'interval': 60},
+         {'pos': 'q', 'name': 'availableChargePower', 'width': 2, 'scale': .01},
+         {'pos': 's', 'name': 'availableDischargePower', 'width': 2, 'scale': .01},
          {'pos': 'x', 'name': 'batteryInletTemperature', 'width': 1, 'signed': True, 'interval': 10},
          {'pos': 'z', 'name': 'soh', 'width': 2, 'scale': .1, 'interval': 60},
          {'pos': 'ab', 'name': 'maxCellDetNo', 'width': 1, 'interval': 60},
@@ -62,6 +64,21 @@ Fields = (
          {'pos': 'ae', 'name': 'minCellDetNo', 'width': 1, 'interval': 60},
          {'pos': 'af', 'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
          {'pos': 'an', 'name': 'cellTemp%02d', 'idx': 13, 'cnt': 4, 'width': 1, 'signed': True, 'interval': 60},
+         ]},
+    {'cmd': '220106', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+     'fields': [
+         {'pos': 'd', 'name': 'coolant2Temperature', 'width': 1, 'signed': True},
+         {'pos': 'o', 'name': '_battBits', 'wdith': 1},
+         # bit 0-3
+         # LTR		3	0011
+         # COOL		4	0100
+         # OFF		6	1100
+         # PTC		E	1110
+         ]},
+    {'cmd': '22e011', 'canrx': 0x7ed, 'cantx': 0x7e5, 'absolute': True,
+     'fields': [
+         {'pos': 't', 'name': 'auxBatterySoC', 'width': 1},
+         {'pos': 'x', 'name': 'auxBatteryTemp', 'width': 1, 'scale': .5, 'offset': -40},
          ]},
     #{'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
     #'fields': [
@@ -95,11 +112,13 @@ Fields = (
          {'name': 'dcBatteryPower',
           'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
          {'name': 'normalChargePort',
-          'lambda': lambda d: int(d['charging_bits1'] & 0x10 != 0)},
+          'lambda': lambda d: int(d['_charging_bits1'] & 0x10 != 0)},
          {'name': 'rapidChargePort',
-          'lambda': lambda d: int(d['charging_bits1'] & (0x10 | 0x20) != 0)},
+          'lambda': lambda d: int(d['_charging_bits1'] & (0x10 | 0x20) != 0)},
          {'name': 'charging',
           'lambda': lambda d: d['normalChargePort'] or d['rapidChargePort']},
+         {'name': 'battThermalMode',
+          'lambda': lambda d: d['_battBits'] & 0xf},
      )
      },
 )
