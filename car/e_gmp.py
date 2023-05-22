@@ -133,6 +133,7 @@ class E_GMP(Car):
         self._isotp = IsoTpDecoder(self._dongle, Fields)
         self._avg_wheel_speed = RollingAverage(int(600/max(1, self._poll_interval)))
         self._avg_gps_speed = RollingAverage(int(600/max(1, self._poll_interval)))
+        self._motor_speed_divider = config.get('motor_speed_devider', 278)
         self.fields = Fields
 
     def read_dongle(self, data):
@@ -150,7 +151,7 @@ class E_GMP(Car):
             else:
                 break
 
-        speed = abs(data['driveMotorSpeed1']) / 276
+        speed = abs(data['driveMotorSpeed1']) / self._motor_speed_divider
 
         data['batteryAvgTemperature'] = temp_sum / temp_cnt
         data['charging'] = 1 if (data['dcBatteryPower'] is not None and
