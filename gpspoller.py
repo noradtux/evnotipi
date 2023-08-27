@@ -31,20 +31,23 @@ def empty_fix():
 class GpsPoller:
     """ Thread that continously reads data from gpsd. """
 
-    def __init__(self, store=None):
+    def __init__(self, config):
         """ store: json file to store last valid fix on shutdown """
 
         self._log = logging.getLogger("EVNotiPi/GPSPoller")
         self._thread = None
         self._gpsd = ('localhost', 2947)
         self._last_fix = empty_fix()
-        self._store = store
+        self._store = config.get('store')
+        self._precission = config.get('precission', 10)
         self._running = False
 
     def run(self):
         """ The reader thread. """
         self._running = True
         gps_sock = None
+        precission = self._precission
+        last_gdop = precission + 1  # Make sure, last_gdop <= precission is false
         while self._running:
             try:
                 if gps_sock:
@@ -57,7 +60,7 @@ class GpsPoller:
                             if 'class' not in fix:
                                 continue
 
-                            if fix['class'] == 'TPV' and fix['mode'] > 1:
+                            if fix['class'] == 'TPV' and last_gdop <= precission:
                                 fix_time = timegm(strptime(fix['time'],
                                                            "%Y-%m-%dT%H:%M:%S.%fZ"))
 
@@ -75,6 +78,9 @@ class GpsPoller:
                                         0 < self._last_fix['speed'] < 1):
                                     self._last_fix['speed'] = 0
                             elif fix['class'] == 'SKY':
+                                if 'gdop' in fix:
+                                    last_gdop = fix['gdop']
+
                                 self._last_fix.update({
                                     'xdop': fix.get('xdop', None),
                                     'ydop': fix.get('ydop', None),
