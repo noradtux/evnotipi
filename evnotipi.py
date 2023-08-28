@@ -86,7 +86,7 @@ watchdog = WATCHDOG(config['watchdog'])
 dongle = DONGLE(config['dongle'])
 
 # Init GPS interface
-gps = GpsPoller(store='/var/cache/evnotipi/gps.json')
+gps = GpsPoller(config['gps'])
 Threads.append(gps)
 
 # Init car
