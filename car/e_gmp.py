@@ -59,7 +59,7 @@ Fields = (
          {'pos': 's', 'name': 'availableDischargePower', 'width': 2, 'scale': .01},
          {'pos': 'x', 'name': 'batteryInletTemperature', 'width': 1, 'signed': True},
          {'pos': 'z', 'name': 'soh', 'width': 2, 'scale': .1},
-         {'pos': 32, 'name': 'energyRemaining', 'width': 2, 'scale': 2},
+         {'pos': 'ac', 'name': 'energyRemaining', 'width': 2, 'scale': 2},
          {'pos': 'af', 'name': 'SOC_DISPLAY', 'width': 1, 'scale': .5},
          {'pos': 'an', 'name': 'cellTemp%02d', 'idx': 13, 'cnt': 4, 'width': 1, 'signed': True},
          ]},
