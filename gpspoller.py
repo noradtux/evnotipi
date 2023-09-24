@@ -1,6 +1,6 @@
 """ Interface to gpsd """
-from threading import Thread
-from time import sleep, strptime
+from asyncio import sleep, create_task
+from time import strptime
 from calendar import timegm
 import json
 import logging
@@ -35,14 +35,14 @@ class GpsPoller:
         """ store: json file to store last valid fix on shutdown """
 
         self._log = logging.getLogger("EVNotiPi/GPSPoller")
-        self._thread = None
+        self._task = None
         self._gpsd = ('localhost', 2947)
         self._last_fix = empty_fix()
         self._store = config.get('store')
         self._precission = config.get('precission', 10)
         self._running = False
 
-    def run(self):
+    async def run(self):
         """ The reader thread. """
         self._running = True
         gps_sock = None
@@ -51,7 +51,7 @@ class GpsPoller:
         while self._running:
             try:
                 if gps_sock:
-                    data = gps_sock.recv(4096)
+                    data = await gps_sock.recv(4096)
                     for line in data.split(b'\r\n'):
                         if len(line) == 0:
                             continue
@@ -125,17 +125,16 @@ class GpsPoller:
                 self._log.warn('File not found (%s)', self._store)
 
         self._running = True
-        self._thread = Thread(target=self.run, name="EVNotiPi/GPS")
-        self._thread.start()
+        self._task = create_task(self.run(), name='GpsPoller')
 
     def stop(self):
         """ Stop the poller thread. """
         self._running = False
-        self._thread.join()
+        #self._task.join()
         if self._store:
             with open(self._store, 'w', encoding='utf-8') as store_file:
                 json.dump(self._last_fix, store_file)
 
-    def check_thread(self):
+    def check_task(self):
         """ Return running state if the poller thread. """
-        return self._thread.is_alive()
+        return self._task.is_alive()

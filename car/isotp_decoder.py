@@ -20,6 +20,7 @@ def is_power_of_two(number):
 
 TqBase = ord('a') - 1
 
+
 def tq(pos: str) -> int:
     """ Convert Torque style address (a - zz) to an int """
     pos = pos.lower()
@@ -42,7 +43,7 @@ class IsoTpDecoder:
         self.preprocess_fields()
 
     def preprocess_fields(self):
-        """ Preprocess field structure, 
+        """ Preprocess field structure,
             creating format strings for unpack etc.,"""
         for cmd_data in self._fields:
             fmt = ">"
@@ -126,7 +127,7 @@ class IsoTpDecoder:
                                 fmt += 'x'
                             elif pad < 0:
                                 raise ValueError('negative padding encountered!!')
-                            
+
                             fmt_last_pos = field['pos'] + field.get('cnt', 1) * field['width'] - 1
 
                         # For patterned fields (i.e. cellVolts%02d) use multiplyer
@@ -176,7 +177,7 @@ class IsoTpDecoder:
                 cmd_data['struct'] = struct.Struct(fmt)
                 cmd_data['fields'] = new_fields
 
-    def get_data(self, can_tries=1):
+    async def get_data(self, can_tries=1):
         """ Takes a structure which describes adresses,
             commands and how to decode the return """
         data = {}
@@ -198,10 +199,10 @@ class IsoTpDecoder:
                     while True:
                         can_try += 1
                         try:
-                            raw = self._dongle.send_command_ex(cmd_data['cmd'],
-                                                               canrx=cmd_data['canrx'],
-                                                               cantx=cmd_data['cantx'],
-                                                               fc_opts=cmd_data['fc_opts'])
+                            raw = await self._dongle.send_command_ex(cmd_data['cmd'],
+                                                                     canrx=cmd_data['canrx'],
+                                                                     cantx=cmd_data['cantx'],
+                                                                     fc_opts=cmd_data['fc_opts'])
                             break
                         except NoData:
                             if can_try > can_tries:

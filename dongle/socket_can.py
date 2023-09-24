@@ -1,5 +1,5 @@
 """ Module implementing an interface through Linux's socket CAN interface """
-from time import sleep
+from asyncio import sleep
 from socket import (socket, timeout as sock_timeout,
                     AF_CAN, PF_CAN, SOCK_DGRAM, SOCK_RAW, CAN_ISOTP,
                     CAN_RAW, CAN_EFF_FLAG, CAN_EFF_MASK, CAN_RAW_FILTER,
@@ -118,29 +118,29 @@ class SocketCan:
         ip_route.close()
 
         # test if kernel supports CAN_ISOTP
-        try:
-            sock = CanSocket(AF_CAN, SOCK_DGRAM, CAN_ISOTP)
-            sock.close()
-            # CAN_ISOTP_TX_PADDING CAN_ISOTP_RX_PADDING CAN_ISOTP_CHK_PAD_LEN CAN_ISOTP_CHK_PAD_DATA
-            opts = CAN_ISOTP_TX_PADDING | CAN_ISOTP_RX_PADDING | CAN_ISOTP_CHK_PAD_LEN
-            # if self._is_extended:
-            #    opts |= CAN_ISOTP_EXTEND_ADDR
-            self._sock_opt_isotp_opt = pack("=LLBBBB", opts, 0, 0, 0xAA, 0xFF, 0)
-            self._sock_opt_isotp_fc = pack("=BBB", 0, 0, 0)
-            # select implementation of send_command_ex
-            self.send_command_ex = self.send_command_ex_isotp
-            self._log.info("using ISO-TP support")
-        except OSError as err:
-            if err.errno == 93:
-                # CAN_ISOTP not supported
-                self.send_command_ex = self.send_command_ex_canraw
-            else:
-                raise
+        #try:
+        sock = CanSocket(AF_CAN, SOCK_DGRAM, CAN_ISOTP)
+        sock.close()
+        # CAN_ISOTP_TX_PADDING CAN_ISOTP_RX_PADDING CAN_ISOTP_CHK_PAD_LEN CAN_ISOTP_CHK_PAD_DATA
+        opts = CAN_ISOTP_TX_PADDING | CAN_ISOTP_RX_PADDING | CAN_ISOTP_CHK_PAD_LEN
+        # if self._is_extended:
+        #    opts |= CAN_ISOTP_EXTEND_ADDR
+        self._sock_opt_isotp_opt = pack("=LLBBBB", opts, 0, 0, 0xAA, 0xFF, 0)
+        self._sock_opt_isotp_fc = pack("=BBB", 0, 0, 0)
+        # select implementation of send_command_ex
+        #self.send_command_ex = async self.send_command_ex_isotp
+        self._log.info("using ISO-TP support")
+        #except OSError as err:
+        #    if err.errno == 93:
+        #        # CAN_ISOTP not supported
+        #        self.send_command_ex = async self.send_command_ex_canraw
+        #    else:
+        #        raise
 
         self._can_raw_sock = CanSocket(PF_CAN, SOCK_RAW, CAN_RAW)
         self._can_raw_sock.bind((self._config['port'],))
 
-    def send_command_ex_isotp(self, cmd, cantx, canrx, fc_opts=None):
+    async def send_command_ex(self, cmd, cantx, canrx, fc_opts=None):
         """ Send a command using specified can tx id and
             return response from can rx id.
             Implemented using kernel level iso-tp. """
@@ -166,7 +166,7 @@ class SocketCan:
                     self._log.debug("canrx(%s) cantx(%s) cmd(%s)",
                                     hex(canrx), hex(cantx), cmd.hex(' '))
                 sock.send(cmd)
-                data = sock.recv(512)
+                data = await sock.recv(512)
                 if self._log.isEnabledFor(logging.DEBUG):
                     self._log.debug(data.hex(' '))
         except sock_timeout as err:
@@ -179,7 +179,7 @@ class SocketCan:
 
         return data
 
-    def send_command_ex_canraw(self, cmd, cantx, canrx, fc_opts=None):
+    async def send_command_ex_canraw(self, cmd, cantx, canrx, fc_opts=None):
         """ Send a command using specified can tx id and
             return response from can rx id. """
         if self._log.isEnabledFor(logging.DEBUG):
@@ -218,7 +218,7 @@ class SocketCan:
 
                 while True:
                     self._log.debug("waiting recv msg")
-                    msg = sock.recv(72)
+                    msg = await sock.recv(72)
                     can_id, length, msg_data = CANFMT.unpack(msg)
 
                     if self._log.isEnabledFor(logging.DEBUG):
@@ -287,12 +287,12 @@ class SocketCan:
 
         return data
 
-    def read_raw_frame(self, timeout=None):
+    async def read_raw_frame(self, timeout=None):
         """ Read a single frame. """
         try:
             self._can_raw_sock.settimeout(timeout)
 
-            msg = self._can_raw_sock.recv(72)
+            msg = await self._can_raw_sock.recv(72)
 
             can_id, length, msg_data = CANFMT.unpack(msg)
             can_id &= CAN_EFF_MASK

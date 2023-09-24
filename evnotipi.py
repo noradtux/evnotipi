@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """ EVNotiPi main module """
 
-from gevent.monkey import patch_all; patch_all()
-from time import monotonic, sleep
+import asyncio
 from subprocess import check_call, check_output
 from argparse import ArgumentParser
+from time import monotonic
 import sys
 import signal
 import os
@@ -61,7 +61,8 @@ del args
 
 # emulate old config if watchdog section is missing
 if 'watchdog' not in config or 'type' not in config['watchdog']:
-    log.warning('Old watchdog config syntax detected. Please adjust according to config.yaml.template.')
+    log.warning('Old watchdog config syntax detected. Please adjust according '
+                'to config.yaml.template.')
     config['watchdog'] = {
         'type': 'GPIO',
         'shutdown_pin': config['dongle'].get('shutdown_pin', 24),
@@ -77,7 +78,7 @@ CAR = car.load(config['car']['type'])
 # Load watchdog module
 WATCHDOG = watchdog.load(config['watchdog']['type'])
 
-Threads = []
+Tasks = set()
 
 # Init watchdog
 watchdog = WATCHDOG(config['watchdog'])
@@ -87,28 +88,24 @@ dongle = DONGLE(config['dongle'])
 
 # Init GPS interface
 gps = GpsPoller(config['gps'])
-Threads.append(gps)
+Tasks.add(gps)
 
 # Init car
 car = CAR(config['car'], dongle, watchdog, gps)
-Threads.append(car)
 
 # Init EVNotify
 EVNotify = evnotify.EVNotify(config['evnotify'], car)
-Threads.append(EVNotify)
 
 # Init ABRP
 if 'abrp' in config and config['abrp'].get('enable') is True:
     import abrp
     ABRP = abrp.ABRP(config['abrp'], car)
-    Threads.append(ABRP)
 
 # Init influx interface
 if 'influxdb' in config and config['influxdb'].get('enable') is True:
     import influx_telemetry
     Influx = influx_telemetry.InfluxTelemetry(
         config['influxdb'], car, gps, EVNotify)
-    Threads.append(Influx)
 
 # Init WiFi control
 if 'wifi' in config and config['wifi'].get('enable') is True:
@@ -121,7 +118,7 @@ else:
 if 'webservice' in config and config['webservice'].get('enable') is True:
     import webservice
     WebService = webservice.WebService(config['webservice'], car)
-    Threads.append(WebService)
+    Tasks.add(WebService)
 
 # Set up signal handling
 
@@ -133,63 +130,60 @@ def exit_gracefully(signum, frame):
 
 signal.signal(signal.SIGTERM, exit_gracefully)
 
-# Start polling loops
-for t in Threads:
-    t.start()
 
-Systemd.notify('READY=1')
-log.info('Starting main loop')
+async def main():
+    # Suppress duplicate logs
+    LOG_USER = 1
+    log_flags = 0
 
-# Suppress duplicate logs
-LOG_USER = 1
-log_flags = 0
+    # Start polling loops
+    for t in Tasks:
+        t.start()
 
-main_running = True
-try:
-    while main_running:
-        now = monotonic()
-        threads_ok = True
-        for t in Threads:
-            status = t.check_thread()
-            if not status:
-                log.error('Thread Failed (%s)', str(t))
-                threads_ok = False
-                raise ThreadFailure(str(t))
+    main_running = True
+    try:
+        while main_running:
+            now = monotonic()
 
-        if threads_ok:
+            await car.poll_data()
+
             Systemd.notify('WATCHDOG=1')
 
-        if 'system' in config and 'shutdown_delay' in config['system']:
-            if (now - car.last_data > config['system']['shutdown_delay'] and
-                    not car.is_available()):
-                usercnt = int(check_output(['who', '-q']).split(b'\n')[1].split(b'=')[1])
-                if usercnt == 0:
-                    log.info('Not charging and car off => Shutdown')
-                    check_call(['/bin/systemctl', 'poweroff'])
-                    main_running = False
-                elif not log_flags & LOG_USER:
-                    log.info('Not charging and car off; Not shutting down, users connected')
-                    log_flags |= LOG_USER
-            elif log_flags & LOG_USER:
-                log_flags &= ~LOG_USER
+            if 'system' in config and 'shutdown_delay' in config['system']:
+                if (now - car.last_data > config['system']['shutdown_delay'] and
+                        not car.is_available()):
+                    usercnt = int(check_output(['who', '-q']).split(b'\n')[1].split(b'=')[1])
+                    if usercnt == 0:
+                        log.info('Not charging and car off => Shutdown')
+                        check_call(['/bin/systemctl', 'poweroff'])
+                        main_running = False
+                    elif not log_flags & LOG_USER:
+                        log.info('Not charging and car off; Not shutting down, users connected')
+                        log_flags |= LOG_USER
+                elif log_flags & LOG_USER:
+                    log_flags &= ~LOG_USER
 
-        if wifi and config['wifi'].get('shutdown_delay') is not None:
-            if (now - car.last_data > config['wifi']['shutdown_delay'] and
-                    not car.is_available()):
-                wifi.disable()
-            else:
-                wifi.enable()
+            if wifi and config['wifi'].get('shutdown_delay') is not None:
+                if (now - car.last_data > config['wifi']['shutdown_delay'] and
+                        not car.is_available()):
+                    wifi.disable()
+                else:
+                    wifi.enable()
 
-        if main_running:
-            loop_delay = 1 - (monotonic()-now)
-            sleep(max(0, loop_delay))
+            if main_running:
+                await car.wait_next_poll()
 
-except (KeyboardInterrupt, SystemExit):  # when you press ctrl+c
-    main_running = False
-    Systemd.notify('STOPPING=1')
-finally:
-    Systemd.notify('STOPPING=1')
-    log.info('Exiting ...')
-    for t in Threads[::-1]:  # reverse Threads
-        t.stop()
-    log.info('Bye.')
+    except (KeyboardInterrupt, SystemExit):  # when you press ctrl+c
+        main_running = False
+    finally:
+        Systemd.notify('STOPPING=1')
+        log.info('Exiting ...')
+        for t in Tasks:  # reverse Threads
+            t.stop()
+        log.info('Bye.')
+
+if __name__ == "__main__":
+    Systemd.notify('READY=1')
+    log.info('Starting main loop')
+
+    asyncio.run(main())

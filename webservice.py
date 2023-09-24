@@ -1,88 +1,76 @@
 """ Simple web service """
 import logging
-import json
-from geventwebsocket.handler import WebSocketHandler
-from geventwebsocket import WebSocketError
-from gevent.pywsgi import WSGIServer
-from threading import Thread, Condition
-from bottle import Bottle, static_file, request
-from gevent import monkey, sleep
-monkey.patch_all()
+from asyncio import Condition
+from aiohttp import web
 
 
-class WebService(Bottle):
+class WebService():
     def __init__(self, config, car):
-        super(WebService, self).__init__()
-        self.log = logging.getLogger("EVNotiPi/WebService")
-        self.log.info("Initializing WebService")
+        self._log = logging.getLogger("EVNotiPi/WebService")
+        self._log.info("Initializing WebService")
 
-        self.car = car
-        self.data = {}
-        self.data_lock = Condition()
-        self.running = False
-        self.server = None
-        self.thread = None
+        self._car = car
+        self._data = {}
+        self._data_available = Condition()
+        self._running = False
+        self._server = None
+        self._runner = None
         self._safe_path = config.get('safe_path', '/var/cache/evnotipi')
 
-        self.route('/data/live/ws', callback=self.handle_websocket)
-        self.route('/data', callback=self.handle_data)
-        self.route('/', callback=self.handle_index)
-        self.route('/static/<filename>', callback=self.handle_static)
-        self.route('/layout/load', callback=self.handle_layout_load)
-        self.route('/layout/store', callback=self.handle_layout_store, method='POST')
+        app = web.Application()
+        app.add_routes([web.get('/data/live/ws', self.handle_websocket),
+                        web.get('/data', self.handle_data),
+                        web.post('/layout/store', self.handle_layout_store),
+                        web.static('/layout/load',
+                                   f'{self._safe_path}/layout.json',
+                                   append_version=True),
+                        web.static('/static/', 'web', append_version=True),
+                        web.static('/', 'index.html', append_version=True),
+                        ])
+        self._app = app
 
-    def handle_websocket(self):
-        wsock = request.environ.get('wsgi.websocket')
-        if not wsock:
-            abort(400, 'Expected WebSocket request.')
+    async def handle_websocket(self, request):
+        ws = web.WebSocketResponse
+        await ws.prepare(request)
 
-        while True:
-            try:
-                with self.data_lock:
-                    self.data_lock.wait()
-                    data = self.data
-                data = json.dumps(data)
-                wsock.send(data)
-            except WebSocketError:
-                break
+        while self._running:
+            with self._data_available:
+                await self._data_available.wait()
+                await ws.send_json(self._data)
 
-    def handle_index(self):
-        return static_file('index.html', root="./web")
+        return ws
 
-    def handle_static(self, filename):
-        return static_file(filename, root="./web")
+    async def handle_data(self, request):
+        return web.json_response(self._data)
 
-    def handle_data(self):
-        return json.dumps(self.data)
-
-    def handle_layout_load(self):
-        with open(self._safe_path + '/layout.json', 'rb') as file:
-            return file.read()
-
-    def handle_layout_store(self):
-        with open(self._safe_path + '/layout.json', 'wb') as file:
-            file.write(request.body.read())
+    async def handle_layout_store(self, request):
+        async with open(self._safe_path + '/layout.json', 'wb') as file:
+            await file.write(request.read())
         return "Layout stored"
 
-    def start(self):
-        self.running = True
-        self.server = WSGIServer(('::', 8080), self,
-                                 handler_class=WebSocketHandler)
-        self.thread = Thread(target=self.server.serve_forever)
-        self.thread.start()
-        self.car.register_data(self.data_callback)
+    async def start(self):
+        self._running = True
+        self._runner = web.AppRunner(self._app)
+        await self._runner.setup()
+        self._server = web.TCPSite(self._runner, '::', 8080)
+        await self._server.start()
 
-    def stop(self):
-        self.car.unregister_data(self.data_callback)
-        self.running = False
-        self.server.stop()
-        self.server.close()
-        self.thread.join()
+        self._car.register_data(self._data_callback)
 
-    def data_callback(self, data):
-        with self.data_lock:
-            self.data = data
-            self.data_lock.notify_all()
+    async def stop(self):
+        self._car.unregister_data(self._data_callback)
+        self._running = False
+        async with self._data_available:
+            self._data_available.notify_all()
+        await self._server.stop()
+        await self._runner.cleanup()
+        self._runner = None
+        self._server = None
+
+    async def data_callback(self, data):
+        async with self._data_available:
+            self._data = data
+            self._data_available.notify_all()
 
     def check_thread(self):
-        return self.thread.is_alive()
+        return self._running

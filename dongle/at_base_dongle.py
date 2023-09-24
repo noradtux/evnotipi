@@ -34,19 +34,19 @@ class AtBase:
         """ Empty method, needs to be overriden"""
         raise NotImplementedError()
 
-    def set_can_id(self, can_id):
+    async def set_can_id(self, can_id):
         """ Empty method, needs to be overriden"""
         raise NotImplementedError()
 
-    def set_can_rx_filter(self, can_id):
+    async def set_can_rx_filter(self, can_id):
         """ Empty method, needs to be overriden"""
         raise NotImplementedError()
 
-    def set_can_rx_mask(self, mask):
+    async def set_can_rx_mask(self, mask):
         """ Empty method, needs to be overriden"""
         raise NotImplementedError()
 
-    def talk_to_dongle(self, cmd, expect=None):
+    async def talk_to_dongle(self, cmd, expect=None):
         """ Send command to dongle and return the response as string. """
         try:
             with self._serial_lock:
@@ -56,13 +56,13 @@ class AtBase:
                     sleep(0.1)
 
                 self._log.debug("Send command: %s", cmd)
-                self._serial.write(bytes(cmd + '\r\n', 'ascii'))
+                await self._serial.write(bytes(cmd + '\r\n', 'ascii'))
                 ret = bytearray()
                 while True:
                     if not self._serial.in_waiting:
                         sleep(0.1)
                         continue
-                    data = self._serial.read(self._serial.in_waiting)
+                    data = await self._serial.read(self._serial.in_waiting)
 
                     endidx = data.find(b'>')
                     if endidx >= 0:
@@ -83,16 +83,16 @@ class AtBase:
 
         return ret.strip(b'\r\n')
 
-    def send_at_cmd(self, cmd, expect='OK'):
+    async def send_at_cmd(self, cmd, expect='OK'):
         """ Send AT command to dongle and return response. """
-        ret = self.talk_to_dongle(cmd, expect)
+        ret = await self.talk_to_dongle(cmd, expect)
         return ret.split(b"\r\n")[-1]
 
-    def send_command(self, cmd):
+    async def send_command(self, cmd):
         """ Convert bytearray "cmd" to string,
             send to dongle and parse the reponse. """
         cmd = cmd.hex()
-        ret = self.talk_to_dongle(cmd)
+        ret = await self.talk_to_dongle(cmd)
 
         if ret in self._ret_no_data:
             raise NoData(ret)
@@ -142,16 +142,16 @@ class AtBase:
 
         return data
 
-    def send_command_ex(self, cmd, cantx, canrx):
+    async def send_command_ex(self, cmd, cantx, canrx):
         """ Convert bytearray "cmd" to string,
             send to dongle and parse the reponse.
             Also handles filters and masks. """
         cmd = cmd.hex()
-        self.set_can_id(cantx)
-        self.set_can_rx_filter(canrx)
-        self.set_can_rx_mask(0x1fffffff if self._is_extended else 0x7ff)
+        await self.set_can_id(cantx)
+        await self.set_can_rx_filter(canrx)
+        await self.set_can_rx_mask(0x1fffffff if self._is_extended else 0x7ff)
 
-        ret = self.talk_to_dongle(cmd)
+        ret = await self.talk_to_dongle(cmd)
 
         if ret in self._ret_no_data:
             raise NoData(ret)

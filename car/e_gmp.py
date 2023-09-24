@@ -134,10 +134,10 @@ class E_GMP(Car):
         self._motor_speed_divider = config.get('motor_speed_devider', 278)
         self.fields = Fields
 
-    def read_dongle(self, data):
+    async def read_dongle(self, data):
         """ Read and parse data from dongle """
         data.update(self.get_base_data())
-        data.update(self._isotp.get_data(self._can_tries))
+        data.update(await self._isotp.get_data(self._can_tries))
 
         temp_sum = 0
         temp_cnt = 0
@@ -155,7 +155,8 @@ class E_GMP(Car):
         data['charging'] = 1 if (data['dcBatteryPower'] is not None and
                                  data['dcBatteryPower'] < -0.8 and
                                  speed == 0) else 0
-        # 1.3kW is lowest possible charging rate (6A single phase at 230V); after losses gives 0.8kW
+        # 1.3kW is lowest possible charging rate (6A single phase at 230V); 
+        # after losses gives 0.8kW
 
         fix = self._gps.fix()
         if (fix and fix['mode'] > 1 and fix['hdop'] is not None and

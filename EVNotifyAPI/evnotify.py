@@ -1,6 +1,7 @@
 """ Python interface for EVNotify API """
 
-import requests
+import aiohttp
+
 
 class CommunicationError(Exception):
     pass
@@ -14,13 +15,13 @@ class EVNotify:
 
     def __init__(self, akey=None, token=None):
         self._rest_url = 'https://app.evnotify.de/'
-        self._session = requests.Session()
+        self._session = aiohttp.ClientSession()
         self._session.headers.update({'User-Agent': 'PyEVNotifyApi/2'})
         self._akey = akey
         self._token = token
         self._timeout = 5
 
-    def sendRequest(self, method, fnc, useAuthentication=False, data={}):
+    async def sendRequest(self, method, fnc, useAuthentication=False, data={}):
         params = {**data}
 
         if useAuthentication:
@@ -29,13 +30,13 @@ class EVNotify:
 
         try:
             if method == 'get':
-                result = getattr(self._session, method)(self._rest_url + fnc,
-                                                        params=params,
-                                                        timeout=self._timeout)
+                result = await getattr(self._session, method)(self._rest_url + fnc,
+                                                              params=params,
+                                                              timeout=self._timeout)
             else:
-                result = getattr(self._session, method)(self._rest_url + fnc,
-                                                        json=params,
-                                                        timeout=self._timeout)
+                result = await getattr(self._session, method)(self._rest_url + fnc,
+                                                              json=params,
+                                                              timeout=self._timeout)
             if result.status_code == 429:
                 raise RateLimit(f'code({result.status_code}) test({result.text})')
             elif result.status_code >= 400:
@@ -43,14 +44,13 @@ class EVNotify:
 
             return result.json()
 
-        except requests.exceptions.ConnectionError:
+        except aiohttp.ClientConnectionError:
             raise CommunicationError("connection failed")
-        except requests.exceptions.Timeout:
-            raise CommunicationError("timeout")
+        #except requests.exceptions.Timeout:
+        #    raise CommunicationError("timeout")
 
-
-    def getKey(self):
-        ret = self.sendRequest('get', 'key')
+    async def getKey(self):
+        ret = await self.sendRequest('get', 'key')
 
         if 'akey' not in ret:
             raise CommunicationError("return akey missing")
@@ -60,8 +60,8 @@ class EVNotify:
     def getToken(self):
         return self._token
 
-    def register(self, akey, password):
-        ret = self.sendRequest('post', 'register', False, {
+    async def register(self, akey, password):
+        ret = await self.sendRequest('post', 'register', False, {
             "akey": akey,
             "password": password
         })
@@ -72,8 +72,8 @@ class EVNotify:
         self._token = ret['token']
         self._akey = akey
 
-    def login(self, akey, password):
-        ret = self.sendRequest('post', 'login', False, {
+    async def login(self, akey, password):
+        ret = await self.sendRequest('post', 'login', False, {
             "akey": akey,
             "password": password
         })
@@ -84,32 +84,32 @@ class EVNotify:
         self._token = ['token']
         self._akey = akey
 
-    def changePassword(self, oldpassword, newpassword):
-        ret = self.sendRequest('post', 'changepw', True, {
+    async def changePassword(self, oldpassword, newpassword):
+        ret = await self.sendRequest('post', 'changepw', True, {
             "oldpassword": oldpassword,
             "newpassword": newpassword
         })
 
         return ret['changed'] if 'changed' in ret else None
 
-    def getSettings(self):
-        ret = self.sendRequest('get', 'settings', True)
+    async def getSettings(self):
+        ret = await self.sendRequest('get', 'settings', True)
 
         if 'settings' not in ret:
             raise CommunicationError("return settings missing")
 
         return ret['settings']
 
-    def setSettings(self, settings):
-        ret = self.sendRequest('put', 'settings', True, {
+    async def setSettings(self, settings):
+        ret = await self.sendRequest('put', 'settings', True, {
             "settings": settings
         })
 
         if 'settings' not in ret:
             raise CommunicationError()
 
-    def setSOC(self, display, bms):
-        ret = self.sendRequest('post', 'soc', True, {
+    async def setSOC(self, display, bms):
+        ret = await self.sendRequest('post', 'soc', True, {
             "display": display,
             "bms": bms
         })
@@ -117,29 +117,29 @@ class EVNotify:
         if 'synced' not in ret:
             raise CommunicationError("return settings missing")
 
-    def getSOC(self):
-        return self.sendRequest('get', 'soc', True)
+    async def getSOC(self):
+        return await self.sendRequest('get', 'soc', True)
 
-    def setExtended(self, obj):
-        ret = self.sendRequest('post', 'extended', True, obj)
-
-        if 'synced' not in ret:
-            raise CommunicationError("return synced missing")
-
-    def getExtended(self):
-        return self.sendRequest('get', 'extended', True)
-
-    def getLocation(self):
-        return self.sendRequest('get', 'location', True)
-
-    def setLocation(self, obj):
-        ret = self.sendRequest('post', 'location', True, obj)
+    async def setExtended(self, obj):
+        ret = await self.sendRequest('post', 'extended', True, obj)
 
         if 'synced' not in ret:
             raise CommunicationError("return synced missing")
 
-    def renewToken(self, password):
-        ret = self.sendRequest('put', 'renewtoken', True, {
+    async def getExtended(self):
+        return await self.sendRequest('get', 'extended', True)
+
+    async def getLocation(self):
+        return await self.sendRequest('get', 'location', True)
+
+    async def setLocation(self, obj):
+        ret = await self.sendRequest('post', 'location', True, obj)
+
+        if 'synced' not in ret:
+            raise CommunicationError("return synced missing")
+
+    async def renewToken(self, password):
+        ret = await self.sendRequest('put', 'renewtoken', True, {
             "password": password
         })
 
@@ -150,8 +150,8 @@ class EVNotify:
 
         return self._token
 
-    def sendNotification(self, abort=False):
-        ret = self.sendRequest('post', 'notification', True, {
+    async def sendNotification(self, abort=False):
+        ret = await self.sendRequest('post', 'notification', True, {
             "abort": abort
         })
 

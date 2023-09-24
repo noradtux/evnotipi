@@ -1,13 +1,15 @@
 """ Influx Telemetry """
 from datetime import datetime, timezone
-from time import time, monotonic, sleep
+from time import monotonic
 import logging
-from influxdb_client import InfluxDBClient, WriteOptions
+from influxdb_client import WriteOptions
+from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 import pyrfc3339
 
 INT_FIELD_LIST = ('charging', 'fanFeedback', 'fanStatus', 'fix_mode',
                   'normalChargePort', 'rapidChargePort', 'submit_queue_len')
 STR_FIELD_LIST = ('gps_device')
+
 
 class InfluxTelemetry:
     """ Submit all available data to anm influxdb """
@@ -30,10 +32,10 @@ class InfluxTelemetry:
     def start(self):
         """ Start the submission thread """
         self._running = True
-        self._influx = InfluxDBClient(url=self._config['url'],
-                                      org=self._config['org'],
-                                      token=self._config['token'],
-                                      enable_gzip=True)
+        self._influx = InfluxDBClientAsync(url=self._config['url'],
+                                           org=self._config['org'],
+                                           token=self._config['token'],
+                                           enable_gzip=True)
         opts = WriteOptions(batch_size=self._batch_size,
                             flush_interval=self._poll_interval * 1000,
                             jitter_interval=5000)
@@ -49,7 +51,7 @@ class InfluxTelemetry:
         self._influx = None
         self._iwrite = None
 
-    def data_callback(self, data):
+    async def data_callback(self, data):
         """ Callback to receive data from "car" """
         now = monotonic()
         states = self._field_states
@@ -85,9 +87,9 @@ class InfluxTelemetry:
         p['fields'] = fields
 
         try:
-            self._iwrite.write(bucket=self._config['bucket'],
-                               org=self._config['org'],
-                               record=[p])
+            await self._iwrite.write(bucket=self._config['bucket'],
+                                     org=self._config['org'],
+                                     record=[p])
         except Exception as e:
             self._log.warning(str(e))
 
