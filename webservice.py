@@ -18,18 +18,16 @@ class WebService():
         self._safe_path = config.get('safe_path', '/var/cache/evnotipi')
 
         app = web.Application()
-        app.add_routes([web.get('/data/live/ws', self.handle_websocket),
-                        web.get('/data', self.handle_data),
-                        web.post('/layout/store', self.handle_layout_store),
-                        web.static('/layout/load',
-                                   f'{self._safe_path}/layout.json',
-                                   append_version=True),
+        app.add_routes([web.get('/data/live/ws', self._handle_websocket),
+                        web.get('/data', self._handle_data),
+                        web.post('/layout/store', self._handle_layout_store),
+                        web.get('/layout/load', self._handle_layout_load),
                         web.static('/static/', 'web', append_version=True),
-                        web.static('/', 'index.html', append_version=True),
+                        web.get('/', self._handle_index),
                         ])
         self._app = app
 
-    async def handle_websocket(self, request):
+    async def _handle_websocket(self, request):
         ws = web.WebSocketResponse
         await ws.prepare(request)
 
@@ -40,10 +38,16 @@ class WebService():
 
         return ws
 
-    async def handle_data(self, request):
+    async def _handle_data(self, request):
         return web.json_response(self._data)
 
-    async def handle_layout_store(self, request):
+    async def _handle_index(self, request):
+        return web.FileResponse('index.html')
+
+    async def _handle_layout_load(self, request):
+        return web.FileResponse(f'{self._safe_path}/layout.json')
+
+    async def _handle_layout_store(self, request):
         async with open(self._safe_path + '/layout.json', 'wb') as file:
             await file.write(request.read())
         return "Layout stored"
@@ -67,7 +71,7 @@ class WebService():
         self._runner = None
         self._server = None
 
-    async def data_callback(self, data):
+    async def _data_callback(self, data):
         async with self._data_available:
             self._data = data
             self._data_available.notify_all()
