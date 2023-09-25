@@ -1,5 +1,5 @@
 """ Interface to gpsd """
-from asyncio import sleep, create_task
+from asyncio import sleep, create_task, open_connection
 from time import strptime
 from calendar import timegm
 import json
@@ -45,13 +45,15 @@ class GpsPoller:
     async def run(self):
         """ The reader thread. """
         self._running = True
-        gps_sock = None
+        #gps_sock = None
+        reader = None
+        writer = None
         precission = self._precission
         last_gdop = precission + 1  # Make sure, last_gdop <= precission is false
         while self._running:
             try:
-                if gps_sock:
-                    data = await gps_sock.recv(4096)
+                if reader:
+                    data = await reader.read(4096)
                     for line in data.split(b'\r\n'):
                         if len(line) == 0:
                             continue
@@ -94,19 +96,26 @@ class GpsPoller:
                         except json.decoder.JSONDecodeError:
                             self._log.error("JSONDecodeError %s", line)
                 else:
-                    gps_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    gps_sock.connect(self._gpsd)
-                    gps_sock.settimeout(1)
-                    gps_sock.recv(1024)
-                    gps_sock.sendall(b'?WATCH={"enable":true,"json":true};')
+                    #gps_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    #gps_sock.connect(self._gpsd)
+                    #gps_sock.settimeout(1)
+                    #gps_sock.recv(1024)
+                    #gps_sock.sendall(b'?WATCH={"enable":true,"json":true};')
+                    reader, writer = await open_connection('localhost', 2947)
+                    writer.write(b'?WATCH={"enable":true,"json":true};')
+                    await writer.drain()
             except socket.timeout:
-                sleep(0.1)
+                await sleep(0.1)
             except (StopIteration, ConnectionResetError, OSError) as err:
                 self._log.info('Problem encountered. Resetting socket. (%s)', err)
-                gps_sock.close()
-                gps_sock = None
+                reader.close()
+                writer.close()
+                reader = None
+                writer = None
+                #gps_sock.close()
+                #gps_sock = None
                 self._last_fix = empty_fix()
-                sleep(1)
+                await sleep(1)
 
     def fix(self):
         """ Return the last fix. """
