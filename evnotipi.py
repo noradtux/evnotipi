@@ -32,6 +32,7 @@ args = parser.parse_args()
 del parser
 
 # load config
+config = None
 if os.path.exists(args.config):
     if args.config[-5:] == '.json':
         import json
@@ -40,14 +41,16 @@ if os.path.exists(args.config):
     elif args.config[-5:] == '.yaml':
         import yaml
         with open(args.config, encoding='utf-8') as config_file:
-            config = None
             # use the last document in config.yaml as config
             for c in yaml.load_all(config_file, Loader=yaml.SafeLoader):
                 config = c
     else:
-        raise Exception('Unknown config type')
+        raise ValueError('Unknown config type')
 else:
-    raise Exception('No config found')
+    raise ValueError('No config found')
+
+assert config is not None
+
 
 if args.debug:
     logging.basicConfig(level=logging.DEBUG)
@@ -61,13 +64,10 @@ del args
 
 # emulate old config if watchdog section is missing
 if 'watchdog' not in config or 'type' not in config['watchdog']:
-    log.warning('Old watchdog config syntax detected. Please adjust according '
-                'to config.yaml.template.')
-    config['watchdog'] = {
-        'type': 'GPIO',
-        'shutdown_pin': config['dongle'].get('shutdown_pin', 24),
-        'pup_down': config['dongle'].get('pup_down', 21),
-    }
+    raise ValueError('Old watchdog config syntax detected. '
+                     'Please adjust according to config.yaml.template.')
+
+Tasks = set()
 
 # Load OBD2 interface module
 DONGLE = dongle.load(config['dongle']['type'])
@@ -77,8 +77,6 @@ CAR = car.load(config['car']['type'])
 
 # Load watchdog module
 WATCHDOG = watchdog.load(config['watchdog']['type'])
-
-Tasks = set()
 
 # Init watchdog
 watchdog = WATCHDOG(config['watchdog'])
@@ -120,25 +118,18 @@ if 'webservice' in config and config['webservice'].get('enable') is True:
     WebService = webservice.WebService(config['webservice'], car)
     Tasks.add(WebService)
 
-# Set up signal handling
-
-
-def exit_gracefully(signum, frame):
-    """ Signalhandler for SIGTERM """
-    sys.exit(0)
-
-
-signal.signal(signal.SIGTERM, exit_gracefully)
+LOG_USER = 1
 
 
 async def main():
+    """ main loop """
+
     # Suppress duplicate logs
-    LOG_USER = 1
     log_flags = 0
 
     # Start polling loops
-    for t in Tasks:
-        t.start()
+    for task in Tasks:
+        task.start()
 
     main_running = True
     try:
@@ -182,8 +173,15 @@ async def main():
             t.stop()
         log.info('Bye.')
 
+def exit_gracefully(signum, frame):
+    """ Signalhandler for SIGTERM """
+    sys.exit(0)
+
+
 if __name__ == "__main__":
+    # Set up signal handling
+    signal.signal(signal.SIGTERM, exit_gracefully)
+
     Systemd.notify('READY=1')
-    log.info('Starting main loop')
 
     asyncio.run(main())
