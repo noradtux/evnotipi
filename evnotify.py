@@ -40,6 +40,7 @@ class EVNotify:
         self._car = car
         self._config = config
         self._poll_interval = config['interval']
+        self._enabled = config.get('enabled', True)
         self._running = False
         self._thread = None
 
@@ -49,10 +50,11 @@ class EVNotify:
 
     def start(self):
         """ Start submit thread. """
-        self._running = True
-        self._thread = Thread(target=self.submit_data, name="EVNotiPi/EVNotify")
-        self._thread.start()
-        self._car.register_data(self.data_callback)
+        if self._enabled is True:
+            self._running = True
+            self._thread = Thread(target=self.submit_data, name="EVNotiPi/EVNotify")
+            self._thread.start()
+            self._car.register_data(self.data_callback)
 
     def stop(self):
         """ Stop submit thread. """
