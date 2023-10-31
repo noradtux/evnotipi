@@ -63,6 +63,7 @@ class Car:
         self._dongle = dongle
         self._watchdog = watchdog
         self._gps = gps
+        self.id = config['id']
         self._poll_interval = config['interval']
         self._charge_interval = config['charge_interval'] or config['interval']
         self._thread = None
