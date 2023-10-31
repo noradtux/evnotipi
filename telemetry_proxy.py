@@ -97,18 +97,17 @@ class TelemetryProxy:
         if now >= self._next_transmit:
             self._next_transmit = now + self._interval
             msg = msgpack.packb(points)
-            points.clear()
             payload = lzma.compress(msg)
 
             try:
-                while True:
-                    ret = self._session.post(self._transmit_url,
-                                             headers={'Authorization': self._auth},
-                                             data=payload)
-                    if ret.status_code == 402:  # Server requests settings
-                        self._submit_settings()
-                    else:
-                        break
+                ret = self._session.post(self._transmit_url,
+                                         headers={'Authorization': self._auth},
+                                         data=payload)
+                if ret.status_code == 402:  # Server requests settings
+                    states.clear()          # also make sure we send all values on next try
+                    self._submit_settings()
+                else:
+                    points.clear()
             except RequestException as exception:
                 log.warning(str(exception))
                 self._session.close()
