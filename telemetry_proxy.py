@@ -115,6 +115,7 @@ class TelemetryProxy:
                 #await self._websocket.close()
                 #self._websocket = None
                 log.warning(str(exception))
+                self._session.close()
 
     def check_thread(self):
         """ Return the status of the thread """
