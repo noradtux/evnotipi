@@ -110,6 +110,13 @@ if 'influxdb' in config and config['influxdb'].get('enable') is True:
         config['influxdb'], car, gps, EVNotify)
     Threads.append(Influx)
 
+if 'telemetry_proxy' in config and \
+        config['telemetry_proxy'].get('enable') is True:
+    import telemetry_proxy
+    TelPx = telemetry_proxy.TelemetryProxy(
+            config['telemetry_proxy'], car, gps, EVNotify)
+    Threads.append(TelPx)
+
 # Init WiFi control
 if 'wifi' in config and config['wifi'].get('enable') is True:
     from wifi_ctrl import WiFiCtrl
