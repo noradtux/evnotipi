@@ -58,11 +58,12 @@ class EVNotify:
 
     def stop(self):
         """ Stop submit thread. """
-        self._car.unregister_data(self.data_callback)
-        self._running = False
-        with self._data_lock:
-            self._data_lock.notify()
-        self._thread.join()
+        if self._enabled is True:
+            self._car.unregister_data(self.data_callback)
+            self._running = False
+            with self._data_lock:
+                self._data_lock.notify()
+            self._thread.join()
 
     def data_callback(self, data):
         """ Callback to be called from 'car'. """
@@ -227,4 +228,4 @@ class EVNotify:
 
     def check_thread(self):
         """ Return running state of thread. """
-        return self._thread.is_alive()
+        return self._thread.is_alive() if self._enabled is True else True
