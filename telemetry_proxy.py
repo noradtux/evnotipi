@@ -52,8 +52,6 @@ class TelemetryProxy:
         """ Stop the submission thread """
         assert self._running
         self._car.unregister_data(self.data_callback)
-        #if self._websocket:
-        #    await self._websocket.close()
         self._running = False
 
     def data_callback(self, data):
@@ -63,12 +61,11 @@ class TelemetryProxy:
         points = self._points
 
         log.debug("Enqeue...")
-        point = {"tags": {
-            "cartype": self._cartype,
-            "carid": self._car.id,
-            "akey": self._evn_akey,
-            }
-                 }
+        point = {'tags': {
+            'carid': self._car.id,
+            'cartype': self._cartype,
+            'akey': self._evn_akey,
+            }}
 
         fields = {}
         for key, value in data.items():
@@ -93,7 +90,7 @@ class TelemetryProxy:
         point['time'] = data['timestamp']
         point['fields'] = fields
 
-        points += [point]
+        points.append(point)
 
         if now >= self._next_transmit:
             self._next_transmit = now + self._interval
@@ -105,15 +102,7 @@ class TelemetryProxy:
                 self._session.post(self._transmit_url,
                                    headers={'Authorization': self._auth},
                                    data=payload)
-                #if not self._websocket:
-                #    self._websocket = self._session.ws_connect(self._ws_url,
-                #                                               headers={'Authorization': self._ws_auth},
-                #                                               compress=15)
-
-                #await self._websocket.send_bytes(msg)
             except RequestException as exception:
-                #await self._websocket.close()
-                #self._websocket = None
                 log.warning(str(exception))
                 self._session.close()
 
