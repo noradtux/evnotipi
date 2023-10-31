@@ -40,11 +40,6 @@ class TelemetryProxy:
         log.debug('Starting thread')
         assert not self._running
         self._running = True
-        msg = msgpack.packb(self._backends)
-        payload = lzma.compress(msg)
-        self._session.post(f'{self._base_url}/setsvcsettings/{self._car.id}',
-                           headers={'Authorization': self._auth},
-                           data=payload)
         self._car.register_data(self.data_callback)
         log.debug('Thread running')
 
@@ -52,9 +47,14 @@ class TelemetryProxy:
         """ Stop the submission thread """
         assert self._running
         self._car.unregister_data(self.data_callback)
-        #if self._websocket:
-        #    await self._websocket.close()
         self._running = False
+
+    def _submit_settings(self):
+        msg = msgpack.packb(self._backends)
+        payload = lzma.compress(msg)
+        self._session.post(f'{self._base_url}/setsvcsettings/{self._car.id}',
+                           headers={'Authorization': self._auth},
+                           data=payload)
 
     def data_callback(self, data):
         """ Callback to receive data from "car" """
@@ -102,18 +102,15 @@ class TelemetryProxy:
             payload = lzma.compress(msg)
 
             try:
-                self._session.post(self._transmit_url,
-                                   headers={'Authorization': self._auth},
-                                   data=payload)
-                #if not self._websocket:
-                #    self._websocket = self._session.ws_connect(self._ws_url,
-                #                                               headers={'Authorization': self._ws_auth},
-                #                                               compress=15)
-
-                #await self._websocket.send_bytes(msg)
+                while True:
+                    ret = self._session.post(self._transmit_url,
+                                             headers={'Authorization': self._auth},
+                                             data=payload)
+                    if ret.status_code == 402:  # Server requests settings
+                        self._submit_settings()
+                    else:
+                        break
             except RequestException as exception:
-                #await self._websocket.close()
-                #self._websocket = None
                 log.warning(str(exception))
                 self._session.close()
 
