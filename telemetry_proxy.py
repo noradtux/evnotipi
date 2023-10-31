@@ -40,11 +40,6 @@ class TelemetryProxy:
         log.debug('Starting thread')
         assert not self._running
         self._running = True
-        msg = msgpack.packb(self._backends)
-        payload = lzma.compress(msg)
-        self._session.post(f'{self._base_url}/setsvcsettings/{self._car.id}',
-                           headers={'Authorization': self._auth},
-                           data=payload)
         self._car.register_data(self.data_callback)
         log.debug('Thread running')
 
@@ -53,6 +48,13 @@ class TelemetryProxy:
         assert self._running
         self._car.unregister_data(self.data_callback)
         self._running = False
+
+    def _submit_settings(self):
+        msg = msgpack.packb(self._backends)
+        payload = lzma.compress(msg)
+        self._session.post(f'{self._base_url}/setsvcsettings/{self._car.id}',
+                           headers={'Authorization': self._auth},
+                           data=payload)
 
     def data_callback(self, data):
         """ Callback to receive data from "car" """
@@ -99,9 +101,14 @@ class TelemetryProxy:
             payload = lzma.compress(msg)
 
             try:
-                self._session.post(self._transmit_url,
-                                   headers={'Authorization': self._auth},
-                                   data=payload)
+                while True:
+                    ret = self._session.post(self._transmit_url,
+                                             headers={'Authorization': self._auth},
+                                             data=payload)
+                    if ret.status_code == 402:  # Server requests settings
+                        self._submit_settings()
+                    else:
+                        break
             except RequestException as exception:
                 log.warning(str(exception))
                 self._session.close()
