@@ -37,12 +37,16 @@ class TelemetryProxy:
 
     def start(self):
         """ Start the submission thread """
+        log.debug('Starting thread')
         assert not self._running
         self._running = True
+        msg = msgpack.packb(self._backends)
+        payload = lzma.compress(msg)
         self._session.post(f'{self._base_url}/setsvcsettings/{self._car.id}',
                            headers={'Authorization': self._auth},
-                           data=self._backends)
+                           data=payload)
         self._car.register_data(self.data_callback)
+        log.debug('Thread running')
 
     def stop(self):
         """ Stop the submission thread """
@@ -52,7 +56,7 @@ class TelemetryProxy:
         #    await self._websocket.close()
         self._running = False
 
-    async def data_callback(self, data):
+    def data_callback(self, data):
         """ Callback to receive data from "car" """
         now = monotonic()
         states = self._field_states
@@ -92,7 +96,7 @@ class TelemetryProxy:
         points += [point]
 
         if now >= self._next_transmit:
-            self._next_transmit += now + self._interval
+            self._next_transmit = now + self._interval
             msg = msgpack.packb(points)
             points.clear()
             payload = lzma.compress(msg)
