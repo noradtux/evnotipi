@@ -7,14 +7,16 @@ import pyrfc3339
 
 INT_FIELD_LIST = ('charging', 'fanFeedback', 'fanStatus', 'fix_mode',
                   'normalChargePort', 'rapidChargePort', 'submit_queue_len')
-STR_FIELD_LIST = ('gps_device')
+STR_FIELD_LIST = ('cartype', 'akey', 'gps_device')
+
+log = logging.getLogger("EVNotiPi/InfluxDB")
+
 
 class InfluxTelemetry:
     """ Submit all available data to anm influxdb """
 
     def __init__(self, config, car, gps, evnotify):
-        self._log = logging.getLogger("EVNotiPi/InfluxDB")
-        self._log.info("Initializing InfluxDB")
+        log.info("Initializing InfluxDB")
 
         self._config = config
         self._evn_akey = evnotify._config['akey']
@@ -26,6 +28,7 @@ class InfluxTelemetry:
         self._influx = None
         self._iwrite = None
         self._field_states = {}
+        self._running = False
 
     def start(self):
         """ Start the submission thread """
@@ -54,12 +57,9 @@ class InfluxTelemetry:
         now = monotonic()
         states = self._field_states
 
-        self._log.debug("Enqeue...")
+        log.debug("Enqeue...")
         p = {"measurement": "telemetry",
-             "tags": {
-                 "cartype": self._cartype,
-                 "akey": self._evn_akey,
-                 }
+             "tags": {}
              }
 
         fields = {}
@@ -85,11 +85,9 @@ class InfluxTelemetry:
         p['fields'] = fields
 
         try:
-            self._iwrite.write(bucket=self._config['bucket'],
-                               org=self._config['org'],
-                               record=[p])
+            self._iwrite.write(bucket=self._config['bucket'], record=[p])
         except Exception as e:
-            self._log.warning(str(e))
+            log.warning(str(e))
 
     def check_thread(self):
         """ Return the status of the thread """
