@@ -41,6 +41,7 @@ class TelemetryProxy:
         assert not self._running
         self._running = True
         self._car.register_data(self.data_callback)
+        self._submit_settings()
         log.debug('Thread running')
 
     def stop(self):
@@ -105,6 +106,7 @@ class TelemetryProxy:
                                          data=payload)
                 if ret.status_code == 402:  # Server requests settings
                     states.clear()          # also make sure we send all values on next try
+                    points.clear()
                     self._submit_settings()
                 else:
                     points.clear()
