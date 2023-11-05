@@ -1,16 +1,22 @@
 """ msgpack telemetry """
 from time import monotonic
-import lzma
+from lzma import compress, decompress
 import logging
-import msgpack
+from msgpack import packb, unpackb
 from requests import Session
 from requests.exceptions import RequestException
 
-INT_FIELD_LIST = ('charging', 'fanFeedback', 'fanStatus', 'fix_mode',
-                  'normalChargePort', 'rapidChargePort', 'submit_queue_len')
-STR_FIELD_LIST = ('cartype', 'akey', 'gps_device')
-
 log = logging.getLogger("EVNotiPi/TelemetryProxy")
+
+
+def msg_encode(msg):
+    """ encode and compress message """
+    return compress(packb(msg))
+
+
+def msg_decode(msg):
+    """ decompress and decode message """
+    return unpackb(decompress(msg), use_list=False)
 
 
 class TelemetryProxy:
@@ -26,6 +32,7 @@ class TelemetryProxy:
         self._gps = gps
         self._interval = config.get('interval', 5)
         self._field_states = {}
+        self._fields = None
         self._next_transmit = 0
         self._points = []
         self._base_url = config['url']
@@ -51,11 +58,15 @@ class TelemetryProxy:
         self._running = False
 
     def _submit_settings(self):
-        msg = msgpack.packb(self._backends)
-        payload = lzma.compress(msg)
-        self._session.post(f'{self._base_url}/setsvcsettings/{self._car.id}',
-                           headers={'Authorization': self._auth},
-                           data=payload)
+        log.info('Submitting service settings')
+        payload = msg_encode(self._backends)
+        response = self._session.post(f'{self._base_url}/setsvcsettings/{self._car.id}',
+                                      headers={'Authorization': self._auth},
+                                      data=payload)
+        assert response.status_code == 200
+        data = msg_decode(response.content)
+        self._fields = data['fields']
+        log.debug('got fields (%s)', self._fields)
 
     def data_callback(self, data):
         """ Callback to receive data from "car" """
@@ -64,41 +75,33 @@ class TelemetryProxy:
         points = self._points
 
         log.debug("Enqeue...")
-        point = {'tags': {
+        point = {
             'carid': self._car.id,
             'cartype': self._cartype,
             'akey': self._evn_akey,
-            }}
+            }
 
-        fields = {}
         for key, value in data.items():
-            if value is None:
+            if value is None or \
+                    (self._fields is not None and key not in self._fields):
                 continue
 
-            if key in STR_FIELD_LIST:
-                point['tags'][key] = value
-            else:
-                if key not in states:
-                    states[key] = {'next_interval': 0, 'last_value': None}
+            if key not in states:
+                states[key] = {'next_interval': 0, 'last_value': None}
 
-                if value != states[key]['last_value'] or \
-                        now >= states[key]['next_interval']:
+            if value != states[key]['last_value'] or \
+                    now >= states[key]['next_interval']:
 
-                    states[key]['last_value'] = value
-                    states[key]['next_interval'] = now + 60
+                states[key]['last_value'] = value
+                states[key]['next_interval'] = now + 60
 
-                    fields[key] = int(value) if key in INT_FIELD_LIST \
-                        else float(value)
-
-        point['time'] = data['timestamp']
-        point['fields'] = fields
+                point[key] = value
 
         points.append(point)
 
         if now >= self._next_transmit:
             self._next_transmit = now + self._interval
-            msg = msgpack.packb(points)
-            payload = lzma.compress(msg)
+            payload = msg_encode(points)
 
             try:
                 ret = self._session.post(self._transmit_url,
