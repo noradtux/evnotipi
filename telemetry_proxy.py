@@ -111,6 +111,8 @@ class TelemetryProxy:
                     states.clear()          # also make sure we send all values on next try
                     points.clear()
                     self._submit_settings()
+                elif ret.status_code == 400:
+                    log.error('Transmit Error (%s)', ret.text)
                 else:
                     points.clear()
             except RequestException as exception:
