@@ -108,6 +108,7 @@ class TelemetryProxy:
             Thread(target=self._submit).start()
 
     def _submit(self):
+        states = self._field_states
         points = self._points
         payload = msg_encode(points)
  
