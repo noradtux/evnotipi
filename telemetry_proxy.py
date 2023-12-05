@@ -1,6 +1,7 @@
 """ msgpack telemetry """
 from time import monotonic
 from lzma import compress, decompress
+from threading import Thread
 import logging
 from msgpack import packb, unpackb
 from requests import Session
@@ -92,30 +93,38 @@ class TelemetryProxy:
             if value != states[key]['last_value'] or \
                     now >= states[key]['next_interval']:
 
-                states[key]['last_value'] = value
-                states[key]['next_interval'] = now + 60
+                states[key] = {
+                        'next_interval': now + 60,
+                        'last_value': value
+                        }
 
                 point[key] = value
 
+        log.debug(point)
         points.append(point)
 
         if now >= self._next_transmit:
             self._next_transmit = now + self._interval
-            payload = msg_encode(points)
+            Thread(target=self._submit).start()
 
-            try:
-                ret = self._session.post(self._transmit_url,
-                                         headers={'Authorization': self._auth},
-                                         data=payload)
-                if ret.status_code == 402:  # Server requests settings
-                    states.clear()          # also make sure we send all values on next try
-                    points.clear()
-                    self._submit_settings()
-                else:
-                    points.clear()
-            except RequestException as exception:
-                log.warning(str(exception))
-                self._session.close()
+    def _submit(self):
+        points = self._points
+        payload = msg_encode(points)
+ 
+        log.debug(points)
+        try:
+            ret = self._session.post(self._transmit_url,
+                                     headers={'Authorization': self._auth},
+                                     data=payload)
+            if ret.status_code == 402:  # Server requests settings
+                states.clear()          # also make sure we send all values on next try
+                points.clear()
+                self._submit_settings()
+            else:
+                points.clear()
+        except RequestException as exception:
+            log.warning(str(exception))
+            self._session.close()
 
     def check_thread(self):
         """ Return the status of the thread """
