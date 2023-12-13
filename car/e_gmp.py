@@ -73,11 +73,6 @@ Fields = (
          # OFF		6	1100
          # PTC		E	1110
          ]},
-    {'cmd': '22e011', 'canrx': 0x7ed, 'cantx': 0x7e5, 'absolute': True,
-     'fields': [
-         {'pos': 't', 'name': 'auxBatterySoC', 'width': 1},
-         {'pos': 'x', 'name': 'auxBatteryTemp', 'width': 1, 'scale': .5, 'offset': -40},
-         ]},
     #{'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
     #'fields': [
     #    {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 97, 'cnt': 32, 'width': 1, 'scale': .02},
