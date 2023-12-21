@@ -67,11 +67,11 @@ class GpsPoller:
                                 self._last_fix.update({
                                     'device':    fix['device'],
                                     'mode':      fix['mode'],
-                                    'latitude':  fix.get('lat'),
-                                    'longitude': fix.get('lon'),
-                                    'speed':     fix.get('speed'),
-                                    'altitude':  fix.get('altMSL'),
-                                    'heading':   fix.get('track'),
+                                    'latitude':  round(fix.get('lat'), 6),
+                                    'longitude': round(fix.get('lon'), 6),
+                                    'speed':     round(fix.get('speed'), 1),
+                                    'altitude':  round(fix.get('altMSL'), 0),
+                                    'heading':   round(fix.get('track'), 0),
                                     'time':      fix_time,
                                 })
                                 if (self._last_fix['speed'] is not None and
@@ -79,17 +79,11 @@ class GpsPoller:
                                     self._last_fix['speed'] = 0
                             elif fix['class'] == 'SKY':
                                 if 'gdop' in fix:
-                                    last_gdop = fix['gdop']
+                                    last_gdop = round(fix['gdop'], 1)
 
-                                self._last_fix.update({
-                                    'xdop': fix.get('xdop', None),
-                                    'ydop': fix.get('ydop', None),
-                                    'vdop': fix.get('vdop', None),
-                                    'tdop': fix.get('tdop', None),
-                                    'hdop': fix.get('hdop', None),
-                                    'gdop': fix.get('gdop', None),
-                                    'pdop': fix.get('pdop', None),
-                                })
+                                for dop in ('xdop', 'ydop', 'vdop', 'tdop',
+                                            'hdop', 'gdop', 'pdop', 'gdop'):
+                                    self._last_fix[dop] = round(fix[dop], 1) if dop in fix else None
 
                         except json.decoder.JSONDecodeError:
                             self._log.error("JSONDecodeError %s", line)
