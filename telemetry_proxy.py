@@ -83,6 +83,10 @@ class TelemetryProxy:
             }
 
         for key, value in data.items():
+            if key == 'timestamp':
+                point[key] = value
+                continue
+
             if value is None or \
                     (self._fields is not None and key not in self._fields):
                 continue
@@ -100,7 +104,7 @@ class TelemetryProxy:
 
                 point[key] = value
 
-        log.debug(point)
+        #log.debug(point)
         points.append(point)
 
         if now >= self._next_transmit:
