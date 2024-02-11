@@ -151,7 +151,7 @@ class E_GMP(Car):
 
         speed = abs(data['driveMotorSpeed1']) / self._motor_speed_divider
 
-        data['batteryAvgTemperature'] = temp_sum / temp_cnt
+        data['batteryAvgTemperature'] = round(temp_sum / temp_cnt, 2)
         data['charging'] = 1 if (data['dcBatteryPower'] is not None and
                                  data['dcBatteryPower'] < -0.8 and
                                  speed == 0) else 0
