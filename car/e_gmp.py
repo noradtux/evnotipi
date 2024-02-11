@@ -66,7 +66,7 @@ Fields = (
     {'cmd': '220106', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
          {'pos': 'd', 'name': 'coolant2Temperature', 'width': 1, 'signed': True},
-         {'pos': 'l', 'name': 'acCompressorRPM', 'width': 1, 'scale': 20},
+         {'pos': 'm', 'name': 'acCompressorRPM', 'width': 1, 'scale': 20},
          #{'pos': 'o', 'name': '_battBits', 'width': 1},
          # bit 0-3
          # LTR		3	0011
@@ -76,7 +76,7 @@ Fields = (
          ]},
     {'cmd': '22e011', 'canrx': 0x7ed, 'cantx': 0x7e5, 'absolute': True,
      'fields': [
-         {'pos': 't', 'name': 'auxBatterySoC', 'width': 1},
+         {'pos': 'u', 'name': 'auxBatterySoC', 'width': 1},
          ]},
      #{'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
     #'fields': [
@@ -115,8 +115,8 @@ Fields = (
             'lambda': lambda d: int(d['_charging_bits1'] & (0x10 | 0x20) != 0)},
            {'name': 'charging',
             'lambda': lambda d: d['normalChargePort'] or d['rapidChargePort']},
-           {'name': 'battThermalMode',
-            'lambda': lambda d: d['_battBits'] & 0xf},
+           #{'name': 'battThermalMode',
+           # 'lambda': lambda d: d['_battBits'] & 0xf},
            )
        },
 )
