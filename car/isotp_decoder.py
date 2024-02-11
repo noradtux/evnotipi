@@ -137,7 +137,7 @@ class IsoTpDecoder:
                         else:
                             field_fmt += FormatMap[field['width']]['f'].upper()
 
-                        self._log.debug(f"fmt({fmt} {field_fmt})")
+                        self._log.debug("fmt(%s %s)", fmt, field_fmt)
                         fmt += field_fmt
 
                         if not is_power_of_two(field['width']):
