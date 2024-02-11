@@ -66,14 +66,19 @@ Fields = (
     {'cmd': '220106', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
      'fields': [
          {'pos': 'd', 'name': 'coolant2Temperature', 'width': 1, 'signed': True},
-         {'pos': 'o', 'name': '_battBits', 'width': 1},
+         {'pos': 'l', 'name': 'acCompressorRPM', 'width': 1, 'scale': 20},
+         #{'pos': 'o', 'name': '_battBits', 'width': 1},
          # bit 0-3
          # LTR		3	0011
          # COOL		4	0100
          # OFF		6	1100
          # PTC		E	1110
          ]},
-    #{'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
+    {'cmd': '22e011', 'canrx': 0x7ed, 'cantx': 0x7e5, 'absolute': True,
+     'fields': [
+         {'pos': 't', 'name': 'auxBatterySoC', 'width': 1},
+         ]},
+     #{'cmd': '22010a', 'canrx': 0x7ec, 'cantx': 0x7e4, 'absolute': True,
     #'fields': [
     #    {'pos': 'e', 'name': 'cellVoltage%03d', 'idx': 97, 'cnt': 32, 'width': 1, 'scale': .02},
     #    ]},
@@ -89,31 +94,31 @@ Fields = (
      'fields': [
          {'pos': 'g', 'name': 'odo', 'width': 3},
          ]},
-    {'cmd': '22c00b', 'canrx': 0x7a8, 'cantx': 0x7a0, 'optional': True, 'absolute': True,
-     'fields': [
-         {'pos': 'e', 'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'f', 'name': 'tire_fl_temp', 'width': 1, 'offset': -50},
-         {'pos': 'j', 'name': 'tire_fr_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'k', 'name': 'tire_fr_temp', 'width': 1, 'offset': -50},
-         {'pos': 'o', 'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'p', 'name': 'tire_rl_temp', 'width': 1, 'offset': -50},
-         {'pos': 't', 'name': 'tire_rr_pres', 'width': 1, 'scale': 0.2/14.504},
-         {'pos': 'u', 'name': 'tire_rr_temp', 'width': 1, 'offset': -50},
-         ]},
-    {'computed': True,
-     'fields': (
-         {'name': 'dcBatteryPower',
-          'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
-         {'name': 'normalChargePort',
-          'lambda': lambda d: int(d['_charging_bits1'] & 0x10 != 0)},
-         {'name': 'rapidChargePort',
-          'lambda': lambda d: int(d['_charging_bits1'] & (0x10 | 0x20) != 0)},
-         {'name': 'charging',
-          'lambda': lambda d: d['normalChargePort'] or d['rapidChargePort']},
-         {'name': 'battThermalMode',
-          'lambda': lambda d: d['_battBits'] & 0xf},
-     )
-     },
+     {'cmd': '22c00b', 'canrx': 0x7a8, 'cantx': 0x7a0, 'optional': True, 'absolute': True,
+      'fields': [
+          {'pos': 'e', 'name': 'tire_fl_pres', 'width': 1, 'scale': 0.2/14.504},
+          {'pos': 'f', 'name': 'tire_fl_temp', 'width': 1, 'offset': -50},
+          {'pos': 'j', 'name': 'tire_fr_pres', 'width': 1, 'scale': 0.2/14.504},
+          {'pos': 'k', 'name': 'tire_fr_temp', 'width': 1, 'offset': -50},
+          {'pos': 'o', 'name': 'tire_rl_pres', 'width': 1, 'scale': 0.2/14.504},
+          {'pos': 'p', 'name': 'tire_rl_temp', 'width': 1, 'offset': -50},
+          {'pos': 't', 'name': 'tire_rr_pres', 'width': 1, 'scale': 0.2/14.504},
+          {'pos': 'u', 'name': 'tire_rr_temp', 'width': 1, 'offset': -50},
+          ]},
+      {'computed': True,
+       'fields': (
+           {'name': 'dcBatteryPower',
+            'lambda': lambda d: d['dcBatteryCurrent'] * d['dcBatteryVoltage'] / 1000.0},
+           {'name': 'normalChargePort',
+            'lambda': lambda d: int(d['_charging_bits1'] & 0x10 != 0)},
+           {'name': 'rapidChargePort',
+            'lambda': lambda d: int(d['_charging_bits1'] & (0x10 | 0x20) != 0)},
+           {'name': 'charging',
+            'lambda': lambda d: d['normalChargePort'] or d['rapidChargePort']},
+           {'name': 'battThermalMode',
+            'lambda': lambda d: d['_battBits'] & 0xf},
+           )
+       },
 )
 
 
