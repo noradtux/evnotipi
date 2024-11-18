@@ -5,7 +5,7 @@ from threading import Thread
 import logging
 from msgpack import packb, unpackb
 from requests import Session
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, ConnectTimeout
 
 log = logging.getLogger("EVNotiPi/TelemetryProxy")
 
@@ -49,7 +49,7 @@ class TelemetryProxy:
         assert not self._running
         self._running = True
         self._car.register_data(self.data_callback)
-        self._submit_settings()
+        self._settings_submitted = False
         log.debug('Thread running')
 
     def stop(self):
@@ -118,6 +118,10 @@ class TelemetryProxy:
  
         log.debug(points)
         try:
+            if not self._settings_submitted:
+                self._submit_settings()
+                self._settings_submitted = True
+
             ret = self._session.post(self._transmit_url,
                                      headers={'Authorization': self._auth},
                                      data=payload)
@@ -130,6 +134,8 @@ class TelemetryProxy:
         except RequestException as exception:
             log.warning(str(exception))
             self._session.close()
+        except ConnectTimeout as exception:
+            log.warning(str(exception))
 
     def check_thread(self):
         """ Return the status of the thread """
