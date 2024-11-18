@@ -42,6 +42,7 @@ class TelemetryProxy:
         self._session = Session()
         self._websocket = None
         self._running = False
+        self._settings_submitted = False
 
     def start(self):
         """ Start the submission thread """
@@ -49,7 +50,6 @@ class TelemetryProxy:
         assert not self._running
         self._running = True
         self._car.register_data(self.data_callback)
-        self._settings_submitted = False
         log.debug('Thread running')
 
     def stop(self):
